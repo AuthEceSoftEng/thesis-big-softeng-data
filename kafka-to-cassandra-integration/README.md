@@ -1,7 +1,3 @@
-# thesis-big-softeng-data
-Diploma Thesis on Mining Big Software Engineering Data
-
-
 ## Kafka and Cassandra: Integration guide
 ```sh
 cd kafka-to-cassandra-integration
