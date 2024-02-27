@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Reads events from the kafka events_topic and passes it to the cassandra table mykeyspace.events 
+# Reads events from the kafka events-topic and passes it to the cassandra table mykeyspace.events 
 # Template: https://developer.confluent.io/get-started/python/#build-consumer
 
 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
             consumer.assign(partitions)
 
     # Subscribe to topic
-    topic = "events_topic"
+    topic = "events-topic"
     consumer.subscribe([topic], on_assign=reset_offset)
 
 

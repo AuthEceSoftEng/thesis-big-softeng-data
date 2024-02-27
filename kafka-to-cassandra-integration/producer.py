@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# A GHArchive file is read and acts as a Kafka producer into the kafka topic "events_topic"
+# A GHArchive file is read and acts as a Kafka producer into the kafka topic "events-topic"
 # Template: https://developer.confluent.io/get-started/python/#build-producer 
 
 import sys, json
@@ -39,12 +39,11 @@ if __name__ == '__main__':
 
     filepath = 'github-data/2015-01-01-15.json'
    
-    topic = 'events_topic'
+    topic = 'events-topic'
     
     print("Calculating the number of JSON objects of the file...")
     
     # Calculate size of file (number of lines of file)
-    filepath = '../2015-01-01-15.json'
     with open(filepath, 'r') as file_object:
             linesInFile = len(file_object.readlines())
     
