@@ -1,11 +1,11 @@
 version: '3'
 
+networks:
+  cassandra-network:
+    driver: bridge
+
 services:
-  # # Cassandra database
-  # cassandra:
-  #   image: 'bitnami/cassandra:latest'
-  #   container_name: cassandra
-  # Kafka broker 
+
   kafka:
     image: bitnami/kafka
     hostname: kafka
@@ -17,10 +17,8 @@ services:
       - KAFKA_CFG_PROCESS_ROLES=broker,controller
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      
       - KAFKA_LISTENERS=PLAINTEXT://kafka:9092,CONTROLLER://:2181
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      
       - KAFKA_BROKER_ID=1
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@//:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
@@ -28,7 +26,6 @@ services:
       - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
     volumes:
       - ./kafka:/bitnami/kafka:latest
-    # command: ['kafka-topics.sh', '--create', '--topic', 'events-topic', '--bootstrap-server', 'kafka:9092']
 
 # Kafka UI
   kafka-ui:
@@ -43,17 +40,52 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     volumes:
       - ./kafka-ui/config.yml:/etc/kafkaui/dynamic_config.yaml
-# Python 
-  python:
-    image: python:3.10
-    container_name: python
+# Python producer
+  python-producer:
+    image: python:3.10-script-executing-image
+    container_name: python-producer
     volumes: 
       - ./hello-world.py:/hello-world.py
       - ./getting-started.ini:/getting-started.ini
       - ./producer.py:/producer.py
       - ./github-data:/github-data
-    # command: ['python', 'hello-world.py']  
+      - ./delete-kafka-topic.sh:/delete-kafka-topic.sh
     command: ['python', 'producer.py', 'getting-started.ini']
     depends_on:
       - kafka
+
+# Python consumer
+  python-consumer:
+    image: python:3.10-script-executing-image
+    container_name: python-consumer
+    volumes: 
+      - ./hello-world.py:/hello-world.py
+      - ./getting-started.ini:/getting-started.ini
+      - ./consumer.py:/consumer.py
+      - ./github-data:/github-data
+      - ./delete-kafka-topic.sh:/delete-kafka-topic.sh
+    command: ['python', 'consumer.py', 'getting-started.ini']
+    depends_on:
+      - kafka
+      - cassandra
+
+
+  # Cassandra service
+  cassandra:
+    image: cassandra:4.1.4
+    container_name: cassandra
+    hostname: cassandra
+    networks:
+      - cassandra-network
+
+  # cqlsh for Docker 
+  cqlsh:
+    image: nuvo/docker-cqlsh
+    container_name: cqlsh-container
+    environment: 
+      - CQLSH_HOST=cassandra
+      - CQLSH_PORT=9042
+      - CQLVERSION=3.4.6 
+    networks: 
+      - cassandra-network
 
