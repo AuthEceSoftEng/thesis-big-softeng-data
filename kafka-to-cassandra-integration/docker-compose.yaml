@@ -5,7 +5,7 @@ networks:
     driver: bridge
 
 services:
-
+# Kafka broker
   kafka:
     image: bitnami/kafka
     hostname: kafka
@@ -26,6 +26,8 @@ services:
       - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
     volumes:
       - ./kafka:/bitnami/kafka:latest
+    networks:
+      - cassandra-network
 
 # Kafka UI
   kafka-ui:
@@ -40,6 +42,17 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     volumes:
       - ./kafka-ui/config.yml:/etc/kafkaui/dynamic_config.yaml
+      
+# Cassandra 
+  cassandra:
+    image: cassandra:4.1.4
+    # ports:
+    #   - "9042:9042"
+    container_name: cassandra
+    hostname: cassandra
+    networks:
+      - cassandra-network
+
 # Python producer
   python-producer:
     image: python:3.10-script-executing-image
@@ -53,6 +66,8 @@ services:
     command: ['python', 'producer.py', 'getting-started.ini']
     depends_on:
       - kafka
+    networks:
+      - cassandra-network
 
 # Python consumer
   python-consumer:
@@ -68,24 +83,14 @@ services:
     depends_on:
       - kafka
       - cassandra
-
-
-  # Cassandra service
-  cassandra:
-    image: cassandra:4.1.4
-    container_name: cassandra
-    hostname: cassandra
     networks:
       - cassandra-network
 
-  # cqlsh for Docker 
-  cqlsh:
-    image: nuvo/docker-cqlsh
-    container_name: cqlsh-container
-    environment: 
-      - CQLSH_HOST=cassandra
-      - CQLSH_PORT=9042
-      - CQLVERSION=3.4.6 
-    networks: 
-      - cassandra-network
+
+
+
+
+
+
+
 

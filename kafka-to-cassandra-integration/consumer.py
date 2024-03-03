@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
     config_parser = ConfigParser()
     config_parser.read_file(args.config_file)
-    config = dict(config_parser['default'])
+    config = dict(config_parser['consumer-port'])
     config.update(config_parser['consumer'])
 
     # Create Consumer instance
@@ -38,11 +38,13 @@ if __name__ == '__main__':
     topic = "events-topic"
     consumer.subscribe([topic], on_assign=reset_offset)
 
-
+    cassandra_container_name = 'cassandra'
     # Create a Cassandra cluster, connect to it and use a keyspace
-    cluster = Cluster()
+    # cluster = Cluster()
+    cluster = Cluster([cassandra_container_name],port=9042)
 
     # A keyspace must have been created before running
+    # session = cluster.connect('mykeyspace')
     session = cluster.connect('mykeyspace')
     session.execute('USE mykeyspace')
 

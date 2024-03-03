@@ -1,54 +1,34 @@
 ## Kafka and Cassandra: Integration guide
 
-Build the python docker image to run the producer script
-```sh
-docker build --tag python:3.10-script-executing-image .
-```
-Prerequisites to compose the kafka and kafka-ui images
+Move to directory "kafka-to-cassandra-integration"
 ```sh
 cd kafka-to-cassandra-integration
-# Root must be the owner of the kafka folder 
-sudo mkdir -p kafka
-sudo chmod -R g+rwX kafka
-mkdir -p kafka-ui
-touch kafka-ui/config.yml
+```
+Build the docker image to run the producer.py script
+```sh
+docker build -f Dockerfile-python --tag python:3.10-script-executing-image .
+```
+Execute the bash script below to setup for the compose of the kafka and kafka-ui services
+```sh
+sudo ./setup-kafka-and-ui.sh
 ```
 
-Add the following code to kafka-ui/config.yml:
+Run the kafka, kafka-ui and cassandra services
 ```sh
-kafka:
- clusters:
-   - bootstrapServers: kafka:9092
-     name: kafka
+docker compose up kafka kafka-ui cassandra
 ```
-Run the kafka and kafka-ui images
+In another terminal, compose the producer-python service. It creates the kafka topic "events-topic" and starts producing messages into it.<br>
+To stop the "python-producer" service, press Ctrl + C.
 ```sh
-docker compose up kafka kafka-ui
+docker compose up python-producer 
 ```
-In another terminal, run the producer image. Stop the image using the binding Ctrl + C.
+Access the cassandra container through cqlsh
 ```sh
-chmod u+X delete-kafka-topic.sh
-delete-kafka-topic.sh # Deletes the kafka topic first
-docker compose up python # Create the kafka topic and produce messages into it
-```
-Create the cassandra server-cqlsh docker container network
-```sh
-docker network create cassandra-network
-```
-<!-- Terminal 1: Create the kafka topic and run the producer.py
-```sh
-docker exec -it kafka bash
-kafka-topics.sh --create --topic events-topic --bootstrap-server kafka:9092
-python producer.py
-``` -->
-In another terminal
-```sh
-docker exec cqlsh cqlsh cassandra 9042 --cqlversion='3.4.5'
-```
-<!-- Terminal 2: -->
- Run the cassandra cluster
-```sh
-docker run -it \
-    bitnami/cassandra:latest cqlsh cassandra-server
+docker exec -it cassandra cqlsh
 ```
 
+## Error I am getting after executing the command above
+I should be connecting to kafka:9092, however I am connecting to localhost:9042
+```sh
+Connection error: ('Unable to connect to any servers', {'127.0.0.1:9042': ConnectionRefusedError(111, "Tried connecting to [('127.0.0.1', 9042)]. Last error: Connection refused")})
+```
