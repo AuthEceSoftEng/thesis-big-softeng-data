@@ -15,14 +15,7 @@ Compose the services
 docker compose up
 ```
 
-## Issue No.1
-Compose the pyflink job kafka_with_json_example.py
-```sh
-docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/kafka_with_json_example.py --jarfile /opt/flink/usrlib/flink-sql-connector-kafka-3.0.2-1.18.jar 
-```
-Unexpected behaviour: Cannot connect to the flink ui (the job does nothing)
-
-## Issue No.2
+## Issue faced
 Compose the flink job kafka_with_json_example_modified.py
 ```sh
 docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/kafka_with_json_example_modified.py --jarfile /opt/flink/usrlib/flink-sql-connector-kafka-3.0.2-1.18.jar 
