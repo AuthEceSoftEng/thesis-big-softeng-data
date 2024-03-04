@@ -58,12 +58,10 @@ services:
     image: python:3.10-script-executing-image
     container_name: python-producer
     volumes: 
-      - ./hello-world.py:/hello-world.py
-      - ./getting-started.ini:/getting-started.ini
-      - ./producer.py:/producer.py
+      - ./python-scripts/producer.py:/producer.py
+      - ./helpers/getting-started.ini:/helpers/getting-started.ini
       - ./github-data:/github-data
-      - ./delete-kafka-topic.sh:/delete-kafka-topic.sh
-    command: ['python', 'producer.py', 'getting-started.ini']
+    command: ['python', 'python-scripts/producer.py', 'helpers/getting-started.ini']
     depends_on:
       - kafka
     networks:
@@ -74,12 +72,10 @@ services:
     image: python:3.10-script-executing-image
     container_name: python-consumer
     volumes: 
-      - ./hello-world.py:/hello-world.py
-      - ./getting-started.ini:/getting-started.ini
-      - ./consumer.py:/consumer.py
+      - ./helpers/getting-started.ini:/helpers/getting-started.ini
+      - ./python-scripts/consumer.py:/python-scripts/consumer.py
       - ./github-data:/github-data
-      - ./delete-kafka-topic.sh:/delete-kafka-topic.sh
-    command: ['python', 'consumer.py', 'getting-started.ini']
+    command: ['python', 'python-scripts/consumer.py', 'helpers/getting-started.ini']
     depends_on:
       - kafka
       - cassandra
