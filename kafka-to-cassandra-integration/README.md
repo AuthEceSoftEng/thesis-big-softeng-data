@@ -1,6 +1,6 @@
 ## Kafka and Cassandra: Integration guide
 
-Move to directory "kafka-to-cassandra-integration"
+Move to directory "kafka-to-cassandra-integration
 ```sh
 cd kafka-to-cassandra-integration
 ```
@@ -22,6 +22,10 @@ To stop the "python-producer" service, press Ctrl + C.
 ```sh
 docker compose up python-producer 
 ```
+To delete the events-topic data
+```sh
+./helpers/delete-kafka-topic.sh
+```
 Access the cassandra container through cqlsh. Wait a moment for the cassandra cluster to run or else you will get the error: 
 ```sh
 "Connection error: ('Unable to connect to any servers', {'127.0.0.1:9042': ConnectionRefusedError(111, "Tried connecting to [('127.0.0.1', 9042)]. Last error: Connection refused")})"
@@ -38,3 +42,4 @@ To stop the "python-consumer" service, press Ctrl + C.
 ```sh
 docker compose up python-consumer 
 ```
+ 
