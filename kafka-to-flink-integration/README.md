@@ -1,13 +1,15 @@
 # Integrate Kafka and Flink
 
+The guide below describes how to run Kafka and Flink on docker. 
+
 Build the docker image
 ```sh
-docker build -f Dockerfile --tag pyflink:latest
+docker build -f Dockerfile --tag pyflink:latest .
 ```
 
 Execute the bash script below to setup for the compose of the kafka and kafka-ui services
 ```sh
-sudo ./setup-kafka-and-ui.sh
+sudo ./helpers/setup-kafka-and-ui.sh
 ```
 
 Compose the services
@@ -16,6 +18,7 @@ docker compose up
 ```
 
 ## Issue faced
+### Terminal 2
 Compose the flink job kafka_with_json_example_modified.py
 ```sh
 docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/kafka_with_json_example_modified.py --jarfile /opt/flink/usrlib/flink-sql-connector-kafka-3.0.2-1.18.jar 
