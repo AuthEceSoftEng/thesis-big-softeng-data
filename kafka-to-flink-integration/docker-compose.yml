@@ -38,7 +38,6 @@ services:
 
 # Flink jobmanager
   jobmanager:
-    # image: pyflink:with_lzma_and_liblzma_dev
     image: pyflink:latest
     container_name: jobmanager-1
     volumes:
