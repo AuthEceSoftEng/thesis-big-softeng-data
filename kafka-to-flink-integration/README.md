@@ -1,8 +1,9 @@
 # Integrate Kafka and Flink
 
-The guide below describes how to run Kafka and Flink on docker. 
+The guide below describes how to run an integration script of Kafka and Flink on docker. The different terminals numbered below can be used for a more modular deployment of the docker services.
 
-Build the docker image
+### Terminal 1
+Build the pyflink image to run the flink job
 ```sh
 docker build -f Dockerfile --tag pyflink:latest .
 ```
@@ -19,12 +20,29 @@ docker compose up
 
 ## Issue faced
 ### Terminal 2
-Compose the flink job kafka_with_json_example_modified.py
+
+
+Expected behavior when executing the pyflink job: <br>
+Compose the flink job word_count.py (Template:)
+
+```sh
+docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/word_count.py 
+```
+The script should be able to run and connect to the flink web UI in localhost:8081
+Example output in terminal:
+```sh
+Job has been submitted with JobID 79f22c337331f459ae340e9983678123
+Program execution finished
+Job with JobID 79f22c337331f459ae340e9983678123 has finished.
+Job Runtime: 19283 ms
+```
+
+Error I am receiving: <br>
+Compose the integration-to-kafka pyflink job: kafka_with_json_example_modified.py
 ```sh
 docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/kafka_with_json_example_modified.py --jarfile /opt/flink/usrlib/flink-sql-connector-kafka-3.0.2-1.18.jar 
 ```
-
-Error: 
+Terminal output:
 ```sh
 WARNING: Unknown module: jdk.compiler specified to --add-exports
 WARNING: Unknown module: jdk.compiler specified to --add-exports
@@ -70,4 +88,6 @@ org.apache.flink.client.program.ProgramAbortException: java.lang.RuntimeExceptio
         at org.apache.flink.client.cli.CliFrontend.main(CliFrontend.java:1157)
 Caused by: java.lang.RuntimeException: Python process exits with code: 1
         at org.apache.flink.client.python.PythonDriver.main(PythonDriver.java:130)
-        ... 14 more```
+        ... 14 more
+```
+

@@ -1,6 +1,6 @@
 ## Kafka and Cassandra: Integration guide
 
-The guide below describes how to run Kafka and Cassandra on docker. Different terminals as numbered below can be used for a more modular deployment of the docker services.
+The guide below describes how to run Kafka and Cassandra on docker. The different terminals numbered below can be used for a more modular deployment of the docker services.
 
 
 ### Terminal 1

@@ -43,7 +43,7 @@ services:
     container_name: jobmanager-1
     volumes:
     - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/usrlib/flink-sql-connector-kafka-3.0.2-1.18.jar
-    # user's pyflink jobs
+    # User's pyflink jobs
     - ./usrlib:/opt/flink/usrlib
     
     ports:
@@ -55,7 +55,6 @@ services:
         jobmanager.rpc.address: jobmanager
 # Flink taskmanager
   taskmanager:
-    # image: pyflink:with_lzma_and_liblzma_dev
     image: pyflink:latest
     container_name: taskmanager-1
     depends_on:
