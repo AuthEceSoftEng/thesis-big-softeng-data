@@ -58,7 +58,7 @@ cqlsh> DESC mykeyspace.events;
 # Example 1: Count the events in the database
 cqlsh> SELECT COUNT(*) FROM mykeyspace.events;
 # Example 2: Retrieve the id and actor information of 5 events maximum of type CreateEvent:
-cqlsh> SELECT id, actor FROM mykeyspace.events WHERE type = 'CreateEvent' LIMIT 5;
+cqlsh> SELECT id, actor FROM mykeyspace.events WHERE type = 'CreateEvent' LIMIT 5 ALLOW FILTERING;
 
 ```
 
