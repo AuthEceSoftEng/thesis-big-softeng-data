@@ -31,3 +31,6 @@ Compose the integration-to-kafka pyflink job: kafka_with_json_example_modified.p
 docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/kafka_with_json_example_modified_no_main.py --jarfile /opt/flink/usrlib/flink-sql-connector-kafka-3.0.2-1.18.jar
 ```
 
+After running the command above you should be able to see the following:
+- The python integration script "kafka_with_json_example_modified_no_main.py" as a Flink job committed for execution in the Flink cluster at localhost:8081
+- The messages sent from the Flink-to-Kafka integration script to the kafka topic test-json-topic in the Kafka UI at localhost:8080
