@@ -49,7 +49,7 @@ record_serializer = KafkaRecordSerializationSchema.builder() \
 #     .build()
 
 kafka_producer = KafkaSink.builder() \
-    .set_bootstrap_servers("localhost:32967") \
+    .set_bootstrap_servers("kafka:32967") \
     .set_record_serializer(record_serializer) \
     .build()
 
