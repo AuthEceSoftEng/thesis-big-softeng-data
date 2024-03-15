@@ -1,4 +1,11 @@
 version: "3"
+
+
+networks:
+  kafka-network:
+    driver: bridge
+
+
 services:
 # Kafka broker 
   kafka:
@@ -21,6 +28,8 @@ services:
       - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
     volumes:
       - ./kafka:/bitnami/kafka:latest
+    networks:
+      - kafka-network
 # Kafka UI
   kafka-ui:
     container_name: kafka-ui
@@ -33,6 +42,8 @@ services:
       DYNAMIC_CONFIG_ENABLED: true
     volumes:
       - ./kafka-ui/config.yml:/etc/kafkaui/dynamic_config.yaml
+    networks:
+      - kafka-network
 
 # Template for Flink jobmanager and taskmanager: 
 # https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/resource-providers/standalone/docker/#using-flink-python-on-docker
@@ -53,6 +64,11 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
+    networks:
+      - kafka-network
+        
+
+
 # Flink taskmanager
   taskmanager:
     image: pyflink:latest
@@ -66,4 +82,19 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 2
+    networks:
+      - kafka-network
   
+# Python producer
+  python-producer:
+    image: python:3.10-usrlib-as-workdir
+    container_name: python-producer
+    volumes: 
+      - ./usrlib/producer.py:/usrlib/producer.py
+      - ./helpers/getting-started.ini:/helpers/getting-started.ini
+      - ./github-data:/github-data
+    command: ['python', '/usrlib/producer.py', '/helpers/getting-started.ini']
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
