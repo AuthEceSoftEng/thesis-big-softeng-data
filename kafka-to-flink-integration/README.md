@@ -20,7 +20,14 @@ docker compose up kafka kafka-ui taskmanager jobmanager
 You should be able to see the Kafka UI in localhost:8080 and the Flink job execution UI in localhost:8081
 
 ### Terminal 2
-Create the topic with raw event data 
+Compose the producer script to write raw event data from a file to the topic
+```sh
+docker compose up python-producer
+```
+You should be able to see the raw events as messages in the topic raw-events in the Kafka UI at localhost:8080
+
+### Terminal 3
+Create the topics raw-events with the raw event data and event-count with the count of events per type (PushEvent, WatchEvent etc).
 ```sh
 docker exec kafka kafka-topics.sh --create --topic raw-events --bootstrap-server kafka:9092
 docker exec kafka kafka-topics.sh --create --topic event-count --bootstrap-server kafka:9092
@@ -34,5 +41,5 @@ docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/num-of-events-per
 ```
 
 After running the command above you should be able to see the following:
-- The python integration script "num-of-events-per-type.py" as a Flink job committed for execution in the Flink cluster at localhost:8081
-- The raw events in real time messages sent from Kafka to Flink to calculate the number of occurences of events per type in the stream execution integration script to the kafka topic test-json-topic in the Kafka UI at localhost:8080
+- The python integration script "num-of-events-per-type.py" as a Flink job committed for execution in the Flink UI at localhost:8081.
+- The number of occurences of events per type in the topic event-count calculated from the initial raw-events stream at localhost:8080.
