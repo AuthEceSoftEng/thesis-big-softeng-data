@@ -121,7 +121,7 @@ services:
     image: python:3.10-usrlib-as-workdir
     container_name: python-consumer
     volumes: 
-      - ./usrlib/getting-started.ini:/usrlib/getting-started.ini
+      - ./helpers/getting-started.ini:/helpers/getting-started.ini
       - ./usrlib/consumer.py:/usrlib/consumer.py
       - ./github-data:/github-data
     command: ['python', '/usrlib/consumer.py', 'helpers/getting-started.ini']
