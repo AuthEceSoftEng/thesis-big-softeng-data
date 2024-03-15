@@ -13,7 +13,7 @@ Build the images below:
 # Image to run the producer and consumer python scripts
 docker build -f Dockerfile-python-not-only-cassandra-workdir --tag python:3.10-usrlib-as-workdir .
 #  Image to run the pyflink job 
-docker build -f Dockerfile --tag pyflink:latest .
+docker build -f Dockerfile-pyflink --tag pyflink:latest .
 ```
 
 
@@ -23,7 +23,7 @@ docker compose up kafka kafka-ui taskmanager jobmanager cassandra
 ```
 You should be able to see the Kafka UI in localhost:8080 and the Flink job execution UI in localhost:8081
 
-### Terminal 1.5: Create the kafka topics
+### Terminal 2: Create the kafka topics and produce messages
 Create the topics raw-events with the raw event data and event-count with the count of events per type (PushEvent, WatchEvent etc).
 ```sh
 docker exec kafka kafka-topics.sh --create --topic raw-events --bootstrap-server kafka:9092
@@ -32,8 +32,6 @@ docker exec kafka kafka-topics.sh --create --topic event-count --bootstrap-serve
 docker exec kafka kafka-topics.sh --list --bootstrap-server kafka:9092
 ```
 
-
-### Terminal 2 - Produce messages to Kafka
 
 Start the "python-producer" service. It creates the kafka topic "raw-events" and starts producing messages into it.
 
