@@ -44,27 +44,29 @@ To stop the "python-producer", press Ctrl + C in the terminal.
 
 
 ### Terminal 3 - Consume messages from Cassandra
-Compose the "python-consumer" service. It should consume messages from the topic "raw-events" and send it to cassandra.<br>
-To stop the "python-consumer" service, press Ctrl + C.
-```sh
-docker compose up python-consumer 
-```
-
-### Terminal 4 - (Optional: Make queries to the Cassandra database through cqlsh)
-Access the cassandra container through cqlsh. 
+Access the cassandra container through cqlsh and create a keyspace
  
 ```sh
 docker exec -it cassandra cqlsh
 # Once the cassandra cli starts:
 cqlsh> CREATE KEYSPACE IF NOT EXISTS mykeyspace WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy'};
 ```
-
 If the "cassandra" service has not started you will get the error: 
 ```sh
 "Connection error: ('Unable to connect to any servers', {'127.0.0.1:9042': ConnectionRefusedError(111, "Tried connecting to [('127.0.0.1', 9042)]. Last error: Connection refused")})"
 ```
 
-Now you can run simple cql commands on the cqlsh terminal. Some simple examples are shown below:
+### Terminal 4
+Compose the "python-consumer" service. It should consume messages from the topic "raw-events" and send it to cassandra.<br>
+```sh
+docker compose up python-consumer 
+```
+To stop the "python-consumer" service, press Ctrl + C.
+
+
+
+### Terminal 3 (revisited) - Optional: Go back to terminal 3 and make queries to the Cassandra database through cqlsh
+You can run simple cql commands on the cqlsh terminal. Some simple examples are shown below:
 ```sh
 # To see the table mykeyspace.events structure:
 cqlsh> DESC mykeyspace.events;
@@ -75,7 +77,7 @@ cqlsh> SELECT id, actor FROM mykeyspace.events WHERE type = 'CreateEvent' LIMIT 
 
 ```
 
-You can also access the topic data through the "kafka-ui" at localhost:8080.
+You can also access the topic "raw-events"' data through the Kafka UI at localhost:8080.
 
 
 
@@ -83,7 +85,7 @@ You can also access the topic data through the "kafka-ui" at localhost:8080.
 ### Terminal 5 - Run the pyflink job to calculate the new events in real time 
 Compose the pyflink job: num-of-events-per-type.py
 ```sh
-docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/num-of-events-per-type.py --jarfile /opt/flink/usrlib/flink-sql-connector-kafka-3.0.2-1.18.jar
+docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/num-of-events-per-type.py --jarfile /opt/flink/connectors/flink-sql-connector-kafka-3.0.2-1.18.jar
 ```
 
 After running the command above you should be able to see the following:
