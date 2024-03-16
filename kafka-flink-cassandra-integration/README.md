@@ -1,6 +1,7 @@
 ## Kafka, Flink and Cassandra: Integration guide
 
-The guide below describes how to run Kafka, Flink and Cassandra on docker. The different terminals numbered below can be used for a more modular deployment of the docker services.
+The guide below describes how to run Kafka, Flink and Cassandra on docker. 
+The different terminals numbered below are used to keep the deployment of the docker services modular.
 
 
 ### Terminal 1 - Image builds and docker compose
@@ -11,7 +12,7 @@ sudo ./helpers/setup-kafka-and-ui.sh
 Build the images below: 
 ```sh
 # Image to run the producer and consumer python scripts
-docker build -f Dockerfile-python-not-only-cassandra-workdir --tag python:3.10-usrlib-as-workdir .
+docker build -f Dockerfile-python --tag python:3.10-usrlib-as-workdir .
 #  Image to run the pyflink job 
 docker build -f Dockerfile-pyflink --tag pyflink:latest .
 ```
@@ -90,4 +91,6 @@ docker exec jobmanager-1 ./bin/flink run -py /opt/flink/usrlib/num-of-events-per
 
 After running the command above you should be able to see the following:
 - The python integration script "num-of-events-per-type.py" as a Flink job committed for execution in the Flink UI at localhost:8081.
-- The number of occurences of events per type in the topic event-count calculated from the initial raw-events stream at localhost:8080.
+- The number of occurences of events per type in the topic event-count calculated from the initial raw-events stream at localhost:8080.<br>
+
+To terminate the pyflink job, you can select "Cancel job" in the Flink UI at localhost:8081.
