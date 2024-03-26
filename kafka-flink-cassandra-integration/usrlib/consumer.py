@@ -4,7 +4,6 @@
 # Template: https://developer.confluent.io/get-started/python/#build-consumer
 
 
-import sys
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING

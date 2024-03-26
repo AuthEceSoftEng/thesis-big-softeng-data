@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-# A GHArchive file is read and acts as a Kafka producer into the kafka topic "events-topic"
+# A GHArchive file is read and acts as a Kafka producer into the kafka topic "raw-events"
 # Template: https://developer.confluent.io/get-started/python/#build-producer 
 
 import sys, json
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer
-import time
 
 
 if __name__ == '__main__':
@@ -62,8 +61,8 @@ if __name__ == '__main__':
                         sys.stdout.flush()
                         producer.produce(topic, value=jsonStr, callback=delivery_callback)
                         linesRead = i
-                        # Short time before next JSON object is received
-                        time.sleep(3)
+                        # # Short time before next JSON object is received
+                        # time.sleep(3)
     except KeyboardInterrupt:
         # Each line corresponds to a JSON object (linesRead = numberOfJSONObjectsRead)
         print("\nNumber of JSON objects read from file: %d" % (linesRead))        

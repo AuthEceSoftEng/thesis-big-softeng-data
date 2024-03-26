@@ -9,14 +9,13 @@ FlinkKafkaConsumer respectively since the latter are deprecated
 '''
 
 from pyflink.common import Types, Row
-from pyflink.datastream import StreamExecutionEnvironment, DataStream
+from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.datastream.connectors.kafka import  KafkaSink, KafkaSource, \
     KafkaRecordSerializationSchema
-from pyflink.datastream.formats.json import JsonRowSerializationSchema, JsonRowDeserializationSchema
+from pyflink.datastream.formats.json import JsonRowSerializationSchema
 from pyflink.common.serialization import SimpleStringSchema
 from pyflink.common import WatermarkStrategy
 
-import json, logging, sys
 
 env = StreamExecutionEnvironment.get_execution_environment()
 # env.add_jars("file:///home/xeon/flink-1.18.0/lib/flink-sql-connector-kafka-3.0.2-1.18.jar")
@@ -37,8 +36,6 @@ ds_raw = env.from_source( source=kafka_consumer, \
 
 
 # Kafka producer
-
-# # type_info = Types.ROW(Types.TUPLE([Types.STRING(), Types.INT()]))
 type_info = Types.ROW_NAMED(['event_type', 'num_of_occurences'],[Types.STRING(), Types.INT()])
 
 record_schema = JsonRowSerializationSchema.builder() \
@@ -58,13 +55,10 @@ kafka_producer = KafkaSink.builder() \
 def extract_event_type(eventString):
         eventDict = eval(eventString)
         eventType = eventDict["type"]
-        # eventTypeTempList = [eventType]
-        # eventTypeTempTuple = eventType
         return eventType
 
 def create_row(eventType):
         newRow = Row(eventType, 1)
-        # newRow.get_fields_by_names()
         return newRow
 
 def key_the_row(event_row):
@@ -78,11 +72,6 @@ ds_count = ds_raw.map(extract_event_type, output_type=Types.STRING()) \
         .map(create_row, output_type=type_info) \
         .key_by(key_the_row, key_type=Types.STRING()) \
         .reduce(reduce_the_row)
-
-# ds_count = ds_raw.flat_map(extract_event_type) \
-#         .map(lambda i: (i, 1), output_type=Types.TUPLE([Types.STRING(), Types.INT()])) \
-#         .key_by(lambda i: i[0]) \
-#         .reduce(lambda i, j: (i[0], i[1] + j[1]))
 
 ds_count.sink_to(kafka_producer)
 
