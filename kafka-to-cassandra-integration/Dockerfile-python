@@ -1,9 +1,0 @@
-FROM python:3.10-slim
-
-WORKDIR /kafka-to-cassandra-integration
-
-COPY helpers/requirements.txt ./
-RUN python -m pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-

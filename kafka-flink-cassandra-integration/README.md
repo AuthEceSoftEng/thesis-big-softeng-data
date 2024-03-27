@@ -32,7 +32,7 @@ docker exec kafka kafka-topics.sh --create --topic event-count --bootstrap-serve
 # Optional: You can see if the topis have been successfully created through the command:
 docker exec kafka kafka-topics.sh --list --bootstrap-server kafka:9092
 # Optional: Delete the topic data if needed:
-docker exec kafka kafka-topics.sh --delete <topic-name> --bootstrap-server kafka:9092
+docker exec kafka kafka-topics.sh --delete --topic <topic-name> --bootstrap-server kafka:9092
 ```
 
 
