@@ -20,9 +20,9 @@ docker build -f Dockerfile-pyflink --tag pyflink:latest .
 
 Run the Kafka, Flink and Cassandra services.
 ```sh
-docker compose up kafka kafka-ui taskmanager jobmanager cassandra
+docker compose up kafka kafka-ui taskmanager jobmanager cassandra cassandra-ui
 ```
-You should be able to see the Kafka UI in localhost:8080 and the Flink job execution UI in localhost:8081
+You should be able to see the Kafka UI at localhost:8080, the cassandra-ui at localhost:8083 and the Flink job execution UI at localhost:8081
 
 ### Terminal 2: Create the kafka topics and produce messages
 Create the topics raw-events with the raw event data and event-count with the count of events per type (PushEvent, WatchEvent etc).
@@ -46,7 +46,7 @@ Now, you should be able to see the raw events as messages in the topic raw-event
 To stop the "python-producer", press Ctrl + C in the terminal.
 
 
-### Terminal 3 - Consume messages from Cassandra
+### Terminal 3 - Make queries to Cassandra
 Access the cassandra container through cqlsh and create a keyspace
  
 ```sh
@@ -59,7 +59,7 @@ If the "cassandra" service has not started you will get the error:
 "Connection error: ('Unable to connect to any servers', {'127.0.0.1:9042': ConnectionRefusedError(111, "Tried connecting to [('127.0.0.1', 9042)]. Last error: Connection refused")})"
 ```
 
-### Terminal 4
+### Terminal 4 - Consume messages into Cassandra
 Compose the "python-consumer" service. It should consume messages from the topic "raw-events" and send it to cassandra.<br>
 ```sh
 docker compose up python-consumer 

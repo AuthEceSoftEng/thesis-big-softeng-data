@@ -47,9 +47,34 @@ if __name__ == '__main__':
     session = cluster.connect('mykeyspace')
     session.execute('USE mykeyspace')
 
+    # Create type:
+    session.execute('CREATE TYPE IF NOT EXISTS actor_type ( \
+                    id text, \
+                    login text, \
+                    display_login text, \
+                    gravatar_id text, \
+                    url text)')
+
+
+    session.execute('CREATE TYPE IF NOT EXISTS repo_type ( \
+                    id text, \
+                    name text, \
+                    url text)')
+    
+    session.execute('CREATE TYPE IF NOT EXISTS org_type ( \
+                    id text, \
+                    login text, \
+                    gravatar_id text, \
+                    url text, \
+                    avatar_id, text)')
+    
     # Create the table events 
+    # The payload field is an object of different type for different event types 
+    # (PushEvent, CreateEvent etc) but is assigned the text type for simplicity 
+    # for the time being.
     session.execute('CREATE TABLE IF NOT EXISTS events (id text PRIMARY KEY, type text, \
-                    actor text, repo text, payload text, public text, created_at timestamp)')
+                    actor actor_type, repo repo_type, payload text, public boolean, \
+                    created_at text, org org_type)')
 
     # Delete all pre-existing data of the table events
     session.execute('TRUNCATE events')

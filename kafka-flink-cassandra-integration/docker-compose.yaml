@@ -101,6 +101,17 @@ services:
     networks:
       - cassandra-network
 
+# Cassandra UI
+  cassandra-ui:
+    image: ipushc/cassandra-web
+    container_name: cassandra-ui
+    ports:
+      - "8083:8083"
+    depends_on:
+      - cassandra
+    networks:
+      - cassandra-network
+
 # Python producer
   python-producer:
     image: python:3.10-usrlib-as-workdir

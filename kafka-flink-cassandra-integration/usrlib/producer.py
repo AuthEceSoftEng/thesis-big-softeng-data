@@ -3,7 +3,7 @@
 # A GHArchive file is read and acts as a Kafka producer into the kafka topic "raw-events"
 # Template: https://developer.confluent.io/get-started/python/#build-producer 
 
-import sys, json
+import sys, json, time
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer
