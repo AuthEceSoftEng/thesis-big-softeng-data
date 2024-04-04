@@ -46,22 +46,47 @@ Now, you should be able to see the raw events as messages in the topic raw-event
 To stop the "python-producer", press Ctrl + C in the terminal.
 
 
-
-### Terminal 3 - Activate the Cassandra UI
-```sh
-docker compose up cassandra-ui
-```
-Now you should be able to see the Cassandra UI at localhost:8083 
-
-### Terminal 4 - Consume messages into Cassandra
+### Terminal 3 - Consume messages into Cassandra
 Compose the "python-consumer" service. It should consume messages from the topic "raw-events" and send it to cassandra.<br>
 ```sh
 docker compose up python-consumer 
 ```
 To stop the "python-consumer" service, press Ctrl + C.
 
+### Terminal 4 - Activate the Cassandra UI
 
+Optional: You can check if the cassandra database is up and running using the following command in a new terminal: 
+```sh 
+docker exec -it cassandra cqlsh
+```
+You should be able to see something like the following:
+```sh
+Connected to Test Cluster at localhost:9042
+[cqlsh 6.1.0 | Cassandra 4.1.4 | CQL spec 3.4.6 | Native protocol v5]
+Use HELP for help.
+cqlsh> 
+```
 
+If the "cassandra" service has not started you will get the error:
+```sh
+"Connection error: ('Unable to connect to any servers', {'127.0.0.1:9042': ConnectionRefusedError(111, "Tried connecting to [('127.0.0.1', 9042)]. Last error: Connection refused")})"
+```
+
+Once the cassandra service is up and running 
+()
+you can activate the Cassandra UI:
+```sh
+docker compose up cassandra-ui
+```
+Now you should be able to see the Cassandra UI at localhost:8083. <br>
+Optional: There, you can make queries such as: 
+```sh
+# Example 1: Count the events in the database
+SELECT COUNT(*) FROM mykeyspace.events;
+# Example 2: Retrieve the id and actor information of 5 events maximum of type
+SELECT id, actor FROM mykeyspace.events WHERE type = 'CreateEvent' LIMIT 5 ALLOW FILTERING;
+# etc
+```
 
 ### Terminal 5 - Run the pyflink job to calculate the new events in real time 
 Compose the pyflink job: num-of-events-per-type.py
