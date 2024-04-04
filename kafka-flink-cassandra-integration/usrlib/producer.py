@@ -61,7 +61,7 @@ if __name__ == '__main__':
                         sys.stdout.flush()
                         producer.produce(topic, value=jsonStr, callback=delivery_callback)
                         linesRead = i
-                        # # Short time before next JSON object is received
+                        # # (Optional) Short time before next JSON object is received
                         # time.sleep(3)
     except KeyboardInterrupt:
         # Each line corresponds to a JSON object (linesRead = numberOfJSONObjectsRead)

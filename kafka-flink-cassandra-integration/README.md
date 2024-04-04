@@ -20,7 +20,7 @@ docker build -f Dockerfile-pyflink --tag pyflink:latest .
 
 Run the Kafka, Flink and Cassandra services.
 ```sh
-docker compose up kafka kafka-ui taskmanager jobmanager cassandra cassandra-ui
+docker compose up kafka kafka-ui taskmanager jobmanager cassandra 
 ```
 You should be able to see the Kafka UI at localhost:8080, the cassandra-ui at localhost:8083 and the Flink job execution UI at localhost:8081
 
@@ -46,18 +46,12 @@ Now, you should be able to see the raw events as messages in the topic raw-event
 To stop the "python-producer", press Ctrl + C in the terminal.
 
 
-### Terminal 3 - Make queries to Cassandra
-Access the cassandra container through cqlsh and create a keyspace
- 
+
+### Terminal 3 - Open the Cassandra ui  
 ```sh
-docker exec -it cassandra cqlsh
-# Once the cassandra cli starts:
-cqlsh> CREATE KEYSPACE IF NOT EXISTS mykeyspace WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy'};
+docker compose up cassandra-ui
 ```
-If the "cassandra" service has not started you will get the error: 
-```sh
-"Connection error: ('Unable to connect to any servers', {'127.0.0.1:9042': ConnectionRefusedError(111, "Tried connecting to [('127.0.0.1', 9042)]. Last error: Connection refused")})"
-```
+Now you should be able to see the cassandra UI at localhost:8083 
 
 ### Terminal 4 - Consume messages into Cassandra
 Compose the "python-consumer" service. It should consume messages from the topic "raw-events" and send it to cassandra.<br>
@@ -65,22 +59,6 @@ Compose the "python-consumer" service. It should consume messages from the topic
 docker compose up python-consumer 
 ```
 To stop the "python-consumer" service, press Ctrl + C.
-
-
-
-### Terminal 3 (revisited) - Optional: Go back to terminal 3 and make queries to the Cassandra database through cqlsh
-You can run simple cql commands on the cqlsh terminal. Some simple examples are shown below:
-```sh
-# To see the table mykeyspace.events structure:
-cqlsh> DESC mykeyspace.events;
-# Example 1: Count the events in the database
-cqlsh> SELECT COUNT(*) FROM mykeyspace.events;
-# Example 2: Retrieve the id and actor information of 5 events maximum of type CreateEvent:
-cqlsh> SELECT id, actor FROM mykeyspace.events WHERE type = 'CreateEvent' LIMIT 5 ALLOW FILTERING;
-
-```
-
-You can also access the topic "raw-events"' data through the Kafka UI at localhost:8080.
 
 
 

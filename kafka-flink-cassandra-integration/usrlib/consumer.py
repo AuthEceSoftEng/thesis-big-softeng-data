@@ -3,7 +3,7 @@
 # Reads events from the kafka events-topic and passes it to the cassandra table mykeyspace.events 
 # Template: https://developer.confluent.io/get-started/python/#build-consumer
 
-
+import time, json
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
@@ -40,33 +40,39 @@ if __name__ == '__main__':
     cassandra_container_name = 'cassandra'
     # Create a Cassandra cluster, connect to it and use a keyspace
     # cluster = Cluster()
-    cluster = Cluster([cassandra_container_name],port=9042)
+    
+    # cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster(contact_points=[cassandra_container_name], port=9042)
 
     # A keyspace must have been created before running
     # session = cluster.connect('mykeyspace')
-    session = cluster.connect('mykeyspace')
+    session = cluster.connect()
+
+    session.execute("CREATE KEYSPACE IF NOT EXISTS mykeyspace \
+                     WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy'};")
     session.execute('USE mykeyspace')
 
     # Create type:
     session.execute('CREATE TYPE IF NOT EXISTS actor_type ( \
-                    id text, \
+                    id int, \
                     login text, \
                     display_login text, \
                     gravatar_id text, \
-                    url text)')
+                    url text, \
+                    avatar_url text)')
 
 
     session.execute('CREATE TYPE IF NOT EXISTS repo_type ( \
-                    id text, \
+                    id int, \
                     name text, \
                     url text)')
     
     session.execute('CREATE TYPE IF NOT EXISTS org_type ( \
-                    id text, \
+                    id int, \
                     login text, \
                     gravatar_id text, \
                     url text, \
-                    avatar_id, text)')
+                    avatar_url text)')
     
     # Create the table events 
     # The payload field is an object of different type for different event types 
@@ -78,7 +84,6 @@ if __name__ == '__main__':
 
     # Delete all pre-existing data of the table events
     session.execute('TRUNCATE events')
-
 
     # Poll for new messages from Kafka and insert them in Cassandra
     try:
@@ -92,21 +97,28 @@ if __name__ == '__main__':
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
-                # Extract the (optional) key and value, and insert the json object into Cassandra.
-
+                
 
                 # JSON object to be inserted in the Cassandra database
-                jsonBytes = msg.value()
-                jsonDict = eval(jsonBytes)
-                # Insert fields from the JSON object in the events table
-                session.execute("INSERT INTO events (id, type, actor, repo, payload, \
-                                public, created_at) \
-                                VALUES (%s, %s, %s, %s, %s, %s, %s)", \
-                                [str(jsonDict["id"]), str(jsonDict["type"]), str(jsonDict["actor"]), \
-                                str(jsonDict["repo"]), str(jsonDict["payload"]), str(jsonDict["public"]), \
-                                str(jsonDict["created_at"])])
-                        
+                jsonBytes = msg.value()                
+                # Turned into dictionary
+                jsonDict = eval(jsonBytes) 
+                
+                
+                # Stringify the payload property of the json object
+                jsonDict["payload"] = str(jsonDict["payload"])
 
+                # Stringify the rest of the properties
+                jsonDictStringified = json.dumps(jsonDict)
+                
+                insert_prepared = session.prepare('INSERT INTO events \
+                                JSON ?')
+                
+                # Insert fields from the JSON object in the events table
+                session.execute(insert_prepared, [jsonDictStringified])
+                
+
+                # time.sleep(3)
                 ## Print consumed events upon receive
                 print("\nConsumed an event from topic {topic}: value = {value:12}".format(
                     topic=msg.topic(), value=msg.value().decode('utf-8')))

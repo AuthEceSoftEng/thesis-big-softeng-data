@@ -94,8 +94,8 @@ services:
 # Cassandra 
   cassandra:
     image: cassandra:4.1.4
-    # ports:
-    #   - "9042:9042"
+    ports:
+      - "9042:9042"
     container_name: cassandra
     hostname: cassandra
     networks:
@@ -127,7 +127,8 @@ services:
       - kafka-network
       - cassandra-network
 
-# Python consumer
+
+# Python consumer 
   python-consumer:
     image: python:3.10-usrlib-as-workdir
     container_name: python-consumer
@@ -135,11 +136,10 @@ services:
       - ./helpers/getting-started.ini:/helpers/getting-started.ini
       - ./usrlib/consumer.py:/usrlib/consumer.py
       - ./github-data:/github-data
-    command: ['python', '/usrlib/consumer.py', 'helpers/getting-started.ini']
+    command: ['python', '/usrlib/consumer-with-insert-json.py', 'helpers/getting-started.ini']
     depends_on:
       - kafka
       - cassandra
     networks:
+      - kafka-network
       - cassandra-network
-
-      
