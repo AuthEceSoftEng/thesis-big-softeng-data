@@ -22,9 +22,9 @@ Run the Kafka, Flink and Cassandra services.
 ```sh
 docker compose up kafka kafka-ui taskmanager jobmanager cassandra 
 ```
-You should be able to see the Kafka UI at localhost:8080, the cassandra-ui at localhost:8083 and the Flink job execution UI at localhost:8081
+You should be able to see the Kafka UI at localhost:8080 and the Flink job execution UI at localhost:8081
 
-### Terminal 2: Create the kafka topics and produce messages
+### Terminal 2 - Create the kafka topics and produce messages
 Create the topics raw-events with the raw event data and event-count with the count of events per type (PushEvent, WatchEvent etc).
 ```sh
 docker exec kafka kafka-topics.sh --create --topic raw-events --bootstrap-server kafka:9092
@@ -47,11 +47,11 @@ To stop the "python-producer", press Ctrl + C in the terminal.
 
 
 
-### Terminal 3 - Open the Cassandra ui  
+### Terminal 3 - Activate the Cassandra UI
 ```sh
 docker compose up cassandra-ui
 ```
-Now you should be able to see the cassandra UI at localhost:8083 
+Now you should be able to see the Cassandra UI at localhost:8083 
 
 ### Terminal 4 - Consume messages into Cassandra
 Compose the "python-consumer" service. It should consume messages from the topic "raw-events" and send it to cassandra.<br>

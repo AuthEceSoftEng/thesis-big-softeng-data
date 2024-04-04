@@ -136,7 +136,7 @@ services:
       - ./helpers/getting-started.ini:/helpers/getting-started.ini
       - ./usrlib/consumer.py:/usrlib/consumer.py
       - ./github-data:/github-data
-    command: ['python', '/usrlib/consumer-with-insert-json.py', 'helpers/getting-started.ini']
+    command: ['python', '/usrlib/consumer.py', 'helpers/getting-started.ini']
     depends_on:
       - kafka
       - cassandra
