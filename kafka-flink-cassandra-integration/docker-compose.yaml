@@ -24,7 +24,7 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:32967
       - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@//:2181
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@localhost:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_NODE_ID=1
       - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
@@ -45,7 +45,7 @@ services:
     environment:
       DYNAMIC_CONFIG_ENABLED: true
     volumes:
-      - ./kafka-ui/config.yml:/etc/kafkaui/dynamic_config.yaml
+      - ./kafka-ui-non-root/config.yml:/etc/kafkaui/dynamic_config.yaml
     networks:
       - kafka-network
       - cassandra-network
@@ -93,13 +93,29 @@ services:
 
 # Cassandra 
   cassandra:
-    image: cassandra:4.1.4
+    image: cassandra:4.1.6
     ports:
       - "9042:9042"
     container_name: cassandra
     hostname: cassandra
     networks:
       - cassandra-network
+
+# Cassandra 
+  cassandra:
+    image: cassandra:4.1.6
+    ports:
+      - "9042:9042"
+    container_name: cassandra
+    hostname: cassandra
+    networks:
+      - cassandra-network
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh cassandra 9042 -e 'describe keyspaces'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
 # Cassandra UI
   cassandra-ui:
@@ -108,29 +124,14 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      - cassandra
+      cassandra:
+        condition: service_healthy
     networks:
       - cassandra-network
-
-# Python producer
-  python-producer:
-    image: python:3.10-usrlib-as-workdir
-    container_name: python-producer
-    volumes: 
-      - ./usrlib/producer.py:/usrlib/producer.py
-      - ./helpers/getting-started.ini:/helpers/getting-started.ini
-      - ./github-data:/github-data
-    command: ['python', '/usrlib/producer.py', '/helpers/getting-started.ini']
-    depends_on:
-      - kafka
-    networks:
-      - kafka-network
-      - cassandra-network
-
 
 # Python consumer 
   python-consumer:
-    image: python:3.10-usrlib-as-workdir
+    image: python:3.10-script-executing-image
     container_name: python-consumer
     volumes: 
       - ./helpers/getting-started.ini:/helpers/getting-started.ini
