@@ -1,0 +1,209 @@
+networks:
+  kafka-network:
+    driver: bridge
+  flink-network:
+    driver: bridge
+  cassandra-network:
+    driver: bridge
+
+services:
+# Kafka broker 
+  kafka:
+    image: bitnami/kafka:3.9
+    container_name: kafka
+    ports:
+      - 32967:32967
+      - 9092:9092
+    volumes:
+      - ./kafka:/bitnami/kafka
+    environment:
+      # KRaft settings
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_BROKER_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller, broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:2181
+      # Listeners
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:2181,PLAINTEXT_HOST://:32967
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:32967
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
+      # - ./usrlib/helpers/delete_messages_of_topic_historical-raw-events.json:/usrlib/helpers/delete_messages_of_topic_historical-raw-events.json
+    networks:
+      - kafka-network
+      - cassandra-network
+
+# Kafka UI
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - '8080:8080'
+    depends_on:
+      - kafka
+    environment:
+      DYNAMIC_CONFIG_ENABLED: true
+    volumes:
+      - ./kafka-ui/config.yml:/etc/kafkaui/dynamic_config.yaml
+    networks:
+      - kafka-network
+      - cassandra-network
+
+
+# Flink taskmanager 1
+  taskmanager-1:
+    image: pyflink:1.18.1
+    container_name: taskmanager-1
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    scale: 1
+    # One of the job managers is sufficient for the flink properties
+    environment:
+      - | 
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 24
+    networks:
+      - kafka-network
+      - cassandra-network
+      - flink-network
+ 
+# Flink jobmanager
+  jobmanager:
+    image: pyflink:1.18.1
+    container_name: jobmanager
+    volumes:
+    # Connectors
+    - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
+    - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
+    - ./connectors/flink-streaming-scala_2.12-1.18.1.jar:/opt/flink/opt/flink-streaming-scala_2.12-1.18.1.jar
+
+    # User's pyflink jobs
+    # 1. Screen 2 jobs
+    - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
+    # 2. Screen 3 jobs
+    - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
+    # 3. Screen 4 jobs
+    - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
+    
+    # Config file
+    - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
+    ports:
+      - "8081:8081"
+    command: jobmanager    
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+    depends_on: 
+      - cassandra
+    networks:
+      - kafka-network
+      - cassandra-network
+      - flink-network
+
+# Cassandra 
+  cassandra:
+    image: cassandra:4.1.7
+    ports:
+      - "9042:9042"
+    container_name: cassandra
+    hostname: cassandra
+    volumes:
+      - /var/lib/cassandra:/var/lib/cassandra
+    networks:
+      - cassandra-network
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh cassandra 9042 -e 'describe keyspaces'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+# Cassandra UI
+  cassandra-ui:
+    image: ipushc/cassandra-web
+    container_name: cassandra-ui
+    ports:
+      - "8083:8083"
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    networks:
+      - cassandra-network
+
+# Python near real time events producer
+  python-historical-events-producer:
+    image: python:3.10-script-executing-image
+    container_name: python-historical-events-producer
+    volumes: 
+      # /usrlib
+      - ./usrlib/historical-events-file-rotating-producer.py:/usrlib/historical-events-file-rotating-producer.py
+      - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
+      - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+      - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
+      - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
+      
+      # usrlib/helpers
+      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
+
+      # github_data
+      - ./usrlib/github_data:/github_data
+      - ./usrlib/github_data/files_parsed.json:/github_data/files_parsed.json
+      
+      # - ./other_data:/usrlib/other_data
+
+    command: ['python', 'historical-events-file-rotating-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
+
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+      - cassandra-network
+
+# Python server exposing the data
+  python-data-exposing-server:
+    image: python:3.10-script-executing-image
+    container_name: python-data-exposing-server
+    volumes: 
+      - ./flask-material-dashboard-with-counters/server.py:/usrlib/server.py
+    ports: 
+      - "127.0.0.1:3000:3000"
+    command: ['python', 'server.py']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - cassandra
+    networks:
+      - kafka-network
+      - cassandra-network
+
+# Python flask dashboard app
+  python-flask-app:
+    image: python:3.10-script-executing-image
+    container_name: python-flask-app
+    volumes: 
+      - ./flask-material-dashboard-with-counters:/usrlib/flask-material-dashboard-with-counters
+      - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
+    ports: 
+      - "127.0.0.1:5000:5000"
+    
+    command: ['python', 'flask-material-dashboard-with-counters/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+      - cassandra-network
+
+
+    

@@ -1,0 +1,15 @@
+  .drop_down_list_select{
+    background: #ffffff;
+    min-height:5vh;
+    display:flex;
+    justify-content:center;
+    align-items:bottom;
+    color:#7c7c7c;
+    border:none;
+    padding: 5px 5px;
+    border-radius:5px;
+  }
+  
+  .drop_down_list_select:focus{
+    outline:none;
+  }

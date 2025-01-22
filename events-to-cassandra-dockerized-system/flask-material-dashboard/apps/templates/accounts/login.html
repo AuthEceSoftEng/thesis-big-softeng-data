@@ -1,0 +1,671 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Dashboard {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<head>
+    <style>
+      th, td {
+        text-align: center;
+      }
+    </style>
+    <!-- Custom CSS file path relative to the static directory -->
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='path/to/yourfile.css') }}"> -->
+</head>
+
+<body>
+
+<nav class="navbar navbar-main navbar-expand-lg px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
+  <div class="container-fluid py-1 px-3">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
+        <li class="breadcrumb-item text-sm"><a class="opacity-5 text-dark" href="javascript:;">Github Analyzer</a></li>
+        <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Trending</li>
+      </ol>
+      <h6 class="font-weight-bolder mb-0">Trending</h6>
+    </nav>
+    <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
+  </div>
+</nav>
+
+<div class="container-fluid py-4">
+  <!-- Statistics on the top of the page -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+      <div class="card">
+        <div class="card-header p-3 pt-2">
+          <div
+            class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
+            <i class="material-icons opacity-10">weekend</i>
+          </div>
+          <div class="text-end pt-1">
+            <p class="text-sm mb-0 text-capitalize">Today's Commits</p>
+            <h4 id='todays-commits' class="mb-0">---</h4>
+            <script>
+              fetch('http://localhost:3000/stats_by_day')
+                .then(response => response.json())
+                .then(data => {
+                  const total_commits = data[0].total_commits;
+                  document.getElementById("todays-commits").textContent =
+                    total_commits;
+                  // console.log(total_commits);
+                }
+                );
+            </script>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+      <div class="card">
+        <div class="card-header p-3 pt-2">
+          <div
+            class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
+            <i class="material-icons opacity-10">person</i>
+          </div>
+          <div class="text-end pt-1">
+            <p class="text-sm mb-0 text-capitalize">Today's Stars</p>
+            <h4 id="todays-stars" class="mb-0">---</h4>
+            <script>
+              fetch('http://localhost:3000/stats_by_day')
+                .then(response => response.json())
+                .then(data => {
+                  const total_stars = data[0].total_stars;
+                  document.getElementById("todays-stars").textContent =
+                    total_stars;
+                  // console.log(total_stars);
+                }
+                );
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+      <div class="card">
+        <div class="card-header p-3 pt-2">
+          <div
+            class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
+            <i class="material-icons opacity-10">person</i>
+          </div>
+          <div class="text-end pt-1">
+            <p class="text-sm mb-0 text-capitalize">Today's forks</p>
+            <h4 id="todays-forks" class="mb-0">---</h4>
+            <script>
+              fetch('http://localhost:3000/stats_by_day')
+                .then(response => response.json())
+                .then(data => {
+                  const total_forks = data[0].total_forks;
+                  document.getElementById("todays-forks").textContent =
+                    total_forks;
+                  // console.log(total_forks);
+                }
+                );
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <div class="card">
+        <div class="card-header p-3 pt-2">
+          <div
+            class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
+            <i class="material-icons opacity-10">weekend</i>
+          </div>
+          <div class="text-end pt-1">
+            <p class="text-sm mb-0 text-capitalize">Today's pull-requests</p>
+            <h4 id="todays-pull-requests" class="mb-0">---</h4>
+            <script>
+              fetch('http://localhost:3000/stats_by_day')
+                .then(response => response.json())
+                .then(data => {
+                  const pull_requests = data[0].total_pull_requests;
+                  document.getElementById("todays-pull-requests").textContent =
+                    pull_requests;
+                }
+                );
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>  
+  
+  <!-- Trending repos by stars and forks -->
+  <div class="row mb-4">   
+    <div class="col-lg-6 col-md-12">
+      <div class="card">
+        <div class="card-header card-header-warning">
+          <h4 class="card-title">Most starred repositories</h4>
+          <p class="card-category">6th September 2024</p>
+        </div>
+        <div class="card-body table-responsive">
+          <table id="stars_table" class="table table-hover">
+            <script>
+              function format_date(element_class_for_date) {
+                var my_date_arg;
+
+                fetch('http://localhost:3000/stats_by_day')
+                  .then(response => response.json())
+                  .then(data => {
+                    
+                    my_date_arg = data[0].day;
+                    const date = new Date(my_date_arg);
+                    const day = date.getDate();
+                    const ordinal = (day === 1 || day === 21 || day === 31) ? 'st' : (day === 2 || day === 22) ? 'nd' : (day === 3 || day === 23) ? 'rd' : 'th';
+                    const formattedDate = `${day}${ordinal} ${date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}`;
+                    let elements = document.getElementsByClassName(element_class_for_date); 
+                    for (var elements_index = 0; elements_index < elements.length; elements_index++){
+                        elements[elements_index].textContent = formattedDate;
+                    }
+                  }
+                  );
+
+                
+              
+              }
+              format_date("card-category")
+            </script>
+
+
+            <script>
+              var html_head = `<thead class="text-warning">
+                <tr>
+                  <th>Place</th>
+                  <th>Repository name</th>
+                  <th>New stars</th>
+                </tr>
+              </thead>`
+
+              function create_ranking_table_html_body(element_id_to_assign_hmtl_onto, 
+                data_url, html_head, second_col, third_col
+              ) {
+                  /*
+                Creates the table contents (html_body)
+                second_col: represents the 'winners' e.g most starred repos
+                third_col: represents the winners' performances e.g 459 stars 
+                
+                returns the html combining the head and the body of the table
+                */
+
+                var html_body_inside = `<tbody>`
+
+                //  Create the html_body of the table
+                fetch(data_url)
+                  .then(response => response.json())
+                  .then(data => {
+                    // const pull_requests = data[0][0].total_pull_requests;
+
+                    for (let data_index = 0; data_index < data.length; data_index++){
+                      html_body_inside = html_body_inside 
+                        + `<tr>`
+                        + `<td>${data_index+1}</td>`
+                        + `<td>${data[data_index][second_col]}</td>`
+                        + `<td>${data[data_index][third_col]}</td>`
+                        + `</tr>`
+                    }
+                    html_body_inside = html_body_inside + `</tbody>`;
+                    
+                    document.getElementById(element_id_to_assign_hmtl_onto).innerHTML = 
+                    html_head + html_body_inside;    
+
+                  }
+                  );
+
+              }
+              
+              var data_url = 'http://localhost:3000/most_starred_repos_by_day';
+              create_ranking_table_html_body("stars_table", data_url, html_head, 
+                'repo_name', 'stars');
+            </script>
+            
+          </table>
+        </div>
+      </div>
+    </div>    
+    <div class="col-lg-6 col-md-12">
+      <div class="card">
+        <div class="card-header card-header-warning">
+          <h4 class="card-title">Most forked repositories</h4>
+          <p class="card-category">6th September 2024</p>
+        </div>
+        <div class="card-body table-responsive">
+          <table id="forks_table" class="table table-hover">
+            
+            <script>
+            format_date("card-category")
+            </script>
+
+          </table>
+
+            <script>
+              var html_head = `<thead class="text-warning">
+                <tr>
+                  <th>Place</th>
+                  <th>Repository name</th>
+                  <th>New forks</th>
+                </tr>
+              </thead>`
+              
+              var data_url = 'http://localhost:3000/most_forked_repos_by_day';
+              create_ranking_table_html_body("forks_table", data_url, html_head, 
+                'repo_name', 'forks');
+            </script>
+            
+          </table>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Most popular languages and topics -->
+  <div class="row mb-4">   
+    <div class="col-lg-6 col-md-12">
+      <div class="card">
+        <div class="card-header card-header-warning">
+          <h4 class="card-title">Trending languages</h4>
+          <p >Based on pull-requests on <span class="card-category">6th September 2024</span></p>
+        </div>
+        <div class="card-body table-responsive">
+          <table id="trending_languages_table" class="table table-hover">
+            <script>
+              format_date("card-category")
+            </script>
+            <script>
+              var html_head = `<thead class="text-warning">
+                <tr>
+                  <th>Place</th>
+                  <th>Language</th>
+                  <th>Pull-requests on repositories using the language today</th>
+                </tr>
+              </thead>`
+              
+              var data_url = 'http://localhost:3000/popular_languages_by_day';
+              create_ranking_table_html_body("trending_languages_table", data_url, html_head, 
+                'language', 'number_of_events');
+            </script>
+          </table>
+        </div>
+      </div>
+    </div>    
+    <div class="col-lg-6 col-md-12">
+      <div class="card">
+        <div class="card-header card-header-warning">
+          <h4 class="card-title">Trending topics</h4>
+          <p >Based on pull-requests on <span class="card-category">6th September 2024</span></p>
+        </div>
+        <div class="card-body table-responsive">
+          <table id="trending_topics_table" class="table table-hover">
+            <script>
+              format_date("card-category")
+            </script>
+            <script>
+              var html_head = `<thead class="text-warning">
+                <tr>
+                  <th>Place</th>
+                  <th>Topic</th>
+                  <th>Pull-requests on repositories with the topic today</th>
+                </tr>
+              </thead>`
+              
+              var data_url = 'http://localhost:3000/popular_topics_by_day';
+              create_ranking_table_html_body("trending_topics_table", data_url, html_head, 
+                'topic', 'number_of_events');
+            </script>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Near-real-time github events and near-real-time stars and forks -->
+  <div class="row mb-4">
+    <div class="col-lg-8 col-md-6 mb-md-0 mb-4">
+      <div class="card">
+        <div class="card-header pb-0">
+          <div class="row">
+            <div class="col-lg-6 col-7">
+              <h4>Latest Github Events</h4>
+              <p id="secondaryTitle" class="text-sm mb-0">
+                <i class="fa fa-check text-info" aria-hidden="true"></i>
+                <span class="font-weight-bold ms-1">Latest date of events available:</span> 
+              </p>
+           
+              <script src="../../static/assets/js/dist/bundle.js"></script>
+              
+            </div>
+            <div class="col-lg-6 col-5 my-auto text-end">
+              <div class="dropdown float-lg-end pe-4">
+                <a class="cursor-pointer" id="dropdownTable" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fa fa-ellipsis-v text-secondary"></i>
+                </a>
+                <ul class="dropdown-menu px-2 py-3 ms-sm-n4 ms-n5" aria-labelledby="dropdownTable">
+                  <li><a class="dropdown-item border-radius-md" href="javascript:;">Action</a></li>
+                  <li><a class="dropdown-item border-radius-md" href="javascript:;">Another action</a></li>
+                  <li><a class="dropdown-item border-radius-md" href="javascript:;">Something else here</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="myBarChart_live" width="1000" height="600"></canvas>
+          <script src="/static/assets/js/plugins/chartjs.min.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+            integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+            crossorigin="anonymous"></script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+            integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+            crossorigin="anonymous"></script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+      
+          <script src="/static/assets/js/live-num-of-events-bar-graph.js">
+          </script>
+      
+      
+        </div>
+
+
+
+
+
+      </div>
+    </div>
+    <div class="col-lg-4 col-md-6">
+      <div class="card h-100">
+        <div class="card-header pb-0">
+          <h4>Latest star and fork events</h4>
+        </div>
+        <ul id="list"></ul>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+          integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+          crossorigin="anonymous"></script>
+        <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+          integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+          crossorigin="anonymous"></script>
+        <script src="/static/assets/js/latest-stars-forks-events-list.js">
+        </script>
+      </div>
+    </div>
+  </div> 
+ 
+  
+  <!--  Instead of footer -->
+  <div class="row mb-4">
+  </div>
+  <!-- {% include 'includes/footer.html' %} -->
+</div>
+
+{% endblock content %}
+</body>
+
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+<script src="/static/assets/js/plugins/chartjs.min.js"></script>
+<script>
+  var ctx = document.getElementById("chart-bars").getContext("2d");
+
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: ["M", "T", "W", "T", "F", "S", "S"],
+      datasets: [{
+        label: "Sales",
+        tension: 0.4,
+        borderWidth: 0,
+        borderRadius: 4,
+        borderSkipped: false,
+        backgroundColor: "rgba(255, 255, 255, .8)",
+        data: [50, 20, 10, 22, 50, 10, 40],
+        maxBarThickness: 6
+      },],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },
+      scales: {
+        y: {
+          grid: {
+            drawBorder: false,
+            display: true,
+            drawOnChartArea: true,
+            drawTicks: false,
+            borderDash: [5, 5],
+            color: 'rgba(255, 255, 255, .2)'
+          },
+          ticks: {
+            suggestedMin: 0,
+            suggestedMax: 500,
+            beginAtZero: true,
+            padding: 10,
+            font: {
+              size: 14,
+              weight: 300,
+              family: "Roboto",
+              style: 'normal',
+              lineHeight: 2
+            },
+            color: "#fff"
+          },
+        },
+        x: {
+          grid: {
+            drawBorder: false,
+            display: true,
+            drawOnChartArea: true,
+            drawTicks: false,
+            borderDash: [5, 5],
+            color: 'rgba(255, 255, 255, .2)'
+          },
+          ticks: {
+            display: true,
+            color: '#f8f9fa',
+            padding: 10,
+            font: {
+              size: 14,
+              weight: 300,
+              family: "Roboto",
+              style: 'normal',
+              lineHeight: 2
+            },
+          }
+        },
+      },
+    },
+  });
+
+
+  var ctx2 = document.getElementById("chart-line").getContext("2d");
+
+  new Chart(ctx2, {
+    type: "line",
+    data: {
+      labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+      datasets: [{
+        label: "Mobile apps",
+        tension: 0,
+        borderWidth: 0,
+        pointRadius: 5,
+        pointBackgroundColor: "rgba(255, 255, 255, .8)",
+        pointBorderColor: "transparent",
+        borderColor: "rgba(255, 255, 255, .8)",
+        borderColor: "rgba(255, 255, 255, .8)",
+        borderWidth: 4,
+        backgroundColor: "transparent",
+        fill: true,
+        data: [50, 40, 300, 320, 500, 350, 200, 230, 500],
+        maxBarThickness: 6
+
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },
+      scales: {
+        y: {
+          grid: {
+            drawBorder: false,
+            display: true,
+            drawOnChartArea: true,
+            drawTicks: false,
+            borderDash: [5, 5],
+            color: 'rgba(255, 255, 255, .2)'
+          },
+          ticks: {
+            display: true,
+            color: '#f8f9fa',
+            padding: 10,
+            font: {
+              size: 14,
+              weight: 300,
+              family: "Roboto",
+              style: 'normal',
+              lineHeight: 2
+            },
+          }
+        },
+        x: {
+          grid: {
+            drawBorder: false,
+            display: false,
+            drawOnChartArea: false,
+            drawTicks: false,
+            borderDash: [5, 5]
+          },
+          ticks: {
+            display: true,
+            color: '#f8f9fa',
+            padding: 10,
+            font: {
+              size: 14,
+              weight: 300,
+              family: "Roboto",
+              style: 'normal',
+              lineHeight: 2
+            },
+          }
+        },
+      },
+    },
+  });
+
+  var ctx3 = document.getElementById("chart-line-tasks").getContext("2d");
+
+  new Chart(ctx3, {
+    type: "line",
+    data: {
+      labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+      datasets: [{
+        label: "Mobile apps",
+        tension: 0,
+        borderWidth: 0,
+        pointRadius: 5,
+        pointBackgroundColor: "rgba(255, 255, 255, .8)",
+        pointBorderColor: "transparent",
+        borderColor: "rgba(255, 255, 255, .8)",
+        borderWidth: 4,
+        backgroundColor: "transparent",
+        fill: true,
+        data: [50, 40, 300, 220, 500, 250, 400, 230, 500],
+        maxBarThickness: 6
+
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },
+      scales: {
+        y: {
+          grid: {
+            drawBorder: false,
+            display: true,
+            drawOnChartArea: true,
+            drawTicks: false,
+            borderDash: [5, 5],
+            color: 'rgba(255, 255, 255, .2)'
+          },
+          ticks: {
+            display: true,
+            padding: 10,
+            color: '#f8f9fa',
+            font: {
+              size: 14,
+              weight: 300,
+              family: "Roboto",
+              style: 'normal',
+              lineHeight: 2
+            },
+          }
+        },
+        x: {
+          grid: {
+            drawBorder: false,
+            display: false,
+            drawOnChartArea: false,
+            drawTicks: false,
+            borderDash: [5, 5]
+          },
+          ticks: {
+            display: true,
+            color: '#f8f9fa',
+            padding: 10,
+            font: {
+              size: 14,
+              weight: 300,
+              family: "Roboto",
+              style: 'normal',
+              lineHeight: 2
+            },
+          }
+        },
+      },
+    },
+  });
+</script>
+
+{% endblock javascripts %}
+
+
+
