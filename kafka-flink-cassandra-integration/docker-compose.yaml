@@ -100,16 +100,6 @@ services:
     hostname: cassandra
     networks:
       - cassandra-network
-
-# Cassandra 
-  cassandra:
-    image: cassandra:4.1.6
-    ports:
-      - "9042:9042"
-    container_name: cassandra
-    hostname: cassandra
-    networks:
-      - cassandra-network
     healthcheck:
       test: ["CMD-SHELL", "cqlsh cassandra 9042 -e 'describe keyspaces'"]
       interval: 30s
@@ -129,6 +119,23 @@ services:
     networks:
       - cassandra-network
 
+# Python producer
+  python-producer:
+    #     image: python:3.10-usrlib-as-workdir
+    image: python:3.10-script-executing-image
+    container_name: python-producer
+    volumes: 
+      - ./usrlib/producer.py:/usrlib/producer.py
+      - ./helpers/getting-started.ini:/helpers/getting-started.ini
+      - ./github-data:/github-data
+    command: ['python', '/usrlib/producer.py', '/helpers/getting-started.ini']
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+      - cassandra-network
+
+
 # Python consumer 
   python-consumer:
     image: python:3.10-script-executing-image
@@ -137,7 +144,7 @@ services:
       - ./helpers/getting-started.ini:/helpers/getting-started.ini
       - ./usrlib/consumer.py:/usrlib/consumer.py
       - ./github-data:/github-data
-    command: ['python', '/usrlib/consumer.py', 'helpers/getting-started.ini']
+    command: ['python', '/usrlib/consumer.py', '/helpers/getting-started.ini']
     depends_on:
       - kafka
       - cassandra

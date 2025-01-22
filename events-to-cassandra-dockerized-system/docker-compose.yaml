@@ -51,7 +51,6 @@ services:
       - kafka-network
       - cassandra-network
 
-
 # Flink taskmanager 1
   taskmanager-1:
     image: pyflink:1.18.1

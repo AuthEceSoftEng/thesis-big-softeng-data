@@ -5,13 +5,13 @@
 ```sh
 cd events-to-cassandra-dockerized-system
 # kafka
-docker image pull bitnami/kafka
+docker image pull bitnami/kafka:3.9
 # kafka-ui
-docker image pull provectuslabs/kafka-ui
+docker image pull provectuslabs/kafka-ui:latest
 # cassandra
 docker image pull cassandra:4.1.7
 # cassandra-ui
-docker image pull ipushc/cassandra-web
+docker image pull ipushc/cassandra-web:latest
 
 # # Prerequisite: python should be installed 
 # # To check if python3 is installed:
