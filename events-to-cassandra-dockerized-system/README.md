@@ -78,7 +78,7 @@ In terminals 6-8, change the pyclientexec option to the host python environment
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec {/usr/bin/python} --jarfile /opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 # Without the jar
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec {/usr/bin/python} -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 ```
 
@@ -87,6 +87,10 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec {/usr/bin/pytho
 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec {/usr/bin/python} --jarfile /opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar -py /opt/flink/usrlib/screen_3_q9_q10_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+
+# Without the jar
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_3_q9_q10_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+
 ```
 
 
@@ -94,6 +98,10 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec {/usr/bin/pytho
 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec {/usr/bin/python} --jarfile /opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar -py /opt/flink/usrlib/screen_4_q11_q15_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+
+# Without the jar
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_4_q11_q15_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+
 ```
 
 

@@ -171,7 +171,7 @@ services:
     image: python:3.10-script-executing-image
     container_name: python-data-exposing-server
     volumes: 
-      - ./flask-material-dashboard-with-counters/server.py:/usrlib/server.py
+      - ./flask-material-dashboard/server.py:/usrlib/server.py
     ports: 
       - "127.0.0.1:3000:3000"
     command: ['python', 'server.py']
@@ -189,12 +189,12 @@ services:
     image: python:3.10-script-executing-image
     container_name: python-flask-app
     volumes: 
-      - ./flask-material-dashboard-with-counters:/usrlib/flask-material-dashboard-with-counters
+      - ./flask-material-dashboard:/usrlib/flask-material-dashboard
       - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
     ports: 
       - "127.0.0.1:5000:5000"
     
-    command: ['python', 'flask-material-dashboard-with-counters/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
+    command: ['python', 'flask-material-dashboard/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
     
     environment:
       - PYTHONUNBUFFERED=1

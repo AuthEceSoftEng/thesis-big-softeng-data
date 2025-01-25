@@ -79,7 +79,7 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 # region
 cassandra_host = 'cassandra'
 cassandra_port = 9042
-cluster = Cluster(cassandra_host, port=cassandra_port, connect_timeout=10)
+cluster = Cluster([cassandra_host], port=cassandra_port, connect_timeout=10)
 
 
 cassandra_keyspace = 'prod_gharchive'
