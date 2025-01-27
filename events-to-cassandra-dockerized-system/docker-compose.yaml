@@ -33,7 +33,6 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:32967
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
-      # - ./usrlib/helpers/delete_messages_of_topic_historical-raw-events.json:/usrlib/helpers/delete_messages_of_topic_historical-raw-events.json
     networks:
       - kafka-network
       - cassandra-network
@@ -157,8 +156,6 @@ services:
       - ./usrlib/github_data:/github_data
       - ./usrlib/github_data/files_parsed.json:/github_data/files_parsed.json
       
-      # - ./other_data:/usrlib/other_data
-
     command: ['python', 'historical-events-file-rotating-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
 
     environment:
