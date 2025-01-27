@@ -1,10 +1,13 @@
 networks:
   kafka-network:
     driver: bridge
+    name: kafka-network
   flink-network:
     driver: bridge
+    name: flink-network
   cassandra-network:
     driver: bridge
+    name: cassandra-network
 
 services:
 # Kafka broker 
