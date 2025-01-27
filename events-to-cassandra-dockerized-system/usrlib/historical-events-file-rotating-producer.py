@@ -512,7 +512,7 @@ if __name__ == '__main__':
     
     # # Get the URL of the gharchive available you want to 
     starting_date_formatted =  '2024-11-01-1'
-    ending_date_formatted =  '2024-11-01-2'
+    ending_date_formatted =  '2024-11-01-1'
     
     
     
