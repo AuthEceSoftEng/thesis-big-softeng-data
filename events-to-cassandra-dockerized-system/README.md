@@ -31,46 +31,37 @@ docker build -f Dockerfile-python -t python:3.10-script-executing-image .
 ./helpers/setup-kafka-and-ui.sh
 ```
 
-### Terminal 3: Start docker services kafka, flink cluster, cassandra and flask app ui
+### Terminal 3: Start services kafka, cassandra and flask app ui
 ```sh
-# Start the Kafka, Flink, Cassandra (and optionally the flask app) services
-docker compose up kafka kafka-ui jobmanager taskmanager cassandra cassandra-ui python-flask-app
-
+# Start the services
+docker compose up kafka kafka-ui cassandra cassandra-ui python-flask-app
 # Stop the services
-docker compose down kafka kafka-ui jobmanager taskmanager cassandra cassandra-ui python-flask-app
+docker compose down kafka kafka-ui cassandra cassandra-ui python-flask-app
 ```
 
 Now you should be able to see 
 - The kafka-ui at localhost:8080
-- The flink web ui at localhost:8081
 - The cassandra-ui at localhost:8083
 - The flask app UI at localhost:5000
 - (Optionally) All database data exposed (if any): the addresses exposed are in the file: 'events-to-cassandra-dockerized-system/flask-material-dashboard-with-counters/server.py'
 
-
-### Terminal 4: Create keyspace 'prod_gharchive' if not exists 
-
-Prerequisite: The cassandra container should be running.
+### Terminal 4: Start flink cluster services
 ```sh
-# To check if the cassandra container is running (status should be 'Up <running_time>')
-docker ps --format "table {{.Names}} \t {{.Status}}"
+# Start the services
+docker compose up -d jobmanager && docker compose up taskmanager-1 
+# Stop the services
+docker compose down jobmanager taskmanager-1
 ```
-```sh
-# Create keyspace 'prod_gharchive' if not exists 
-docker exec -it cassandra /bin/bash
-cqlsh cassandra
 
-# Describe keyspace SimpleStrategy
-CREATE KEYSPACE IF NOT EXISTS prod_gharchive WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'} AND durable_writes = true;
-
-# Run the python-data-exposing-server service
-docker compose up python-data-exposing-server 
-```
+Now you should be able to see 
+- The flink web ui at localhost:8081
 
 
 ### Terminal 5: Download events of the designated gharchive files, thin them and produce them to kafka
 ```sh
-# Deploy the producer
+# Create the topic
+# Note: Ignore the error on the deletion of the topic as the topic has not been created yet
+./delete_and_recreate_topic.sh
 docker compose up python-historical-events-producer
 ```
 
@@ -80,14 +71,12 @@ In terminals 6-8, change the pyclientexec option to the host python environment 
 
 ### Terminal 6: Deploy screen 2 pyflink job (job getting the screen 2 data)
 ```sh
-# Deploy the pyflink job 
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 ```
 
 ### Terminal 7: Deploy screen 3 pyflink job (job getting the screen 3 data)
 
 ```sh
-# Deploy the pyflink job 
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_3_q9_q10_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 ```
 
@@ -95,15 +84,16 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python
 ### Terminal 8: Deploy screen 4 pyflink job (job getting the screen 4 data)
 
 ```sh
-# Deploy the pyflink job 
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_4_q11_q15_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_4_q11_q15_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+
 ```
 
 
 ### Terminal 9 (optional): Delete messages of the 'historical-raw-events' topic if the topic takes up too much space
 ```sh
 # Free up the space of the topic (delete its messages and make its size = 0)
-./helpers/delete-and-recreate-topic.sh
+cd usrlib
+./delete_and_recreate_topic.sh
 ```
 
 

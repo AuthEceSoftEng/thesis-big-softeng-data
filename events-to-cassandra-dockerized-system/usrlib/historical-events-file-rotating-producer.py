@@ -46,7 +46,8 @@ def download_compressed_GHA_file(gha_file_url, folderpath):
     else:
         print(f"File {filename} already exists in folder {folderpath}.")
 
-
+# Flink API functions to access job status
+# region
 def get_subtasks_endpoints_of_job_in_flink(job_name, hostname):
     r"""
     Description
@@ -142,7 +143,6 @@ def get_subtasks_endpoints_of_job_in_flink(job_name, hostname):
     
     return subtask_of_task_endpoint_list
 
-
 def check_if_subtasks_of_task_are_busy(task_endpoint=str, \
     show_endpoint=False, verbose=True):
     '''
@@ -159,12 +159,23 @@ def check_if_subtasks_of_task_are_busy(task_endpoint=str, \
     '''
     res = requests.get(task_endpoint)
     try:
+        res = requests.get(task_endpoint)
+        # On first call to the endpoint '/jobs/:jobid/vertices/:vertexid/backpressure', the jobs are not returned.
+        # So, the endpoint is called again
+        while res.json()["status"] == 'deprecated':
+            print("Waiting for the jobs in the response")
+            time.sleep(4)
+            res = requests.get(task_endpoint)
         subtasks_of_task_list = res.json()["subtasks"]
     except KeyError as e:
+        res = requests.get(task_endpoint)
+        print("Error log:")
         print(f"Task endpoint: {task_endpoint}")
         print(f"Res.json(): {res.json()}")
-        print(e)
-        raise KeyError
+        print()
+        subtasks_of_task_list = res.json()["subtasks"]
+    except Exception as e:
+        print("Exception: ", e)
     subtasks_busy_ratios = [subtask["busyRatio"] for subtask in subtasks_of_task_list]
     
     # Print endpoint
@@ -212,8 +223,6 @@ def check_if_job_is_busy(job_name, hostname, show_endpoint=False, verbose=False)
             return True
     # If no task is busy return False
     return False
-
-
 
 def get_job_busy_ratio(job_name, hostname):
         """
@@ -263,7 +272,9 @@ def get_running_job_names():
         running_job_names.append(job_name)
     
     return running_job_names
-    
+     
+# endregion
+
 # Delete messages from a topic
 # region
 
@@ -504,39 +515,53 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
         sys.stdout.flush()
         time.sleep(5)
         size_of_topic = get_size_of_kafka_topic_in_docker_container(topic, config_server_and_port, kafka_container_name)
-# end_region    
+# endregion    
         
         
 if __name__ == '__main__':
     
+    # Get the URL of the gharchive available you want to 
+    starting_date_formatted =  '2024-12-01-2'
+    ending_date_formatted =  '2024-12-01-2'
     
-    # # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-11-01-1'
-    ending_date_formatted =  '2024-11-01-1'
-    
-    
-    
+    sections_performance = {"1. Download gharchive file": 0,
+                            "2. Thin file": 0,
+                            "3. Produce thinned events": 0,
+                            "4. Wait for flink jobs to finish": 0,
+                            "Total time elapsed": 0}
+    total_dur = 0
+
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
     current_date = starting_date
     
-    # Produce all gharchive files' events from the starting date up to the ending date
+    # Download files, thin contents, produce thinned events 
+    # from the starting date up to the ending date
+    # region
     while current_date <= ending_date:
+        
+        # 1. Download gharchive file
+        # region
+        st = time.time()
         
         current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
         gharchive_file_URL = 'https://data.gharchive.org/' + current_date_formatted + '.json.gz'
-        
-
-        # time.sleep(100)
-        # input("Get into the container and check if the files_parsed.json exists inside userlib/github_data... Press a key to continue") 
-        
-        # folderpath_to_download_into = '/usrlib/github_data'
         folderpath_to_download_into = '/github_data'
-
-        # Download latest gharchive file
         download_compressed_GHA_file(gharchive_file_URL, folderpath_to_download_into)
 
-        # Thin data
+        et = time.time()
+        dur = et - st
+        total_dur += dur
+        # Add the new file download time to the existing time taken for 
+        # previous downloads
+        sections_performance["1. Download gharchive file"] += dur
+        # endregion
+
+
+        # 2. Thin file
+        # region
+        st = time.time()
+
         # Input
         filename = current_date_formatted + '.json.gz'
         filepath_to_download_into = os.path.join(folderpath_to_download_into, filename)
@@ -548,13 +573,19 @@ if __name__ == '__main__':
         filepath_of_thinned_file = os.path.join(folderpath_to_download_into, thinned_filename)
 
         thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
-
-
-        # Out of docker
-        parsed_files_filepath = "/github_data/files_parsed.json"
-
-        topic_to_produce_into = 'historical-raw-events'
         
+        et = time.time()
+        dur = et - st
+        total_dur += dur
+        sections_performance["2. Thin file"] += dur
+        # endregion
+
+
+        # 3. Produce thinned events
+        # region
+        # Store the files produced and up to which point
+        parsed_files_filepath = "/github_data/files_parsed.json"
+        topic_to_produce_into = 'historical-raw-events'
         
         the_whole_file_was_produced_already = None
         the_whole_file_was_read_beforehand = None
@@ -566,14 +597,21 @@ if __name__ == '__main__':
             current_date = current_date + timedelta(hours=1)
             continue
     
-        
 
         current_date = current_date + timedelta(hours=1)
+
+        et = time.time()
+        dur = et - st
+        total_dur += dur
+        sections_performance["3. Produce thinned events"] += dur
+        # endregion
+
         
         
-        
-    # Wait for the pyflink jobs to finish executing
+    # 4. Wait for flink jobs to finish
     # region
+    st = time.time()
+
     running_job_names_in_cluster = get_running_job_names()
         
     if running_job_names_in_cluster == []:
@@ -595,8 +633,6 @@ if __name__ == '__main__':
         if is_a_job_running == True:        
             break
 
-
-
     if (is_a_job_running == False):    
         print(f"Pyflink jobs have not started working")
         print("Waiting for the jobs to start")
@@ -615,7 +651,6 @@ if __name__ == '__main__':
 
         time.sleep(5)
         sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
-            
             
     print()
     print(f"Pyflink jobs have started working")
@@ -637,11 +672,19 @@ if __name__ == '__main__':
     print()
     print("All pyflink jobs stopped working")
     
-        
+    
+    et = time.time()
+    dur = et - st
+    total_dur += dur
+    sections_performance["4. Wait for flink jobs to finish"] += dur
     # endregion
-
+    
+    sections_performance["Total time elapsed"] = total_dur
+    print("Execution times of pipeline parts in seconds:\n")
+    print(*sections_performance.items(), sep="\n")
 
 
 
 
         
+# TODO: Print timing

@@ -38,11 +38,11 @@ import socket
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
-env.set_parallelism(2)
+# env.set_parallelism(2)
 
 env.add_jars("file:///opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar")
 env.add_jars("file:///opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar")
-env.add_jars("file:///opt/flink/opt/flink-streaming-scala_2.12-1.18.1.jar")
+# env.add_jars("file:///opt/flink/opt/flink-streaming-scala_2.12-1.18.1.jar")
 
 env.set_restart_strategy(RestartStrategies.\
     fixed_delay_restart(restart_attempts=3, delay_between_attempts=1000))
@@ -81,12 +81,20 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 
 cassandra_host = 'cassandra'
 cassandra_port = 9042
-    
 cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
 
+# Connect without creating keyspace. Once connected create the keyspace
+session = cluster.connect()
+create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
+    "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
+    "'replication_factor': '1'} AND durable_writes = true;"
+session.execute(create_keyspace)
+
+
 cassandra_keyspace = 'prod_gharchive'
-session = cluster.connect(cassandra_keyspace)
+session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
 session.execute(f'USE {cassandra_keyspace}')
+
 # endregion
 
 # IV. Consume the original datastream 'near-real-time-raw-events'
@@ -122,6 +130,7 @@ raw_events_ds = env.from_source( source=kafka_consumer_third_source, \
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
 
+max_concurrent_requests = 100
 # Q9: Total stars per month on Javascript repo
 # region
 
@@ -234,6 +243,7 @@ cassandra_sink_builder_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by
 cassandra_sink_q9 = cassandra_sink_builder_q9.set_query(upsert_element_into_number_of_stars_of_js_repo_per_month_q9)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .build()
 
 
@@ -361,6 +371,7 @@ cassandra_sink_builder_q10 = CassandraSink.add_sink(top_contributors_of_js_repo_
 cassandra_sink_q10 = cassandra_sink_builder_q10.set_query(upsert_element_into_top_contributors_of_js_repo_q10)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .build()
 
 

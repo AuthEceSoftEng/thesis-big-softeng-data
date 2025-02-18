@@ -37,11 +37,14 @@ import os
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
-env.set_parallelism(2)
+# env.set_parallelism(2)
 
+# Connectors in /opt/flink/opt
 env.add_jars("file:///opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar")
 env.add_jars("file:///opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar")
-env.add_jars("file:///opt/flink/opt/flink-streaming-scala_2.12-1.18.1.jar")
+# env.add_jars("file:///opt/flink/opt/flink-streaming-scala_2.12-1.18.1.jar")
+# env.add_jars("file:///opt/flink/opt/flink-netty-tcnative-dynamic-2.0.62.Final-18.0.jar")
+
 
 env.set_restart_strategy(RestartStrategies.\
     fixed_delay_restart(restart_attempts=3, delay_between_attempts=1000))
@@ -77,14 +80,23 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 
 # III. Create a Cassandra cluster, connect to it and use a keyspace
 # region
+
 cassandra_host = 'cassandra'
 cassandra_port = 9042
 cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
 
+# Connect without creating keyspace. Once connected create the keyspace
+session = cluster.connect()
+create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
+    "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
+    "'replication_factor': '1'} AND durable_writes = true;"
+session.execute(create_keyspace)
+
 cassandra_keyspace = 'prod_gharchive'
-session = cluster.connect(cassandra_keyspace)
+session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
 session.execute(f'USE {cassandra_keyspace}')
 # endregion
+
 
 # IV. Consume the original datastream 'historical-raw-events'
 #region 
@@ -93,14 +105,18 @@ kafka_props = {'enable.auto.commit': 'true',
                'auto.commit.interval.ms': '1000',
                'auto.offset.reset': 'smallest'}
 
-second_screen_consumer_group_id = 'second_screen_consumer_group_id'
 
 topic_to_consume_from = "historical-raw-events"
-kafka_consumer_second_screen_source = KafkaSource.builder() \
+
+
+second_screen_consumer_group_id_1 = 'second_screen_consumer_group_id_1'
+
+
+kafka_consumer_second_screen_source_1 = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer\
                 .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(second_screen_consumer_group_id)\
+            .set_group_id(second_screen_consumer_group_id_1)\
             .set_topics(topic_to_consume_from) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
@@ -112,20 +128,59 @@ print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create 
         "T7_b: number_of_pull_requests_by_bots, T7_h: number_of_pull_requests_by_humans,\n"
         "T8_b: number_of_events_by_bots, T8_h: number_of_events_by_humans")
 
-raw_events_ds = env.from_source( source=kafka_consumer_second_screen_source, \
+raw_events_ds_1 = env.from_source( source=kafka_consumer_second_screen_source_1, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="kafka_source")\
-                # .set_parallelism(16)
+
+
+second_screen_consumer_group_id_2 = 'second_screen_consumer_group_id_2'
+
+
+kafka_consumer_second_screen_source_2 = KafkaSource.builder() \
+            .set_bootstrap_servers(kafka_bootstrap_servers) \
+            .set_starting_offsets(KafkaOffsetsInitializer\
+                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
+            .set_group_id(second_screen_consumer_group_id_2)\
+            .set_topics(topic_to_consume_from) \
+            .set_value_only_deserializer(SimpleStringSchema()) \
+            .set_properties(kafka_props)\
+            .build()
+
+raw_events_ds_2 = env.from_source( source=kafka_consumer_second_screen_source_2, \
+            watermark_strategy=WatermarkStrategy.no_watermarks(),
+            source_name="kafka_source")\
+
+
+
+second_screen_consumer_group_id_3 = 'second_screen_consumer_group_id_3'
+
+
+kafka_consumer_second_screen_source_3 = KafkaSource.builder() \
+            .set_bootstrap_servers(kafka_bootstrap_servers) \
+            .set_starting_offsets(KafkaOffsetsInitializer\
+                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
+            .set_group_id(second_screen_consumer_group_id_3)\
+            .set_topics(topic_to_consume_from) \
+            .set_value_only_deserializer(SimpleStringSchema()) \
+            .set_properties(kafka_props)\
+            .build()
+
+raw_events_ds_3 = env.from_source( source=kafka_consumer_second_screen_source_3, \
+            watermark_strategy=WatermarkStrategy.no_watermarks(),
+            source_name="kafka_source")\
+
+
 #endregion
 
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
 
+max_concurrent_requests = 100
+
 # Q6_b: Top bot contributors by month
 # region
 
 # Q6_b_1. Transform the original stream 
-# region
 
 # Event types where the needed fields reside:
 event_types_with_info_q6_b = ["PushEvent", "PullRequestEvent"]
@@ -223,16 +278,14 @@ bot_contributions_by_month_type_info = \
         Types.STRING()])
     
 # Datastream with extracted fields
-top_bot_contributors_info_ds_q6_b = raw_events_ds.filter(filter_out_non_contributing_events_and_humans_q6_b)\
+top_bot_contributors_info_ds_q6_b = raw_events_ds_1.filter(filter_out_non_contributing_events_and_humans_q6_b)\
                     .map(extract_number_of_contributions_and_create_row_q6_b, \
                            output_type=bot_contributions_by_month_type_info) \
 
 
 
-#endregion
 
 # Q6_b_2. Create Cassandra table sink data into it
-#region 
 
 # Create the table if not exists
 create_top_bot_contributors_table_q6_b = \
@@ -256,19 +309,18 @@ cassandra_sink_q6_b = cassandra_sink_builder_q6_b.set_query(upsert_element_into_
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
     .build()
+    # .set_max_concurrent_requests(max_concurrent_requests)\
+    # .build()
 
 
 # top_bot_contributors_info_ds_q6_b.print()
 
 #endregion
 
-# endregion
-
 # Q6_h: Top human contributors by month
 # region
 
 # Q6_h_1. Transform the original stream 
-# region
 
 # Event types where the needed fields reside:
 event_types_with_info_q6_h = ["PushEvent", "PullRequestEvent"]
@@ -333,14 +385,6 @@ def filter_out_non_contributing_events_and_bots_q6_h(eventString):
     
     
     
-    
-        
-
-    
-    
-    
-    
-    
 # Extract the number of events
 def extract_number_of_contributions_and_create_row_q6_h(eventString):
     
@@ -381,11 +425,11 @@ human_contributions_by_month_type_info_q6_h = \
         Types.STRING()])
     
 # Datastream with extracted fields
-top_human_contributors_info_ds_q6_h = raw_events_ds.filter(filter_out_non_contributing_events_and_bots_q6_h)\
+top_human_contributors_info_ds_q6_h = raw_events_ds_1.filter(filter_out_non_contributing_events_and_bots_q6_h)\
                     .map(extract_number_of_contributions_and_create_row_q6_h, \
                            output_type=human_contributions_by_month_type_info_q6_h) \
 
-#endregion
+# endregion
 
 # Q6_h_2. Create Cassandra table and sink data into it
 #region 
@@ -406,18 +450,19 @@ upsert_element_into_top_human_contributors_q6_h = \
             "username = ? AND month = ?;"
 
 
-cassandra_sink_builder_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h)\
-    # .set_cluster_builder(cassandra_cluster_builder)
+
+cassandra_sink_builder_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h)
+
+
 cassandra_sink_q6_h = cassandra_sink_builder_q6_h.set_query(upsert_element_into_top_human_contributors_q6_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
     .build()
+    # .set_max_concurrent_requests(max_concurrent_requests)\
+    # .build()
 
 
 # top_human_contributors_info_ds_q6_h.print()
-
-#endregion
-
 
 # endregion
 
@@ -425,7 +470,6 @@ cassandra_sink_q6_h = cassandra_sink_builder_q6_h.set_query(upsert_element_into_
 # region
 
 # Q7_b_1. Transform the original stream 
-# region
 
 event_types_with_info_q7_b = ["PullRequestEvent"]
 
@@ -436,7 +480,7 @@ def filter_out_non_pull_request_events_q7_b(eventString):
     '''
 
     # Turn the json event object into event into a dict
-    global event_types_with_info     
+    global event_types_with_info_q7_b
     # event_dict = json.loads(eventString)
     event_dict = eval(eventString)
 
@@ -495,16 +539,13 @@ number_of_pull_requests_by_bots_by_month_type_info_q7_b = \
         Types.BOOLEAN(), Types.STRING()])
     
 # Datastream with extracted fields
-number_of_pull_requests_info_ds_q7_b = raw_events_ds.filter(filter_out_non_pull_request_events_q7_b)\
+number_of_pull_requests_info_ds_q7_b = raw_events_ds_2.filter(filter_out_non_pull_request_events_q7_b)\
                     .map(extract_number_of_pull_requests_and_create_row_q7_b, \
                            output_type=number_of_pull_requests_by_bots_by_month_type_info_q7_b) \
 
 
 
-#endregion
-
 # Q7_b_2. Create Cassandra table and sink data into it
-#region 
 
 # Create the table if not exists
 create_number_of_pull_requests_by_bots_q7_b = \
@@ -527,19 +568,18 @@ cassandra_sink_q7_b = cassandra_sink_builder_q7_b.set_query(upsert_element_into_
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
     .build()
+    # .set_max_concurrent_requests(max_concurrent_requests)\
+    # .build()
 
 
 # number_of_pull_requests_info_ds_q7_b.print()
 
 #endregion
 
-# endregion
-
 # Q7_h: Number of pull requests by humans
 # region
 
 # Q7_h_1. Transform the original stream 
-# region
 
 event_types_with_info_q7_h = ["PullRequestEvent"]
 
@@ -550,7 +590,7 @@ def filter_out_non_pull_request_events_q7_h(eventString):
     '''
 
     # Turn the json event object into event into a dict
-    global event_types_with_info     
+    global event_types_with_info_q7_h
     # event_dict = json.loads(eventString)
     event_dict = eval(eventString)
 
@@ -610,15 +650,12 @@ number_of_pull_requests_by_humans_by_month_type_info_q7_h = \
         Types.BOOLEAN(), Types.STRING()])
     
 # Datastream with extracted fields
-number_of_pull_requests_info_ds_q7_h = raw_events_ds.filter(filter_out_non_pull_request_events_q7_h)\
+number_of_pull_requests_info_ds_q7_h = raw_events_ds_2.filter(filter_out_non_pull_request_events_q7_h)\
                     .map(extract_number_of_pull_requests_and_create_row_q7_h, \
-                           output_type=number_of_pull_requests_by_humans_by_month_type_info_q7_h) \
+                           output_type=number_of_pull_requests_by_humans_by_month_type_info_q7_h) 
 
-
-#endregion
 
 # Q7_h_2. Create Cassandra table and sink data into it
-#region 
 
 # Create the table if not exists
 create_number_of_pull_requests_by_humans_q7_h = \
@@ -641,11 +678,12 @@ cassandra_sink_q7_h = cassandra_sink_builder_q7_h.set_query(upsert_element_into_
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
     .build()
+    # .set_max_concurrent_requests(max_concurrent_requests)\
+    # .build()
 
 
 # number_of_pull_requests_info_ds_q7_h.print()
 
-#endregion
 
 # endregion
 
@@ -653,7 +691,6 @@ cassandra_sink_q7_h = cassandra_sink_builder_q7_h.set_query(upsert_element_into_
 # region
 
 # Q8_b_1. Transform the original stream 
-# region
 
 def filter_out_human_events_q8_b(eventString):
     '''
@@ -708,16 +745,14 @@ number_of_bot_events_per_type_by_month_type_info_q8_b = \
     
     
 # Datastream with extracted fields
-number_of_events_info_ds_q8_b = raw_events_ds.filter(filter_out_human_events_q8_b) \
+number_of_events_info_ds_q8_b = raw_events_ds_3.filter(filter_out_human_events_q8_b) \
                     .map(extract_number_of_bot_events_per_type_and_create_row_q8_b, \
                            output_type=number_of_bot_events_per_type_by_month_type_info_q8_b)
 
 
 
-#endregion
 
 # Q8_b_2. Create Cassandra table and sink data into it
-#region 
 
 # Create the table if not exists
 create_number_of_pull_requests_by_bots_q8_b = \
@@ -741,19 +776,18 @@ cassandra_sink_q8_b = cassandra_sink_builder_q8_b.set_query(upsert_element_into_
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
     .build()
+    # .set_max_concurrent_requests(max_concurrent_requests)\
+    # .build()
 
 
 # number_of_events_info_ds_q8_b.print()
 
 #endregion
 
-# endregion
-
 # Q8_h: Number of events by humans
 # region
 
 # Q8_h_1. Transform the original stream 
-# region
 
 def filter_out_bot_events_q8_h(eventString):
     '''
@@ -807,13 +841,12 @@ number_of_human_events_per_type_by_month_type_info_q8_h = \
     
     
 # Datastream with extracted fields
-number_of_events_info_ds_q8_h = raw_events_ds.filter(filter_out_bot_events_q8_h) \
+number_of_events_info_ds_q8_h = raw_events_ds_3.filter(filter_out_bot_events_q8_h) \
                     .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
                            output_type=number_of_human_events_per_type_by_month_type_info_q8_h)
 
 
 
-#endregion
 
 # Q8_h_2. Create Cassandra table number_of_human_events_per_type_by_month and sink data into it
 #region 
@@ -840,22 +873,27 @@ cassandra_sink_q8_h = cassandra_sink_builder_q8_h.set_query(upsert_element_into_
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
     .build()
+    # .set_max_concurrent_requests(max_concurrent_requests)\
+    # .build()
 
 
 # number_of_events_info_ds_q8_h.print()
 
-#endregion
+
+
+
 
 
 # endregion
 
-
-
 # endregion
 
-
+# endregion
 
 if __name__ =='__main__':
+    
+    
+
     # Execute the flink streaming environment
     env.execute(os.path.splitext(os.path.basename(__file__))[0])
 

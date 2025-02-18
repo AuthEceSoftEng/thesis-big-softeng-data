@@ -37,11 +37,11 @@ import os
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
-env.set_parallelism(2)
+# env.set_parallelism(2)
 
 env.add_jars("file:///opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar")
 env.add_jars("file:///opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar")
-env.add_jars("file:///opt/flink/opt/flink-streaming-scala_2.12-1.18.1.jar")
+# env.add_jars("file:///opt/flink/opt/flink-streaming-scala_2.12-1.18.1.jar")
 
 env.set_restart_strategy(RestartStrategies.\
     fixed_delay_restart(restart_attempts=3, delay_between_attempts=1000))
@@ -77,15 +77,24 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 
 # III. Create a Cassandra cluster, connect to it and use a keyspace
 # region
+
 cassandra_host = 'cassandra'
 cassandra_port = 9042
-cluster = Cluster([cassandra_host], port=cassandra_port, connect_timeout=10)
+cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
+
+# Connect without creating keyspace. Once connected create the keyspace
+session = cluster.connect()
+create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
+    "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
+    "'replication_factor': '1'} AND durable_writes = true;"
+session.execute(create_keyspace)
 
 
 cassandra_keyspace = 'prod_gharchive'
-session = cluster.connect(cassandra_keyspace)
+session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
 session.execute(f'USE {cassandra_keyspace}')
 # endregion
+
 
 # IV. Consume the original datastream 'historical-raw-events'
 #region 
@@ -97,7 +106,7 @@ kafka_props = {'enable.auto.commit': 'true',
 fourth_screen_consumer_group_id = 'fourth_screen_consumer_group_id'
 
 topic_to_consume_from = "historical-raw-events"
-kafka_consumer_second_third_source = KafkaSource.builder() \
+kafka_consumer_fourth_source = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer\
                 .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
@@ -112,7 +121,7 @@ print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create 
         "T11_12: pull_request_closing_times, T13_14: issue_closing_times\n"
         "T15: issue_closing_times_by_label\n")
         
-raw_events_ds = env.from_source( source=kafka_consumer_second_third_source, \
+raw_events_ds = env.from_source( source=kafka_consumer_fourth_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="kafka_source")\
 
@@ -121,6 +130,7 @@ raw_events_ds = env.from_source( source=kafka_consumer_second_third_source, \
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
 
+max_concurrent_requests = 100
 # Q11_12: Closing times of pull requests
 # region
 
@@ -218,6 +228,7 @@ cassandra_sink_builder_q11_12 = CassandraSink.add_sink(pull_request_closing_time
 cassandra_sink_q11_12 = cassandra_sink_builder_q11_12.set_query(upsert_element_into_pull_request_closing_times_q11_12)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .build()
 
 
@@ -321,6 +332,7 @@ cassandra_sink_builder_q13_14 = CassandraSink.add_sink(issue_closing_times_ds_q1
 cassandra_sink_q13_14 = cassandra_sink_builder_q13_14.set_query(upsert_element_into_issue_closing_times_q13_14)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .build()
 
 
@@ -458,6 +470,7 @@ cassandra_sink_builder_q15 = CassandraSink.add_sink(issue_closing_times_by_label
 cassandra_sink_q15 = cassandra_sink_builder_q15.set_query(insert_element_into_issue_closing_times_by_label_q15)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .enable_ignore_null_fields()\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .build()
 
 
