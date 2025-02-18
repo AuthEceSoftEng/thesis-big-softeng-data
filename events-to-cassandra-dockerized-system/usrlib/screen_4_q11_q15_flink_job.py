@@ -79,7 +79,7 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 # region
 
 cassandra_host = 'cassandra'
-cassandra_port = 9042
+cassandra_port = 9142
 cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
 
 # Connect without creating keyspace. Once connected create the keyspace
