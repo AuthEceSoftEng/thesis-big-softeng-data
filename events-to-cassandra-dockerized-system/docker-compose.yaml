@@ -110,18 +110,18 @@ services:
         jobmanager.rpc.address: jobmanager
         parallelism.default: 4
     depends_on: 
-      - cassandra
+      - cassandra_stelios
     networks:
       - kafka-network
       - cassandra-network
       - flink-network
 
 # Cassandra 
-  cassandra:
+  cassandra_stelios:
     image: cassandra:4.1.7
     ports:
       - "9142:9142"
-    container_name: cassandra
+    container_name: cassandra_stelios
     hostname: cassandra
     volumes:
       - /var/lib/cassandra:/var/lib/cassandra
@@ -142,7 +142,7 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      cassandra:
+      cassandra_stelios:
         condition: service_healthy
     networks:
       - cassandra-network
@@ -222,7 +222,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     depends_on:
-      - cassandra
+      - cassandra_stelios
     networks:
       - kafka-network
       - cassandra-network

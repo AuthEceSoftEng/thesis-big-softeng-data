@@ -133,7 +133,7 @@ def query_distinct_results(cassandra_session, select_query=str, number_of_result
     # print(distinct_field_list)
 
 
-cluster = Cluster(['cassandra'], port=9042)
+cluster = Cluster(['cassandra'], port=9142)
 session = cluster.connect('prod_gharchive')
 session.execute('USE prod_gharchive')
 
@@ -181,7 +181,7 @@ def get_top_human_contributors_by_month(month):
     
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     
@@ -237,7 +237,7 @@ def get_top_bot_contributors_by_month(month):
     
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     
@@ -279,7 +279,7 @@ def get_number_of_all_pull_requests_by_humans_by_month(month):
     "
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     # Query to figure out the latest day for which data is available
@@ -301,7 +301,7 @@ def get_number_of_all_pull_requests_by_humans_by_month(month):
     "
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     # Query to figure out the latest day for which data is available
@@ -339,7 +339,7 @@ def get_number_of_all_pull_requests_by_bots_by_month(month):
     "
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
 
@@ -363,7 +363,7 @@ def get_number_of_all_pull_requests_by_bots_by_month(month):
     "
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     # Query to figure out the latest day for which data is available
@@ -431,7 +431,7 @@ def get_number_of_events_for_humans_and_bots_by_month(month):
     "
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     # Query to figure out the latest day for which data is available
@@ -525,7 +525,7 @@ def get_number_of_stars_of_js_repo_by_month():
     
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     
@@ -602,7 +602,7 @@ def get_top_js_repo_contributors(js_repo):
     """
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     
@@ -661,7 +661,7 @@ def get_top_js_repo_contributors_given_js_repo_name(js_repo):
     unquoted_js_repo = unquote(js_repo)
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     
@@ -819,7 +819,7 @@ def get_pull_request_closing_times():
     # Query Cassandra
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     
@@ -1077,7 +1077,7 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     # Query Cassandra
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     
@@ -1330,7 +1330,7 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     # Query Cassandra
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     
@@ -1632,7 +1632,7 @@ def get_issues_closing_times_by_label(repo_name):
     # Query Cassandra
     cassandra_container_name = 'cassandra'
     keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9042)
+    cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
     session.execute(f'USE {keyspace_to_use}')
     

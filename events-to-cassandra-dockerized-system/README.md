@@ -34,9 +34,9 @@ docker build -f Dockerfile-python -t python:3.10-script-executing-image .
 ### Terminal 3: Start services kafka, cassandra and flask app ui
 ```sh
 # Start the services
-docker compose up kafka kafka-ui cassandra cassandra-ui python-flask-app
+docker compose up kafka kafka-ui cassandra_stelios cassandra-ui python-flask-app
 # Stop the services
-docker compose down kafka kafka-ui cassandra cassandra-ui python-flask-app
+docker compose down kafka kafka-ui cassandra_stelios cassandra-ui python-flask-app
 ```
 
 Now you should be able to see 
