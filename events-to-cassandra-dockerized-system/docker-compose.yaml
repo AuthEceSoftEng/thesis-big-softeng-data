@@ -120,7 +120,7 @@ services:
   cassandra:
     image: cassandra:4.1.7
     ports:
-      - "9042:9042"
+      - "9142:9142"
     container_name: cassandra
     hostname: cassandra
     volumes:
@@ -129,7 +129,7 @@ services:
     networks:
       - cassandra-network
     healthcheck:
-      test: ["CMD-SHELL", "cqlsh cassandra 9042 -e 'describe keyspaces'"]
+      test: ["CMD-SHELL", "cqlsh cassandra 9142 -e 'describe keyspaces'"]
       interval: 30s
       timeout: 10s
       retries: 5
