@@ -177,6 +177,38 @@ services:
       - kafka-network
       - cassandra-network
 
+# Python producer of a small sample of historical events of a file
+  python-100.000-events-producer:
+    image: python:3.10-script-executing-image
+    container_name: python-100.000-events-producer
+    volumes: 
+      # /usrlib
+      - ./usrlib/100.000-events-producer.py:/usrlib/100.000-events-producer.py
+      - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
+      - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+      - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
+      - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
+      
+      # usrlib/helpers
+      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
+
+      # github_data
+      - ./usrlib/github_data_for_speed_testing:/github_data_for_speed_testing
+      - ./usrlib/github_data_for_speed_testing/files_parsed.json:/github_data_for_speed_testing/files_parsed.json
+
+
+      
+    command: ['python', '100.000-events-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
+
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+      - cassandra-network
+
 # Python server exposing the data
   python-data-exposing-server:
     image: python:3.10-script-executing-image
