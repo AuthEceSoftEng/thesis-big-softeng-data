@@ -182,9 +182,6 @@ max_concurrent_requests = 100
 
 # Q6_b_1. Transform the original stream 
 
-# Event types where the needed fields reside:
-event_types_with_info_q6_b = ["PushEvent", "PullRequestEvent"]
-
 # Filter out events of type that contain no info we need
 def filter_out_non_contributing_events_and_humans_q6_b(eventString):
     '''
@@ -193,7 +190,7 @@ def filter_out_non_contributing_events_and_humans_q6_b(eventString):
     '''
 
     # Turn the json event object into event into a dict
-    global event_types_with_info_q6_b     
+    event_types_with_info_q6_b = ["PushEvent", "PullRequestEvent"]
     # event_dict = json.loads(eventString)
     event_dict = eval(eventString)
 
@@ -322,8 +319,6 @@ cassandra_sink_q6_b = cassandra_sink_builder_q6_b.set_query(upsert_element_into_
 
 # Q6_h_1. Transform the original stream 
 
-# Event types where the needed fields reside:
-event_types_with_info_q6_h = ["PushEvent", "PullRequestEvent"]
 
 # Filter out events of type that contain no info we need
 def filter_out_non_contributing_events_and_bots_q6_h(eventString):
@@ -332,8 +327,9 @@ def filter_out_non_contributing_events_and_bots_q6_h(eventString):
     and also exclude bot events
     '''
 
-    # Turn the json event object into event into a dict
-    global event_types_with_info_q6_h     
+    # Event types where the needed fields reside:
+    event_types_with_info_q6_h = ["PushEvent", "PullRequestEvent"]
+
     # event_dict = json.loads(eventString)
     event_dict = eval(eventString)
 
@@ -471,7 +467,6 @@ cassandra_sink_q6_h = cassandra_sink_builder_q6_h.set_query(upsert_element_into_
 
 # Q7_b_1. Transform the original stream 
 
-event_types_with_info_q7_b = ["PullRequestEvent"]
 
 # Filter out events of type that contain no info we need
 def filter_out_non_pull_request_events_q7_b(eventString):
@@ -480,7 +475,7 @@ def filter_out_non_pull_request_events_q7_b(eventString):
     '''
 
     # Turn the json event object into event into a dict
-    global event_types_with_info_q7_b
+    event_types_with_info_q7_b = ["PullRequestEvent"]
     # event_dict = json.loads(eventString)
     event_dict = eval(eventString)
 
@@ -581,7 +576,6 @@ cassandra_sink_q7_b = cassandra_sink_builder_q7_b.set_query(upsert_element_into_
 
 # Q7_h_1. Transform the original stream 
 
-event_types_with_info_q7_h = ["PullRequestEvent"]
 
 # Filter out events of type that contain no info we need
 def filter_out_non_pull_request_events_q7_h(eventString):
@@ -590,7 +584,8 @@ def filter_out_non_pull_request_events_q7_h(eventString):
     '''
 
     # Turn the json event object into event into a dict
-    global event_types_with_info_q7_h
+    event_types_with_info_q7_h = ["PullRequestEvent"]
+    
     # event_dict = json.loads(eventString)
     event_dict = eval(eventString)
 

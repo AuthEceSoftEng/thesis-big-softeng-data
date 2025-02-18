@@ -138,7 +138,6 @@ max_concurrent_requests = 100
 # region
 
 # Event types for stars:
-event_types_with_info_q9 = ["WatchEvent"]
 js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
     'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
     'spine/spine', 'vuejs/vue', 'vuejs/core', 'Polymer/polymer', 'facebook/react', 
@@ -155,10 +154,9 @@ def filter_out_non_star_events_and_non_js_repos_q9(eventString):
     and also exclude non js repo events
     '''
 
-    # Turn the json event object into event into a dict
-    global event_types_with_info_q9     
-    # eventDict = json.loads(eventString)
+    # Turn the json event object into event into a dict    
     eventDict = eval(eventString)
+    # eventDict = json.loads(eventString)
 
     # Keep only WatchEvents
     event_type = eventDict["type"]
