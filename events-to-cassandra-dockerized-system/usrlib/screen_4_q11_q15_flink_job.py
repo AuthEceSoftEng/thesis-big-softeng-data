@@ -223,12 +223,11 @@ upsert_element_into_pull_request_closing_times_q11_12 = \
 
 
 
-cassandra_sink_builder_q11_12 = CassandraSink.add_sink(pull_request_closing_times_info_ds_q11_12)\
-
-cassandra_sink_q11_12 = cassandra_sink_builder_q11_12.set_query(upsert_element_into_pull_request_closing_times_q11_12)\
+cassandra_sink_q11_12 = CassandraSink.add_sink(pull_request_closing_times_info_ds_q11_12)\
+    .set_query(upsert_element_into_pull_request_closing_times_q11_12)\
     .set_host(host=cassandra_host, port=cassandra_port)\
-    .enable_ignore_null_fields()\
     .set_max_concurrent_requests(max_concurrent_requests)\
+    .enable_ignore_null_fields()\
     .build()
 
 
@@ -327,12 +326,11 @@ upsert_element_into_issue_closing_times_q13_14 = \
             "repo_name = ? and issue_number = ?;"
 
 
-cassandra_sink_builder_q13_14 = CassandraSink.add_sink(issue_closing_times_ds_q13_14)
-
-cassandra_sink_q13_14 = cassandra_sink_builder_q13_14.set_query(upsert_element_into_issue_closing_times_q13_14)\
+cassandra_sink_q13_14 = CassandraSink.add_sink(issue_closing_times_ds_q13_14)\
+    .set_query(upsert_element_into_issue_closing_times_q13_14)\
     .set_host(host=cassandra_host, port=cassandra_port)\
-    .enable_ignore_null_fields()\
     .set_max_concurrent_requests(max_concurrent_requests)\
+    .enable_ignore_null_fields()\
     .build()
 
 
@@ -465,12 +463,11 @@ insert_element_into_issue_closing_times_by_label_q15 = \
     "VALUES (?, ?, ?, ?, ?);"
 
 
-cassandra_sink_builder_q15 = CassandraSink.add_sink(issue_closing_times_by_label_ds_q15)
-
-cassandra_sink_q15 = cassandra_sink_builder_q15.set_query(insert_element_into_issue_closing_times_by_label_q15)\
+cassandra_sink_q15 = CassandraSink.add_sink(issue_closing_times_by_label_ds_q15)\
+    .set_query(insert_element_into_issue_closing_times_by_label_q15)\
     .set_host(host=cassandra_host, port=cassandra_port)\
-    .enable_ignore_null_fields()\
     .set_max_concurrent_requests(max_concurrent_requests)\
+    .enable_ignore_null_fields()\
     .build()
 
 

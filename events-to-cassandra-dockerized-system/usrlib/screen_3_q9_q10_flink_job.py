@@ -236,12 +236,11 @@ upsert_element_into_number_of_stars_of_js_repo_per_month_q9 = \
             "repo_name = ? AND month = ?;"
 
 
-cassandra_sink_builder_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_month_info_ds_q9)\
-    # .set_cluster_builder(cassandra_cluster_builder)
-cassandra_sink_q9 = cassandra_sink_builder_q9.set_query(upsert_element_into_number_of_stars_of_js_repo_per_month_q9)\
+cassandra_sink_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_month_info_ds_q9)\
+    .set_query(upsert_element_into_number_of_stars_of_js_repo_per_month_q9)\
     .set_host(host=cassandra_host, port=cassandra_port)\
-    .enable_ignore_null_fields()\
     .set_max_concurrent_requests(max_concurrent_requests)\
+    .enable_ignore_null_fields()\
     .build()
 
 
@@ -364,12 +363,11 @@ upsert_element_into_top_contributors_of_js_repo_q10 = \
 
 
 
-cassandra_sink_builder_q10 = CassandraSink.add_sink(top_contributors_of_js_repo_ds_q10)\
-    # .set_cluster_builder(cassandra_cluster_builder)
-cassandra_sink_q10 = cassandra_sink_builder_q10.set_query(upsert_element_into_top_contributors_of_js_repo_q10)\
+cassandra_sink_q10 = CassandraSink.add_sink(top_contributors_of_js_repo_ds_q10)\
+    .set_query(upsert_element_into_top_contributors_of_js_repo_q10)\
     .set_host(host=cassandra_host, port=cassandra_port)\
-    .enable_ignore_null_fields()\
     .set_max_concurrent_requests(max_concurrent_requests)\
+    .enable_ignore_null_fields()\
     .build()
 
 

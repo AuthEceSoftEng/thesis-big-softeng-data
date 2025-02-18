@@ -300,14 +300,13 @@ upsert_element_into_top_bot_contributors_q6_b = \
             "username = ? AND month = ?;"
 
 
-cassandra_sink_builder_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
-    # .set_cluster_builder(cassandra_cluster_builder)
-cassandra_sink_q6_b = cassandra_sink_builder_q6_b.set_query(upsert_element_into_top_bot_contributors_q6_b)\
+cassandra_sink_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
+    .set_query(upsert_element_into_top_bot_contributors_q6_b)\
     .set_host(host=cassandra_host, port=cassandra_port)\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-    # .set_max_concurrent_requests(max_concurrent_requests)\
-    # .build()
+    
 
 
 # top_bot_contributors_info_ds_q6_b.print()
@@ -447,15 +446,12 @@ upsert_element_into_top_human_contributors_q6_h = \
 
 
 
-cassandra_sink_builder_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h)
-
-
-cassandra_sink_q6_h = cassandra_sink_builder_q6_h.set_query(upsert_element_into_top_human_contributors_q6_h)\
+cassandra_sink_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h)\
+    .set_query(upsert_element_into_top_human_contributors_q6_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-    # .set_max_concurrent_requests(max_concurrent_requests)\
-    # .build()
 
 
 # top_human_contributors_info_ds_q6_h.print()
@@ -557,15 +553,12 @@ upsert_element_into_T7_b_number_of_pull_requests_by_bots = \
             "were_accepted = ? AND month = ?;"
 
 
-cassandra_sink_builder_q7_b = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_b)\
-    # .set_cluster_builder(cassandra_cluster_builder)
-cassandra_sink_q7_b = cassandra_sink_builder_q7_b.set_query(upsert_element_into_T7_b_number_of_pull_requests_by_bots)\
+cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_b)\
+    .set_query(upsert_element_into_T7_b_number_of_pull_requests_by_bots)\
     .set_host(host=cassandra_host, port=cassandra_port)\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-    # .set_max_concurrent_requests(max_concurrent_requests)\
-    # .build()
-
 
 # number_of_pull_requests_info_ds_q7_b.print()
 
@@ -667,15 +660,12 @@ upsert_element_into_T7_h_number_of_pull_requests_by_humans = \
             "were_accepted = ? AND month = ?;"
 
 
-cassandra_sink_builder_q7_h = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_h)\
-    # .set_cluster_builder(cassandra_cluster_builder)
-cassandra_sink_q7_h = cassandra_sink_builder_q7_h.set_query(upsert_element_into_T7_h_number_of_pull_requests_by_humans)\
+cassandra_sink_q7_h = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_h)\
+    .set_query(upsert_element_into_T7_h_number_of_pull_requests_by_humans)\
     .set_host(host=cassandra_host, port=cassandra_port)\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-    # .set_max_concurrent_requests(max_concurrent_requests)\
-    # .build()
-
 
 # number_of_pull_requests_info_ds_q7_h.print()
 
@@ -765,14 +755,13 @@ upsert_element_into_number_of_bot_events_per_type_by_month_q8_b = \
             "event_type = ? AND month = ?;"
 
 
-cassandra_sink_builder_q8_b = CassandraSink.add_sink(number_of_events_info_ds_q8_b)\
-    # .set_cluster_builder(cassandra_cluster_builder)
-cassandra_sink_q8_b = cassandra_sink_builder_q8_b.set_query(upsert_element_into_number_of_bot_events_per_type_by_month_q8_b)\
+cassandra_sink_q8_b = CassandraSink.add_sink(number_of_events_info_ds_q8_b)\
+    .set_query(upsert_element_into_number_of_bot_events_per_type_by_month_q8_b)\
     .set_host(host=cassandra_host, port=cassandra_port)\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-    # .set_max_concurrent_requests(max_concurrent_requests)\
-    # .build()
+    
 
 
 # number_of_events_info_ds_q8_b.print()
@@ -862,14 +851,12 @@ upsert_element_into_number_of_human_events_per_type_by_month_q8_h = \
             "event_type = ? AND month = ?;"
 
 
-cassandra_sink_builder_q8_h = CassandraSink.add_sink(number_of_events_info_ds_q8_h)\
-    # .set_cluster_builder(cassandra_cluster_builder)
-cassandra_sink_q8_h = cassandra_sink_builder_q8_h.set_query(upsert_element_into_number_of_human_events_per_type_by_month_q8_h)\
+cassandra_sink_q8_h = CassandraSink.add_sink(number_of_events_info_ds_q8_h)\
+    .set_query(upsert_element_into_number_of_human_events_per_type_by_month_q8_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
+    .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-    # .set_max_concurrent_requests(max_concurrent_requests)\
-    # .build()
 
 
 # number_of_events_info_ds_q8_h.print()
