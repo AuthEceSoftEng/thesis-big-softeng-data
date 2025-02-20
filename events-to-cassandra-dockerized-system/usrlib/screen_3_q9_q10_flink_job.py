@@ -204,8 +204,7 @@ number_of_stars_on_js_repo_by_month_type_info_q9 = \
         Types.STRING()])
     
 # Datastream with extracted fields
-number_of_stars_of_js_repo_by_month_info_ds_q9 = raw_events_ds.filter
-(filter_out_non_star_events_and_non_js_repos_q9)\
+number_of_stars_of_js_repo_by_month_info_ds_q9 = raw_events_ds.filter(filter_out_non_star_events_and_non_js_repos_q9)\
                     .map(extract_stars_on_js_repo_and_create_row_q9, \
                            output_type=number_of_stars_on_js_repo_by_month_type_info_q9) \
 # Uncomment to print the datastream elementss
