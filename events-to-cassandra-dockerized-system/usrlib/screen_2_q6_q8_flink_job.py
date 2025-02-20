@@ -181,7 +181,6 @@ max_concurrent_requests = 100
 # region
 
 # Q6_b_1. Transform the original stream 
-
 # Filter out events of type that contain no info we need
 def filter_out_non_contributing_events_and_humans_q6_b(eventString):
     '''
@@ -235,8 +234,6 @@ def filter_out_non_contributing_events_and_humans_q6_b(eventString):
     if is_push_or_merged_pull_request_event and is_num_of_contributions_regular and is_bot:
         return True
     
-    
-
 # Extract the number of events
 def extract_number_of_contributions_and_create_row_q6_b(eventString):
     
@@ -265,9 +262,6 @@ def extract_number_of_contributions_and_create_row_q6_b(eventString):
     bots_contributions_info_row = Row(number_of_contributions, username, month)
     return bots_contributions_info_row
 
-
-
-
 # Type info for bot contributions by month
 bot_contributions_by_month_type_info = \
     Types.ROW_NAMED(['number_of_contributions', 'username', 'month'], \
@@ -278,12 +272,10 @@ bot_contributions_by_month_type_info = \
 top_bot_contributors_info_ds_q6_b = raw_events_ds_1.filter(filter_out_non_contributing_events_and_humans_q6_b)\
                     .map(extract_number_of_contributions_and_create_row_q6_b, \
                            output_type=bot_contributions_by_month_type_info) \
-
-
-
+# Uncomment to print datastream
+# top_bot_contributors_info_ds_q6_b.print()
 
 # Q6_b_2. Create Cassandra table sink data into it
-
 # Create the table if not exists
 create_top_bot_contributors_table_q6_b = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.top_bot_contributors_by_month "\
@@ -292,14 +284,13 @@ create_top_bot_contributors_table_q6_b = \
     "(username ASC);"
 session.execute(create_top_bot_contributors_table_q6_b)
 
-
 # Upsert query to be executed for every element
 upsert_element_into_top_bot_contributors_q6_b = \
             "UPDATE prod_gharchive.top_bot_contributors_by_month "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
             "username = ? AND month = ?;"
 
-
+# Sink events into the Cassandra table 
 cassandra_sink_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
     .set_query(upsert_element_into_top_bot_contributors_q6_b)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -308,17 +299,12 @@ cassandra_sink_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
     .build()
     
 
-
-# top_bot_contributors_info_ds_q6_b.print()
-
 #endregion
 
 # Q6_h: Top human contributors by month
 # region
 
 # Q6_h_1. Transform the original stream 
-
-
 # Filter out events of type that contain no info we need
 def filter_out_non_contributing_events_and_bots_q6_h(eventString):
     '''
@@ -359,7 +345,6 @@ def filter_out_non_contributing_events_and_bots_q6_h(eventString):
     else:
         return False
 
-
     # Keep only human events
     if event_type == "PushEvent":
         username = event_dict["actor"]
@@ -371,14 +356,9 @@ def filter_out_non_contributing_events_and_bots_q6_h(eventString):
     else: 
         return False
         
-
     # Keep push and merged pull-request events only if not created by bots
     if is_push_or_merged_pull_request_event and is_human and is_num_of_contributions_regular:
         return True
-    
-
-    
-    
     
 # Extract the number of events
 def extract_number_of_contributions_and_create_row_q6_h(eventString):
@@ -403,15 +383,10 @@ def extract_number_of_contributions_and_create_row_q6_h(eventString):
     elif event_type == "PullRequestEvent":
         username = event_dict["payload"]["pull_request"]["user"]
         number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
-    
     humans_contributions_info_row = Row(number_of_contributions, username, month)
     return humans_contributions_info_row
 
-
-
-
 output_type_of_process = [Types.LONG(), Types.STRING(), Types.STRING()]
-
 
 # Type info for human contributions by month
 human_contributions_by_month_type_info_q6_h = \
@@ -423,12 +398,10 @@ human_contributions_by_month_type_info_q6_h = \
 top_human_contributors_info_ds_q6_h = raw_events_ds_1.filter(filter_out_non_contributing_events_and_bots_q6_h)\
                     .map(extract_number_of_contributions_and_create_row_q6_h, \
                            output_type=human_contributions_by_month_type_info_q6_h) \
-
-# endregion
+# Uncomment to print datastream
+# top_human_contributors_info_ds_q6_h.print()
 
 # Q6_h_2. Create Cassandra table and sink data into it
-#region 
-
 # Create the table if not exists
 create_top_human_contributors_table_q6_h = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.top_human_contributors_by_month "\
@@ -437,33 +410,26 @@ create_top_human_contributors_table_q6_h = \
     "(username ASC);"
 session.execute(create_top_human_contributors_table_q6_h)
 
-
 # Upsert query to be executed for every element
 upsert_element_into_top_human_contributors_q6_h = \
             "UPDATE prod_gharchive.top_human_contributors_by_month "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
             "username = ? AND month = ?;"
 
-
-
+# Sink events into the Cassandra table 
 cassandra_sink_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h)\
     .set_query(upsert_element_into_top_human_contributors_q6_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-
-
-# top_human_contributors_info_ds_q6_h.print()
-
+    
 # endregion
 
 # Q7_b: Number of pull requests by bots
 # region
 
 # Q7_b_1. Transform the original stream 
-
-
 # Filter out events of type that contain no info we need
 def filter_out_non_pull_request_events_q7_b(eventString):
     '''
@@ -498,7 +464,6 @@ def filter_out_non_pull_request_events_q7_b(eventString):
     if is_pull_request_event and is_bot:
         return True
     
-    
 def extract_number_of_pull_requests_and_create_row_q7_b(eventString):
     
     event_dict = eval(eventString)
@@ -517,11 +482,8 @@ def extract_number_of_pull_requests_and_create_row_q7_b(eventString):
         were_accepted = True
     else:
         were_accepted = False
-    
     pull_requests_by_bots_info_row = Row(number_of_pull_requests, were_accepted, month)
     return pull_requests_by_bots_info_row
-
-
 
 # Type info for number of pull requests by bots by month
 number_of_pull_requests_by_bots_by_month_type_info_q7_b = \
@@ -533,11 +495,11 @@ number_of_pull_requests_by_bots_by_month_type_info_q7_b = \
 number_of_pull_requests_info_ds_q7_b = raw_events_ds_2.filter(filter_out_non_pull_request_events_q7_b)\
                     .map(extract_number_of_pull_requests_and_create_row_q7_b, \
                            output_type=number_of_pull_requests_by_bots_by_month_type_info_q7_b) \
-
+# Uncomment to print datastream
+# number_of_pull_requests_info_ds_q7_b.print()
 
 
 # Q7_b_2. Create Cassandra table and sink data into it
-
 # Create the table if not exists
 create_number_of_pull_requests_by_bots_q7_b = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_bots "\
@@ -545,31 +507,26 @@ create_number_of_pull_requests_by_bots_q7_b = \
     "were_accepted)));"
 session.execute(create_number_of_pull_requests_by_bots_q7_b)
 
-
 # Upsert query to be executed for every element
 upsert_element_into_T7_b_number_of_pull_requests_by_bots = \
             "UPDATE prod_gharchive.number_of_pull_requests_by_bots "\
             "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
             "were_accepted = ? AND month = ?;"
 
-
+# Sink events into the Cassandra table 
 cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_b)\
     .set_query(upsert_element_into_T7_b_number_of_pull_requests_by_bots)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-
-# number_of_pull_requests_info_ds_q7_b.print()
-
+    
 #endregion
 
 # Q7_h: Number of pull requests by humans
 # region
 
 # Q7_h_1. Transform the original stream 
-
-
 # Filter out events of type that contain no info we need
 def filter_out_non_pull_request_events_q7_h(eventString):
     '''
@@ -623,13 +580,9 @@ def extract_number_of_pull_requests_and_create_row_q7_h(eventString):
     if event_dict["payload"]["pull_request"]["merged_at"] != None:
         were_accepted = True
     else:
-        were_accepted = False
-    
+        were_accepted = False    
     pull_requests_by_humans_info_row = Row(number_of_pull_requests, were_accepted, month)
     return pull_requests_by_humans_info_row
-
-
-
 
 # Type info for number of pull requests by bots by month
 number_of_pull_requests_by_humans_by_month_type_info_q7_h = \
@@ -641,10 +594,11 @@ number_of_pull_requests_by_humans_by_month_type_info_q7_h = \
 number_of_pull_requests_info_ds_q7_h = raw_events_ds_2.filter(filter_out_non_pull_request_events_q7_h)\
                     .map(extract_number_of_pull_requests_and_create_row_q7_h, \
                            output_type=number_of_pull_requests_by_humans_by_month_type_info_q7_h) 
+# Uncomment to print the datastream
+# number_of_pull_requests_info_ds_q7_h.print()
 
 
 # Q7_h_2. Create Cassandra table and sink data into it
-
 # Create the table if not exists
 create_number_of_pull_requests_by_humans_q7_h = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_humans "\
@@ -652,14 +606,13 @@ create_number_of_pull_requests_by_humans_q7_h = \
     "were_accepted)));"
 session.execute(create_number_of_pull_requests_by_humans_q7_h)
 
-
 # Upsert query to be executed for every element
 upsert_element_into_T7_h_number_of_pull_requests_by_humans = \
             "UPDATE prod_gharchive.number_of_pull_requests_by_humans "\
             "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
             "were_accepted = ? AND month = ?;"
 
-
+# Sink events into the Cassandra table 
 cassandra_sink_q7_h = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_h)\
     .set_query(upsert_element_into_T7_h_number_of_pull_requests_by_humans)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -667,16 +620,13 @@ cassandra_sink_q7_h = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_
     .enable_ignore_null_fields()\
     .build()
 
-# number_of_pull_requests_info_ds_q7_h.print()
-
-
 # endregion
+
 
 # Q8_b: Number of events by bots
 # region
 
 # Q8_b_1. Transform the original stream 
-
 def filter_out_human_events_q8_b(eventString):
     '''
     Exclude human events
@@ -694,7 +644,6 @@ def filter_out_human_events_q8_b(eventString):
     # Keep events only if created by bots
     if is_bot:
         return True   
-    
     
 # Extract the number of events made by humans per type and month
 def extract_number_of_bot_events_per_type_and_create_row_q8_b(eventString):
@@ -716,7 +665,6 @@ def extract_number_of_bot_events_per_type_and_create_row_q8_b(eventString):
     number_of_events = 1
     
     number_of_bot_events_per_type_by_month_info_row = Row(number_of_events, event_type, month)
-    
     return number_of_bot_events_per_type_by_month_info_row
 
 
@@ -733,6 +681,8 @@ number_of_bot_events_per_type_by_month_type_info_q8_b = \
 number_of_events_info_ds_q8_b = raw_events_ds_3.filter(filter_out_human_events_q8_b) \
                     .map(extract_number_of_bot_events_per_type_and_create_row_q8_b, \
                            output_type=number_of_bot_events_per_type_by_month_type_info_q8_b)
+# Uncomment to print the datastream
+# number_of_events_info_ds_q8_b.print()
 
 
 
@@ -754,25 +704,21 @@ upsert_element_into_number_of_bot_events_per_type_by_month_q8_b = \
             "SET number_of_events = number_of_events + ? WHERE "\
             "event_type = ? AND month = ?;"
 
-
+# Sink events into the Cassandra table 
 cassandra_sink_q8_b = CassandraSink.add_sink(number_of_events_info_ds_q8_b)\
     .set_query(upsert_element_into_number_of_bot_events_per_type_by_month_q8_b)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-    
-
-
-# number_of_events_info_ds_q8_b.print()
 
 #endregion
+
 
 # Q8_h: Number of events by humans
 # region
 
 # Q8_h_1. Transform the original stream 
-
 def filter_out_bot_events_q8_h(eventString):
     '''
     Exclude bot events
@@ -812,7 +758,6 @@ def extract_number_of_human_events_per_type_and_create_row_q8_h(eventString):
     number_of_events = 1
     
     number_of_human_events_per_type_by_month_info_row = Row(number_of_events, event_type, month)
-    
     return number_of_human_events_per_type_by_month_info_row
 
 
@@ -828,13 +773,11 @@ number_of_human_events_per_type_by_month_type_info_q8_h = \
 number_of_events_info_ds_q8_h = raw_events_ds_3.filter(filter_out_bot_events_q8_h) \
                     .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
                            output_type=number_of_human_events_per_type_by_month_type_info_q8_h)
-
-
+# Uncomment to print the datastream elements
+# number_of_events_info_ds_q8_h.print()
 
 
 # Q8_h_2. Create Cassandra table number_of_human_events_per_type_by_month and sink data into it
-#region 
-
 # Create the table if not exists
 create_number_of_pull_requests_by_humans_q8_h = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_human_events_per_type_by_month "\
@@ -843,14 +786,13 @@ create_number_of_pull_requests_by_humans_q8_h = \
     "(event_type ASC);"
 session.execute(create_number_of_pull_requests_by_humans_q8_h)
 
-
 # Upsert query to be executed for every element
 upsert_element_into_number_of_human_events_per_type_by_month_q8_h = \
             "UPDATE prod_gharchive.number_of_human_events_per_type_by_month "\
             "SET number_of_events = number_of_events + ? WHERE "\
             "event_type = ? AND month = ?;"
 
-
+# Sink events into the Cassandra table 
 cassandra_sink_q8_h = CassandraSink.add_sink(number_of_events_info_ds_q8_h)\
     .set_query(upsert_element_into_number_of_human_events_per_type_by_month_q8_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -858,19 +800,10 @@ cassandra_sink_q8_h = CassandraSink.add_sink(number_of_events_info_ds_q8_h)\
     .enable_ignore_null_fields()\
     .build()
 
-
-# number_of_events_info_ds_q8_h.print()
-
-
-
-
-
-
 # endregion
 
 # endregion
 
-# endregion
 
 if __name__ =='__main__':
     

@@ -46,7 +46,7 @@ env.add_jars("file:///opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.ja
 env.set_restart_strategy(RestartStrategies.\
     fixed_delay_restart(restart_attempts=3, delay_between_attempts=1000))
 
-#endregion 
+# endregion 
 
 # II. Configure connection of flink to kafka 
 # region
@@ -125,7 +125,7 @@ raw_events_ds = env.from_source( source=kafka_consumer_fourth_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="kafka_source")\
 
-#endregion
+# endregion
 
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
@@ -135,8 +135,6 @@ max_concurrent_requests = 100
 # region
 
 # Q11_12_1. Transform the original stream 
-# region
-
 # Filter out events of type that contain no info we need
 def filter_out_non_pull_request_events_q11_12(eventString):
     '''
@@ -159,7 +157,6 @@ def filter_out_non_pull_request_events_q11_12(eventString):
     if is_closed_pull_request_event:
         return True
     
-    
 # Extract the number of stars in the events
 def extract_opening_and_closing_times_of_pull_requests_and_create_row_q11_12(eventString):
     
@@ -181,29 +178,20 @@ def extract_opening_and_closing_times_of_pull_requests_and_create_row_q11_12(eve
         Row(opening_time, closing_time, repo_name, pull_request_number)
     return opening_and_closing_times_of_pull_requests_info_row
 
-
-
-
-
 # Type info for pull-request closing times
 pull_request_closing_times_type_info_q11_12 = \
     Types.ROW_NAMED(['opening_time', 'closing_time', 'repo_name', 'pull_request_number'], \
     [Types.STRING(), Types.STRING(), \
         Types.STRING(),  Types.INT()])
     
-    
 # Datastream with extracted fields
 pull_request_closing_times_info_ds_q11_12 = raw_events_ds.filter(filter_out_non_pull_request_events_q11_12)\
                     .map(extract_opening_and_closing_times_of_pull_requests_and_create_row_q11_12, \
                            output_type=pull_request_closing_times_type_info_q11_12) 
+# Uncomment to print the datastream elementss
+# pull_request_closing_times_info_ds_q11_12.print()
 
-
-
-#endregion
-
-# Q11_12. Create Cassandra table and sink data into it
-#region 
-
+# Q11_12_2. Create Cassandra table and sink data into it
 # Create the table if not exists
 create_pull_request_closing_times_table_q11_12 = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.pull_request_closing_times "\
@@ -213,7 +201,6 @@ create_pull_request_closing_times_table_q11_12 = \
     "(pull_request_number ASC);"
 session.execute(create_pull_request_closing_times_table_q11_12)
 
-
 # In this case update is the same as insert (only new pull request opening and closing times are inserted,
 # no data is updated)
 upsert_element_into_pull_request_closing_times_q11_12 = \
@@ -221,8 +208,7 @@ upsert_element_into_pull_request_closing_times_q11_12 = \
             "SET opening_time = ?, closing_time = ? WHERE "\
             "repo_name = ? and pull_request_number = ?;"
 
-
-
+# Sink events into the Cassandra table 
 cassandra_sink_q11_12 = CassandraSink.add_sink(pull_request_closing_times_info_ds_q11_12)\
     .set_query(upsert_element_into_pull_request_closing_times_q11_12)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -231,19 +217,14 @@ cassandra_sink_q11_12 = CassandraSink.add_sink(pull_request_closing_times_info_d
     .build()
 
 
-# pull_request_closing_times_info_ds_q11_12.print()
-
-#endregion
+# endregion
 
 # endregion
 
 # Q13_14: Issue closing times
 # region
 
-# Q13_14. Transform the original stream 
-# region
-
-
+# Q13_14_1. Transform the original stream 
 # Filter out events of type that contain no info we need
 def filter_out_non_issue_events_q13_14(eventString):
     '''
@@ -265,7 +246,6 @@ def filter_out_non_issue_events_q13_14(eventString):
     if is_closed_issue_event:
         return True
     
-        
 # Extract the number of stars in the events
 def extract_opening_and_closing_times_of_issues_and_create_row_q13_14(eventString):
     
@@ -287,28 +267,21 @@ def extract_opening_and_closing_times_of_issues_and_create_row_q13_14(eventStrin
         Row(opening_time, closing_time, repo_name, issue_number)
     return opening_and_closing_times_of_issues_info_row
 
-
-
-
 # Type info for closing times of issues
 issue_closing_times_type_info_q13_14 = \
     Types.ROW_NAMED(['opening_time', 'closing_time', 'repo_name', \
         'issue_number'], \
     [Types.STRING(), Types.STRING(), \
         Types.STRING(),  Types.INT()])
-    
-    
+        
 # Datastream with extracted fields
 issue_closing_times_ds_q13_14 = raw_events_ds.filter(filter_out_non_issue_events_q13_14)\
                     .map(extract_opening_and_closing_times_of_issues_and_create_row_q13_14, \
                            output_type=issue_closing_times_type_info_q13_14)
+# Uncomment to print the datastream elements
+# issue_closing_times_ds_q13_14.print()
 
-#endregion
-
-
-# Q13_14. Create Cassandra table and sink data into it
-#region 
-
+# Q13_14_2. Create Cassandra table and sink data into it
 # Create the table if not exists
 create_issue_closing_times_table_q13_14 = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.issue_closing_times "\
@@ -318,14 +291,13 @@ create_issue_closing_times_table_q13_14 = \
     "(issue_number ASC);"
 session.execute(create_issue_closing_times_table_q13_14)
 
-
 # Upsert query to be executed for every element
 upsert_element_into_issue_closing_times_q13_14 = \
             "UPDATE prod_gharchive.issue_closing_times "\
             "SET opening_time = ?, closing_time = ? WHERE "\
             "repo_name = ? and issue_number = ?;"
 
-
+# Sink events into the Cassandra table 
 cassandra_sink_q13_14 = CassandraSink.add_sink(issue_closing_times_ds_q13_14)\
     .set_query(upsert_element_into_issue_closing_times_q13_14)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -333,21 +305,12 @@ cassandra_sink_q13_14 = CassandraSink.add_sink(issue_closing_times_ds_q13_14)\
     .enable_ignore_null_fields()\
     .build()
 
-
-# issue_closing_times_ds_q13_14.print()
-
-#endregion
-
-
 # endregion
 
 # Q15: Issue closing times by label
 # region
 
 # Q15_1. Transform the original stream 
-# region
-
-
 # Filter out events of type that contain no info we need
 def filter_out_non_issue_events_q15(eventString):
     '''
@@ -368,7 +331,6 @@ def filter_out_non_issue_events_q15(eventString):
     # Keep closed issue events
     if is_closed_issue_event:
         return True
-        
         
 # Extract the number of stars in the events
 def extract_opening_and_closing_times_of_issues_and_create_row_q15(eventString):
@@ -393,8 +355,6 @@ def extract_opening_and_closing_times_of_issues_and_create_row_q15(eventString):
     opening_and_closing_times_of_issues_info_row = \
         Row(opening_time, closing_time, repo_name, labels, issue_number)
     return opening_and_closing_times_of_issues_info_row
-
-
 
 
 # Type info for closing times of issues
@@ -439,13 +399,10 @@ issue_closing_times_by_label_ds_q15 = raw_events_ds.filter(filter_out_non_issue_
                     .map(extract_opening_and_closing_times_of_issues_and_create_row_q15, \
                            output_type=issue_closing_times_type_info_with_list_of_labels_q15)\
                     .flat_map(split_issue_labels, output_type=issue_closing_times_type_info_with_single_label)
-
-#endregion
-
+# Uncomment to print the datastream elements
+# issue_closing_times_by_label_ds_q15.print()
 
 # Q15_2. Create Cassandra table and sink data into it
-#region 
-
 # Create the table if not exists
 create_issue_closing_times_by_label_table_q15 = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.issue_closing_times_by_label "\
@@ -455,29 +412,19 @@ create_issue_closing_times_by_label_table_q15 = \
     "(label ASC, issue_number ASC);"
 session.execute(create_issue_closing_times_by_label_table_q15)
 
-
 # Insert query to be executed for every element
 insert_element_into_issue_closing_times_by_label_q15 = \
     "INSERT INTO prod_gharchive.issue_closing_times_by_label "\
     "(opening_time, closing_time, repo_name, label, issue_number) "\
     "VALUES (?, ?, ?, ?, ?);"
 
-
+# Sink events into the Cassandra table 
 cassandra_sink_q15 = CassandraSink.add_sink(issue_closing_times_by_label_ds_q15)\
     .set_query(insert_element_into_issue_closing_times_by_label_q15)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-
-
-# issue_closing_times_by_label_ds_q15.print()
-
-#endregion
-
-
-# endregion
-
 
 # endregion
 

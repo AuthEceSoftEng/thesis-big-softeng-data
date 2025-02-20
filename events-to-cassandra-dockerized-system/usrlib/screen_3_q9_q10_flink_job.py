@@ -135,8 +135,6 @@ max_concurrent_requests = 100
 # region
 
 # Q9_1. Transform the original stream 
-# region
-
 # Event types for stars:
 js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
     'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
@@ -177,7 +175,6 @@ def filter_out_non_star_events_and_non_js_repos_q9(eventString):
     if is_watch_event and is_js_repo:
         return True
        
-    
 # Extract the number of stars in the events
 def extract_stars_on_js_repo_and_create_row_q9(eventString):
     
@@ -200,9 +197,6 @@ def extract_stars_on_js_repo_and_create_row_q9(eventString):
     stars_per_month_on_js_repo_info_row = Row(number_of_stars, repo_name, month)
     return stars_per_month_on_js_repo_info_row
 
-
-
-
 # Type info for number of stars of js repo by month
 number_of_stars_on_js_repo_by_month_type_info_q9 = \
     Types.ROW_NAMED(['number_of_stars', 'username', 'month'], \
@@ -210,17 +204,15 @@ number_of_stars_on_js_repo_by_month_type_info_q9 = \
         Types.STRING()])
     
 # Datastream with extracted fields
-number_of_stars_of_js_repo_by_month_info_ds_q9 = raw_events_ds.filter(filter_out_non_star_events_and_non_js_repos_q9)\
+number_of_stars_of_js_repo_by_month_info_ds_q9 = raw_events_ds.filter
+(filter_out_non_star_events_and_non_js_repos_q9)\
                     .map(extract_stars_on_js_repo_and_create_row_q9, \
                            output_type=number_of_stars_on_js_repo_by_month_type_info_q9) \
+# Uncomment to print the datastream elementss
+# number_of_stars_of_js_repo_by_month_info_ds_q9.print()
 
-
-
-#endregion
 
 # Q9_2. Create Cassandra table and sink data into it
-#region 
-
 # Create the table if not exists
 create_stars_per_month_on_js_repo_table_q9 = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.stars_per_month_on_js_repo "\
@@ -228,14 +220,13 @@ create_stars_per_month_on_js_repo_table_q9 = \
     "repo_name)));"
 session.execute(create_stars_per_month_on_js_repo_table_q9)
 
-
 # Upsert query to be executed for every element
 upsert_element_into_number_of_stars_of_js_repo_per_month_q9 = \
             "UPDATE prod_gharchive.stars_per_month_on_js_repo "\
             "SET number_of_stars = number_of_stars + ? WHERE "\
             "repo_name = ? AND month = ?;"
 
-
+# Sink events into the Cassandra table 
 cassandra_sink_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_month_info_ds_q9)\
     .set_query(upsert_element_into_number_of_stars_of_js_repo_per_month_q9)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -243,19 +234,12 @@ cassandra_sink_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_month_i
     .enable_ignore_null_fields()\
     .build()
 
-
-# number_of_stars_of_js_repo_by_month_info_ds_q9.print()
-
 #endregion
-
-# endregion
 
 # Q10: Top contributors of js repo by month
 # region
 
 # Q10_1. Transform the original stream 
-# region
-
 # Event types where the needed fields reside:
 event_types_with_info_q10 = ["PushEvent", "PullRequestEvent"]
 
@@ -292,9 +276,7 @@ def filter_out_non_contributing_events_and_non_js_repos_q10(eventString):
     # Keep push and pull_request events only made on js repos
     if is_push_or_merged_pull_request_event and is_js_repo:
         return True
-    
-    
-        
+            
 # Extract the number of stars in the events
 def extract_top_contributors_on_js_repo_and_create_row_q10(eventString):
     
@@ -327,8 +309,6 @@ def extract_top_contributors_on_js_repo_and_create_row_q10(eventString):
         Row(number_of_contributions, repo_name, month, username)
     return top_contributors_of_js_repo_info_row
 
-
-
 # Type info for top contributors by month
 human_contributions_by_month_type_info_q10 = \
     Types.ROW_NAMED(['number_of_contributions', 'repo_name', 'username', 'month'], \
@@ -339,13 +319,11 @@ human_contributions_by_month_type_info_q10 = \
 top_contributors_of_js_repo_ds_q10 = raw_events_ds.filter(filter_out_non_contributing_events_and_non_js_repos_q10)\
                     .map(extract_top_contributors_on_js_repo_and_create_row_q10, \
                            output_type=human_contributions_by_month_type_info_q10)
-
-#endregion
+# Uncomment to print the datastream elements
+# top_contributors_of_js_repo_ds_q10.print()
 
 
 # Q10_2. Create Cassandra table and sink data into it
-#region 
-
 # Create the table if not exists
 create_top_contributors_of_js_repo_table_q10 = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.top_contributors_of_js_repo "\
@@ -354,15 +332,13 @@ create_top_contributors_of_js_repo_table_q10 = \
     "(username ASC);"
 session.execute(create_top_contributors_of_js_repo_table_q10)
 
-
 # Upsert query to be executed for every element
 upsert_element_into_top_contributors_of_js_repo_q10 = \
             "UPDATE prod_gharchive.top_contributors_of_js_repo "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
             "repo_name = ? AND month = ? AND username = ?;"
 
-
-
+# Sink events into the Cassandra table 
 cassandra_sink_q10 = CassandraSink.add_sink(top_contributors_of_js_repo_ds_q10)\
     .set_query(upsert_element_into_top_contributors_of_js_repo_q10)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -370,15 +346,7 @@ cassandra_sink_q10 = CassandraSink.add_sink(top_contributors_of_js_repo_ds_q10)\
     .enable_ignore_null_fields()\
     .build()
 
-
-# top_contributors_of_js_repo_ds_q10.print()
-
-#endregion
-
-
 # endregion
-
-
 
 # endregion
 
