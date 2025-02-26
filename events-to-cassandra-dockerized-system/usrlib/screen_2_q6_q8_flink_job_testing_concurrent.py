@@ -276,7 +276,7 @@ upsert_element_into_number_of_human_events_per_type_by_month_q8_h = \
             "SET number_of_events = number_of_events + ? WHERE "\
             "event_type = ? AND month = ?;"
 
-some_glob_var = 1
+num_of_elements_per_window = 10
 
 import time 
 
@@ -290,20 +290,19 @@ class RecordToListWindowFunction(ProcessAllWindowFunction):
         self.session.set_keyspace("prod_gharchive")
       
     
-    
-    def process(self, window: CountWindow, inputs: Iterable[tuple]):
-        result = list(inputs)
-        print(f"New list through the process function: {result}")
+    def process(self, context: ProcessAllWindowFunction.Context, elements: Iterable[tuple]):
+        result = list(elements)
+        # print(f"New list through the process function: {result}")
 
 
         parameters_lists = list(result)
         # print(f"type of parameters: {type(parameters)}")
         # print(parameters)
         # time.sleep(1)
-        print(f"Inserting into cassansdra: {parameters_lists} ...")
+        # print(f"Inserting into cassansdra: {parameters_lists} ...")
         successes, failures = execute_concurrent_with_args(session=self.session, statement="UPDATE prod_gharchive.number_of_human_events_per_type_by_month "\
             "SET number_of_events = number_of_events + %s WHERE "\
-            "event_type = %s AND month = %s;", parameters=parameters_lists, concurrency=2)
+            "event_type = %s AND month = %s;", parameters=parameters_lists, concurrency=num_of_elements_per_window)
 
         # # If failures occured:
         # if failures:
@@ -312,6 +311,30 @@ class RecordToListWindowFunction(ProcessAllWindowFunction):
         # # If successes occured:
         # if successes == True:
         #     raise Exception("Operation failed, failures occured")
+
+        yield result
+    
+    # def process(self, window: CountWindow, inputs: Iterable[tuple]):
+    #     result = list(inputs)
+    #     print(f"New list through the process function: {result}")
+
+
+    #     parameters_lists = list(result)
+    #     # print(f"type of parameters: {type(parameters)}")
+    #     # print(parameters)
+    #     # time.sleep(1)
+    #     print(f"Inserting into cassansdra: {parameters_lists} ...")
+    #     successes, failures = execute_concurrent_with_args(session=self.session, statement="UPDATE prod_gharchive.number_of_human_events_per_type_by_month "\
+    #         "SET number_of_events = number_of_events + %s WHERE "\
+    #         "event_type = %s AND month = %s;", parameters=parameters_lists, concurrency=2)
+
+    #     # # If failures occured:
+    #     # if failures:
+    #     #     raise Exception("Operation failed, failures occured")
+
+    #     # # If successes occured:
+    #     # if successes == True:
+    #     #     raise Exception("Operation failed, failures occured")
 
 
     def close(self):
@@ -323,7 +346,7 @@ class RecordToListWindowFunction(ProcessAllWindowFunction):
 number_of_events_info_ds_q8_h = raw_events_ds_3.filter(filter_out_bot_events_q8_h) \
                     .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
                            output_type=number_of_human_events_per_type_by_month_type_info_q8_h)\
-                    .window_all(CountTumblingWindowAssigner.of(window_size=2))\
+                    .window_all(CountTumblingWindowAssigner.of(window_size=num_of_elements_per_window))\
                     .process(RecordToListWindowFunction(), window_func_output_typing)
 
 
