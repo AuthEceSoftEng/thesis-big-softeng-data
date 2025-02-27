@@ -1,5 +1,7 @@
 # Integrate Kafka, Flink and Cassandra in Docker   
 
+
+## Ingest historical events 
 All terminals below are in the events-to-cassandra-dockerized-system directory
 
 ### Terminal 1: Pull and build docker images 
@@ -72,6 +74,14 @@ In terminals 6-8, change the pyclientexec option to the host python environment 
 ### Terminal 6: Deploy screen 2 pyflink job (job getting the screen 2 data)
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+
+# Alternatives to accelerate data ingestion performance
+# Use of functions process() and session.execute_async()
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+
+# Use of functions process() and session.execute_concurrent_with_args
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+
 ```
 
 ### Terminal 7: Deploy screen 3 pyflink job (job getting the screen 3 data)
@@ -95,8 +105,6 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python
 cd usrlib
 ./delete_and_recreate_topic.sh
 ```
-
-
 
 
 
