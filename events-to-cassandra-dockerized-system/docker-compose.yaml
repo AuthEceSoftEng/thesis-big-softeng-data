@@ -53,6 +53,7 @@ services:
       - kafka-network
       - cassandra-network
 
+
 # Flink taskmanager 1
   taskmanager-1:
     image: pyflink:1.18.1
@@ -67,24 +68,36 @@ services:
       - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
       
+      # Screen 2 screen accelerated
+      - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
+      - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
+
+
       # Config file
       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
     depends_on:
       - jobmanager
     command: taskmanager
-    scale: 1
-    # One of the job managers is sufficient for the flink properties
+    # scale: 3
     environment:
       - | 
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 24
-        parallelism.default: 4
+        parallelism.default: 1
+        taskmanager.numberOfTaskSlots: 16
+
+        taskmanager.rpc.port: 36329
+        taskmanager.data.port: 36330
+
+    ports: 
+      - 36329:36329
+      - 36330:36330
     networks:
       - kafka-network
       - cassandra-network
       - flink-network
- 
+
+
 # Flink jobmanager
   jobmanager:
     image: pyflink:1.18.1
@@ -99,6 +112,10 @@ services:
     - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
     - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
     
+    # Screen 2 screen accelerated
+    - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
+    - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
+
     # Config file
     - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
     ports:
@@ -108,7 +125,8 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        parallelism.default: 4
+        taskmanager.numberOfTaskSlots: 16
+        parallelism.default: 1
     depends_on: 
       - cassandra_stelios
     networks:
@@ -168,6 +186,7 @@ services:
       - ./usrlib/github_data/files_parsed.json:/github_data/files_parsed.json
       
     command: ['python', 'historical-events-file-rotating-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
+    
 
     environment:
       - PYTHONUNBUFFERED=1
