@@ -69,16 +69,17 @@ In terminals 5-7, change the pyclientexec option to the host python environment 
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 
+# Testing scripts based on the original above to accelerate data ingestion performance
+
 # Attention: The job to accelerate is the following
-# The pyflink job below is the same as the one above but for a single cassandra sink (instead of 6) (execution time: ~70 sec)
+# 1. The pyflink job below is the same as the one above but for a single cassandra sink (instead of 6) (execution time: ~70 sec)
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
-# Alternatives to accelerate data ingestion performance
-
-# 1. Use of functions process() and session.execute_async() (execution time: ~90 sec)
+# Alternatives 2 and 3 are less efficient and as so can be ignored (job 1 is the most performant)
+# 2. Use of functions process() and session.execute_async() (execution time: ~90 sec)
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
-# 2. Use of functions process() and session.execute_concurrent_with_args (execution time: ~95 sec)
+# 3. Use of functions process() and session.execute_concurrent_with_args (execution time: ~95 sec)
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 ```
