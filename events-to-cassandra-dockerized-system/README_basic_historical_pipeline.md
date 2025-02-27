@@ -65,13 +65,17 @@ In terminals 5-7, change the pyclientexec option to the host python environment 
 
 ### Terminal 5: Deploy screen 2 pyflink job (job getting the screen 2 data)
 ```sh
+# Attention: The job to accelerate is the following
 # Original flink job of screen 2 (execution time: ~170 sec)
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 
-# Testing scripts based on the original above to accelerate data ingestion performance
 
-# Attention: The job to accelerate is the following
+# The scripts below are attempts of accelerating the script above.
+# They provide another approach for the data ingestion but have failed to be more performant.
+# They are added here for completeness
+
+# Testing scripts based on the original job above to accelerate data ingestion performance
 # 1. The pyflink job below is the same as the one above but for a single cassandra sink (instead of 6) (execution time: ~70 sec)
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
