@@ -52,7 +52,12 @@ Now you should be able to see
 # Create the topic
 # Note: Ignore the error on the deletion of the topic as the topic has not been created yet
 ./delete_and_recreate_topic.sh
-docker compose up python-historical-events-producer
+# Original producer script. Inside, you can configure the dates between  which to produce the events
+# docker compose up python-historical-events-producer
+
+# Producer of 150.000 events of a specific file - created for testing
+# purposes
+docker compose up python-100.000-events-producer
 ```
 
 ### Attention:
@@ -60,13 +65,20 @@ In terminals 5-7, change the pyclientexec option to the host python environment 
 
 ### Terminal 5: Deploy screen 2 pyflink job (job getting the screen 2 data)
 ```sh
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+# Original flink job of screen 2 (execution time: ~170 sec)
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+
+
+# Attention: The job to accelerate is the following
+# The pyflink job below is the same as the one above but for a single cassandra sink (instead of 6) (execution time: ~70 sec)
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 # Alternatives to accelerate data ingestion performance
-# Use of functions process() and session.execute_async()
+
+# 1. Use of functions process() and session.execute_async() (execution time: ~90 sec)
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
-# Use of functions process() and session.execute_concurrent_with_args
+# 2. Use of functions process() and session.execute_concurrent_with_args (execution time: ~95 sec)
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 ```
