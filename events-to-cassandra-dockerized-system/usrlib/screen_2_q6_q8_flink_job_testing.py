@@ -276,43 +276,32 @@ upsert_element_into_number_of_human_events_per_type_by_month_q8_h = \
             "SET number_of_events = number_of_events + ? WHERE "\
             "event_type = ? AND month = ?;"
 
-num_of_elements_per_window = 50
+some_glob_var = 1
 
 import time 
 
-from cassandra.concurrent import execute_concurrent_with_args
-
 # Child class of ProcessFunction
-class RecordToListWindowFunction(ProcessAllWindowFunction):    
-    # global num_of_elements_per_window
+class SessionIntoProcessFunction(ProcessFunction):    
     def open(self, runtime_context):
         self.cluster = Cluster(['cassandra'], port=9142)
         self.session = self.cluster.connect()
         self.session.set_keyspace("prod_gharchive")
-        self.prepared_update_stmt = self.session.prepare(
-        "UPDATE prod_gharchive.number_of_human_events_per_type_by_month "\
-            "SET number_of_events = number_of_events + ? WHERE "\
-            "event_type = ? AND month = ?;"
-    )
+        self.prepared_update_stmt="UPDATE prod_gharchive.number_of_human_events_per_type_by_month "\
+            "SET number_of_events = number_of_events + %s WHERE "\
+            "event_type = %s AND month = %s;"
     
-    def process(self, context: ProcessAllWindowFunction.Context, elements: Iterable[tuple]):
-        result = list(elements)
-        # print(f"New list through the process function: {result}")
-
-
-        parameters_lists = list(result)
+    def process_element(self, value, ctx):
+        parameters = list(value)
         # print(f"type of parameters: {type(parameters)}")
         # print(parameters)
         # time.sleep(1)
-        # print(f"Inserting into cassansdra: {parameters_lists} ...")
-        successes_and_failures = execute_concurrent_with_args(session=self.session, statement=self.prepared_update_stmt, parameters=parameters_lists, concurrency=1000)
+        # print(f"Inserting into cassansdra: {parameters} ...")
+        future = self.session.execute_async(query=self.prepared_update_stmt, parameters=parameters)
 
-        # # If failures occured:
-        # if failures:
-        #     raise Exception("Operation failed, failures occured")
-
-        yield result
-
+        try:
+            results = future.result()
+        except Exception:
+            raise Exception("Operation failed:")
 
     def close(self):
         # Close the cassandra connection
@@ -323,8 +312,9 @@ class RecordToListWindowFunction(ProcessAllWindowFunction):
 number_of_events_info_ds_q8_h = raw_events_ds_3.filter(filter_out_bot_events_q8_h) \
                     .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
                            output_type=number_of_human_events_per_type_by_month_type_info_q8_h)\
-                    .window_all(CountTumblingWindowAssigner.of(window_size=1000))\
-                    .process(RecordToListWindowFunction(), window_func_output_typing)
+                    .rebalance()\
+                    .process(SessionIntoProcessFunction())\
+                    .set_parallelism(4)
 
 
 
