@@ -107,23 +107,28 @@ services:
     image: pyflink:1.18.1
     container_name: jobmanager
     volumes:
+    # Screen 1  
+      - ./usrlib/near-real-time-stats-and-popularity-insights-via-flink.py:/opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py
+      - ./usrlib/create_raw_events_per_sec_datastream.py:/opt/flink/usrlib/create_raw_events_per_sec_datastream.py
+      - ./usrlib/near-real-time-stars-forks-via-flink.py:/opt/flink/usrlib/near-real-time-stars-forks-via-flink.py
+      
     # Connectors
-    - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
-    - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
+      - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
+      - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
 
     # User's pyflink jobs
-    - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
-    - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
-    - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
+      - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
+      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
+      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
     
     # Screen 2 screen accelerated
-    - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
-    - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
-    - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
+      - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
+      - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
+      - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
 
 
     # Config file
-    - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
+      - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
     ports:
       - "8081:8081"
     command: jobmanager    
@@ -242,7 +247,8 @@ services:
     volumes: 
       - ./flask-material-dashboard/server.py:/usrlib/server.py
     ports: 
-      - "127.0.0.1:3100:3100"
+      # - "127.0.0.1:3100:3100"
+      - "3100:3100"
     command: ['python', 'server.py']
     
     environment:
@@ -260,7 +266,7 @@ services:
       - ./flask-material-dashboard:/usrlib/flask-material-dashboard
       - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
     ports: 
-      - "127.0.0.1:5000:5000"
+      - "5000:5000"
     
     command: ['python', 'flask-material-dashboard/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
     
@@ -287,7 +293,7 @@ services:
       - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
       - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
       - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
-      - ./usrlib/github-data:/github-data
+      - ./usrlib/github_data_near_real_time:/github_data_near_real_time
     
     command: ['python', 'near-real-time-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
     environment:
@@ -359,7 +365,7 @@ services:
       - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
       # - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
       # - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
-      # - ./usrlib/github-data:/github-data
+      # - ./usrlib/github_data_near_real_time:/github_data_near_real_time
     
     command: ['python', 'near-real-time-stats-and-popularity-insights-consumer.py', '/usrlib/helpers/getting-started-in-docker.ini']
     environment:
