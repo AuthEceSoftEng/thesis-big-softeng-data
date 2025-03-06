@@ -81,7 +81,7 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 # III. Create a Cassandra cluster, connect to it and use a keyspace
 # region
 
-cassandra_host = 'cassandra'
+cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
 cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
 
@@ -145,6 +145,7 @@ kafka_consumer_second_screen_source_2 = KafkaSource.builder() \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
+
 
 raw_events_ds_2 = env.from_source( source=kafka_consumer_second_screen_source_2, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
@@ -772,7 +773,8 @@ number_of_human_events_per_type_by_month_type_info_q8_h = \
 # Datastream with extracted fields
 number_of_events_info_ds_q8_h = raw_events_ds_3.filter(filter_out_bot_events_q8_h) \
                     .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
-                           output_type=number_of_human_events_per_type_by_month_type_info_q8_h)
+                           output_type=number_of_human_events_per_type_by_month_type_info_q8_h)\
+                    
 # Uncomment to print the datastream elements
 # number_of_events_info_ds_q8_h.print()
 

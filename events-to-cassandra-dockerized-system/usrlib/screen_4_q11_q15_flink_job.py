@@ -78,7 +78,7 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 # III. Create a Cassandra cluster, connect to it and use a keyspace
 # region
 
-cassandra_host = 'cassandra'
+cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
 cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
 
@@ -216,8 +216,6 @@ cassandra_sink_q11_12 = CassandraSink.add_sink(pull_request_closing_times_info_d
     .enable_ignore_null_fields()\
     .build()
 
-
-# endregion
 
 # endregion
 
@@ -428,7 +426,7 @@ cassandra_sink_q15 = CassandraSink.add_sink(issue_closing_times_by_label_ds_q15)
 
 # endregion
 
-
+# endregion
 
 if __name__ == "__main__":
     # Execute the flink streaming environment

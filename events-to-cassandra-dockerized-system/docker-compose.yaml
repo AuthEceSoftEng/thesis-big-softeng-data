@@ -69,6 +69,7 @@ services:
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
       
       # Screen 2 screen accelerated
+      - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
       - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
       - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
 
@@ -83,15 +84,18 @@ services:
       - | 
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        parallelism.default: 1
-        taskmanager.numberOfTaskSlots: 16
+        taskmanager.numberOfTaskSlots: 32
+        parallelism.default: 4
+      # rest.flamegraph.enabled: true
+      # python.operator-chaining.enabled: false
 
-        taskmanager.rpc.port: 36329
-        taskmanager.data.port: 36330
+    # taskmanager.rpc.port: 36329
+    # taskmanager.data.port: 36330
+        
 
-    ports: 
-      - 36329:36329
-      - 36330:36330
+    # ports: 
+    #   - 36329:36329
+    #   - 36330:36330
     networks:
       - kafka-network
       - cassandra-network
@@ -113,8 +117,10 @@ services:
     - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
     
     # Screen 2 screen accelerated
+    - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
     - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
     - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
+
 
     # Config file
     - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
@@ -125,8 +131,10 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 16
-        parallelism.default: 1
+        taskmanager.numberOfTaskSlots: 32
+        parallelism.default: 4
+      # rest.flamegraph.enabled: true
+      # python.operator-chaining.enabled: false
     depends_on: 
       - cassandra_stelios
     networks:
@@ -140,7 +148,7 @@ services:
     ports:
       - "9142:9142"
     container_name: cassandra_stelios
-    hostname: cassandra
+    hostname: cassandra_stelios
     volumes:
       - /var/lib/cassandra:/var/lib/cassandra
       - ./cassandra.yaml:/etc/cassandra/cassandra.yaml

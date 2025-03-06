@@ -79,7 +79,7 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 # III. Create a Cassandra cluster, connect to it and use a keyspace
 # region
 
-cassandra_host = 'cassandra'
+cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
 cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
 
