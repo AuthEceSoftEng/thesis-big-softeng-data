@@ -155,7 +155,7 @@ def get_stats_of_day():
     stats_select_query = f" \
     SELECT day, SUM(stars) AS total_stars, SUM(forks) AS total_forks, \
         SUM(commits) AS total_commits, SUM(pull_requests) AS total_pull_requests \
-        FROM {near_real_time_keyspace}.total_stats_by_day_new_schema \
+        FROM {near_real_time_keyspace}.stats_by_day \
         WHERE day = '{latest_date_available}';\
     "
     # Query to figure out the latest day for which data is available
@@ -299,6 +299,49 @@ def get_languages_by_day():
         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
             
     return jsonify(result)
+
+# Expose popular_topics_by_day for Q5
+@app.route('/popular_topics_by_day', methods=['GET'])
+def get_topics_by_day():
+    distinct_field_name = 'topic'
+
+    # Figure the latest date for which data is available (either today or yesterday)
+    latest_date_available = datetime.now().strftime("%Y-%m-%d")
+    topic_select_query = f" \
+    SELECT * FROM {near_real_time_keyspace}.popular_topics_by_day \
+        WHERE day = '{latest_date_available}' \
+        ORDER BY number_of_events DESC LIMIT 1;\
+    "
+    # Query to figure out the latest day for which data is available
+    rows = query_distinct_results(session, topic_select_query, number_of_results, \
+        distinct_field_name, initial_query_limit)
+
+
+
+    # Change the latest date available to yesterday and make the query on that day
+    if rows == []:
+        latest_date_available = datetime.now() - timedelta(days=1)    
+        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+        topic_select_query = f" \
+        SELECT * FROM {near_real_time_keyspace}.popular_topics_by_day \
+            WHERE day = '{latest_date_available}' \
+            ORDER BY number_of_events DESC LIMIT 1;\
+        "
+        # Perform the query again should there be no queried rows from today
+        rows = query_distinct_results(session, topic_select_query, number_of_results, \
+        distinct_field_name, initial_query_limit)
+        
+    result = []
+    # Create a JSON-serializable object from the resulting data
+    for row in rows:
+        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+            
+    return jsonify(result)
+
+
+
+
+
 
 # endregion
 
