@@ -74,7 +74,7 @@ def consume_events_and_store_stats_in_tables_concurrently():
 
     # Create a Cassandra cluster, connect to it and use a keyspace
     # cluster = Cluster()
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     cluster = Cluster([cassandra_container_name],port=9142)
     
     keyspace = 'near_real_time_gharchive'
@@ -235,7 +235,7 @@ def consume_events_and_store_language_popularity_in_table_concurrently():
 
     # Create a Cassandra cluster, connect to it and use a keyspace
     # cluster = Cluster()
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     cluster = Cluster([cassandra_container_name],port=9142)
     
     keyspace = 'near_real_time_gharchive'
@@ -371,7 +371,7 @@ def consume_events_and_store_topics_popularity_in_table_concurrently():
 
     # Create a Cassandra cluster, connect to it and use a keyspace
     # cluster = Cluster()
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     cluster = Cluster([cassandra_container_name],port=9142)
     # A keyspace must have been created before running
     keyspace = 'near_real_time_gharchive'
