@@ -78,7 +78,7 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 32
-        parallelism.default: 4
+        parallelism.default: 1
     
     # Increase resources for the taskmanager-1
     deploy:
@@ -132,7 +132,7 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 32
-        parallelism.default: 4
+        parallelism.default: 1
       # rest.flamegraph.enabled: true
       # python.operator-chaining.enabled: false
     depends_on: 
@@ -242,7 +242,7 @@ services:
     volumes: 
       - ./flask-material-dashboard/server.py:/usrlib/server.py
     ports: 
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3100:3100"
     command: ['python', 'server.py']
     
     environment:
@@ -272,4 +272,100 @@ services:
       - data-network
 
 
+
+
+# Near real time events producer
+  python-near-real-time-events-producer:
+    image: python:3.10-script-executing-image
+    container_name: python-near-real-time-events-producer
+    volumes: 
+      - ./usrlib/near-real-time-producer.py:/usrlib/near-real-time-producer.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py
+      - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
+      - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
+
+      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
+      - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
+      - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
+      - ./usrlib/github-data:/github-data
     
+    command: ['python', 'near-real-time-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+
+# Flink taskmanager 2
+  taskmanager-2:
+    image: pyflink:1.18.1
+    container_name: taskmanager-2
+    volumes:
+      # Connectors in opt/flink/opt
+      - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
+      - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/lib/flink-connector-cassandra_2.12-3.2.0-1.18.jar
+      
+
+      # Screen 1  
+      - ./usrlib/near-real-time-stats-and-popularity-insights-via-flink.py:/opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py
+      - ./usrlib/create_raw_events_per_sec_datastream.py:/opt/flink/usrlib/create_raw_events_per_sec_datastream.py
+      - ./usrlib/near-real-time-stars-forks-via-flink.py:/opt/flink/usrlib/near-real-time-stars-forks-via-flink.py
+      
+      # User's pyflink jobs
+      - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
+      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
+      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
+      
+      # Screen 2 screen accelerated
+      - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
+      - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
+
+
+      # Config file
+      - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    # scale: 3
+    environment:
+      - | 
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        parallelism.default: 1
+        taskmanager.numberOfTaskSlots: 16
+
+      # taskmanager.rpc.port: 36429
+      # taskmanager.data.port: 36430
+
+    # ports: 
+    #   - 36429:36429
+    #   - 36430:36430
+    
+    networks:
+      - data-network
+      
+
+# Near real time events producer
+  python-near-real-time-stats-and-popularity-insights-consumer:
+    image: python:3.10-script-executing-image
+    container_name: near-real-time-stats-and-popularity-insights-consumer
+    volumes: 
+      - ./usrlib/near-real-time-stats-and-popularity-insights-consumer.py:/usrlib/near-real-time-stats-and-popularity-insights-consumer.py
+      # - ./usrlib/thin_data.py:/usrlib/thin_data.py
+      # - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
+      # - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
+
+      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
+      # - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
+      # - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
+      # - ./usrlib/github-data:/github-data
+    
+    command: ['python', 'near-real-time-stats-and-popularity-insights-consumer.py', '/usrlib/helpers/getting-started-in-docker.ini']
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+      
