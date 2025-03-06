@@ -87,7 +87,7 @@ if __name__=='__main__':
     newest_URL, newest_gharchive_file_date = get_newest_GHArchive_file_URL() 
 
     # In docker 
-    folderpath_to_download_into = '/github-data'
+    folderpath_to_download_into = '/github_data_near_real_time'
     
 
     # Download latest gharchive file
@@ -112,7 +112,7 @@ if __name__=='__main__':
     # Produce data from last file available:
 
     # # The path to the file containing the state of the lines read from each file
-    parsed_files_filepath = "/github-data/files_parsed.json"
+    parsed_files_filepath = "/github_data_near_real_time/files_parsed.json"
 
     topic_to_produce_into = 'near-real-time-raw-events'
     # # Path with custom events
