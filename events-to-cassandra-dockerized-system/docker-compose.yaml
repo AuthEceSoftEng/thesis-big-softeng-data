@@ -1,13 +1,8 @@
 networks:
-  kafka-network:
-    name: kafka-network
+  data-network:
+    name: data-network
     driver: bridge
-  flink-network:
-    name: flink-network
-    driver: bridge
-  cassandra-network:
-    name: cassandra-network
-    driver: bridge
+  
 
 services:
 # Kafka broker 
@@ -34,8 +29,8 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
     networks:
-      - kafka-network
-      - cassandra-network
+      - data-network
+
 
 # Kafka UI
   kafka-ui:
@@ -50,8 +45,7 @@ services:
     volumes:
       - ./kafka-ui/config.yml:/etc/kafkaui/dynamic_config.yaml
     networks:
-      - kafka-network
-      - cassandra-network
+      - data-network
 
 
 # Flink taskmanager 1
@@ -73,7 +67,6 @@ services:
       - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
       - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
 
-
       # Config file
       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
     depends_on:
@@ -86,20 +79,27 @@ services:
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 32
         parallelism.default: 4
-      # rest.flamegraph.enabled: true
-      # python.operator-chaining.enabled: false
+    
+    # Increase resources for the taskmanager-1
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'   # Limit this container to 4 CPUs
+          memory: 8g
+        reservations:
+          cpus: '2.0'   # Guarantee at least 2 CPUs
+          memory: 4g
 
+    # rest.flamegraph.enabled: true
+    # python.operator-chaining.enabled: false
     # taskmanager.rpc.port: 36329
     # taskmanager.data.port: 36330
-        
-
+      
     # ports: 
     #   - 36329:36329
     #   - 36330:36330
     networks:
-      - kafka-network
-      - cassandra-network
-      - flink-network
+      - data-network
 
 
 # Flink jobmanager
@@ -138,9 +138,7 @@ services:
     depends_on: 
       - cassandra_stelios
     networks:
-      - kafka-network
-      - cassandra-network
-      - flink-network
+      - data-network
 
 # Cassandra 
   cassandra_stelios:
@@ -153,9 +151,9 @@ services:
       - /var/lib/cassandra:/var/lib/cassandra
       - ./cassandra.yaml:/etc/cassandra/cassandra.yaml
     networks:
-      - cassandra-network
+      - data-network
     healthcheck:
-      test: ["CMD-SHELL", "cqlsh cassandra 9142 -e 'describe keyspaces'"]
+      test: ["CMD-SHELL", "cqlsh cassandra_stelios 9142 -e 'describe keyspaces'"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -171,7 +169,10 @@ services:
       cassandra_stelios:
         condition: service_healthy
     networks:
-      - cassandra-network
+      - data-network
+    environment: 
+      - CASSANDRA_HOST=cassandra_stelios
+      - CASSANDRA_PORT=9142
 
 # Python historical events producer
   python-historical-events-producer:
@@ -201,8 +202,7 @@ services:
     depends_on:
       - kafka
     networks:
-      - kafka-network
-      - cassandra-network
+      - data-network
 
 # Python producer of a small sample of historical events of a file
   python-100.000-events-producer:
@@ -233,8 +233,7 @@ services:
     depends_on:
       - kafka
     networks:
-      - kafka-network
-      - cassandra-network
+      - data-network
 
 # Python server exposing the data
   python-data-exposing-server:
@@ -251,8 +250,7 @@ services:
     depends_on:
       - cassandra_stelios
     networks:
-      - kafka-network
-      - cassandra-network
+      - data-network
 
 # Python flask dashboard app
   python-flask-app:
@@ -271,8 +269,7 @@ services:
     depends_on:
       - kafka
     networks:
-      - kafka-network
-      - cassandra-network
+      - data-network
 
 
     
