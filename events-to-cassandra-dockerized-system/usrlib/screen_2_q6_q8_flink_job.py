@@ -176,7 +176,7 @@ raw_events_ds_3 = env.from_source( source=kafka_consumer_second_screen_source_3,
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
 
-max_concurrent_requests = 100
+max_concurrent_requests = 1000
 
 # Q6_b: Top bot contributors by month
 # region

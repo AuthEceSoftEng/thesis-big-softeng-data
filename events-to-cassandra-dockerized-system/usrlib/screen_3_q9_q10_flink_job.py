@@ -130,7 +130,7 @@ raw_events_ds = env.from_source( source=kafka_consumer_third_source, \
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
 
-max_concurrent_requests = 100
+max_concurrent_requests = 1000
 # Q9: Total stars per month on Javascript repo
 # region
 
