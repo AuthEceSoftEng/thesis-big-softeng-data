@@ -133,12 +133,174 @@ def query_distinct_results(cassandra_session, select_query=str, number_of_result
     # print(distinct_field_list)
 
 
-cluster = Cluster(['cassandra'], port=9142)
+cluster = Cluster(['cassandra_stelios'], port=9142)
 session = cluster.connect('prod_gharchive')
 session.execute('USE prod_gharchive')
 
 number_of_results = 10
 initial_query_limit = 10
+
+
+# Screen 1: Near real time events
+# region
+# Expose stats_by_day for Q1
+
+near_real_time_keyspace = 'near_real_time_gharchive'
+
+@app.route('/stats_by_day', methods=['GET'])
+def get_stats_of_day():
+    
+    # Figure the latest date for which data is available (either today or yesterday)
+    latest_date_available = datetime.now().strftime("%Y-%m-%d")
+    stats_select_query = f" \
+    SELECT day, SUM(stars) AS total_stars, SUM(forks) AS total_forks, \
+        SUM(commits) AS total_commits, SUM(pull_requests) AS total_pull_requests \
+        FROM {near_real_time_keyspace}.total_stats_by_day_new_schema \
+        WHERE day = '{latest_date_available}';\
+    "
+    # Query to figure out the latest day for which data is available
+    rows = session.execute(stats_select_query)
+   
+    # Change the latest date available to yesterday and make the query on that day
+    if rows.one().day == None:
+        latest_date_available = datetime.now() - timedelta(days=1)    
+        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+        stats_select_query = f" \
+        SELECT day, SUM(stars) AS total_stars, SUM(forks) AS total_forks, \
+            SUM(commits) AS total_commits, SUM(pull_requests) AS total_pull_requests \
+            FROM {near_real_time_keyspace}.stats_by_day \
+            WHERE day = '{latest_date_available}';\
+        "
+        # Perform the query again should there be no queried rows from today
+        rows = session.execute(stats_select_query)
+
+    # return(jsonify(stats_select_query))
+    
+    result = []
+    # Create a JSON-serializable object from the resulting data
+    for row in rows:
+        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+            
+    return jsonify(result)
+
+
+# Expose most_starred_repos_by_day for Q2
+@app.route('/most_starred_repos_by_day', methods=['GET'])
+def get_most_starred_repos_by_day():
+    distinct_field_name = 'repo_name'
+
+    # Figure the latest date for which data is available (either today or yesterday)
+    latest_date_available = datetime.now().strftime("%Y-%m-%d")
+    topic_select_query = f" \
+    SELECT day, repo_name, stars FROM {near_real_time_keyspace}.stats_by_day \
+        WHERE day = '{latest_date_available}' \
+        ORDER BY stars DESC LIMIT 1;\
+    "
+    # Query to figure out the latest day for which data is available
+    rows = query_distinct_results(session, topic_select_query, number_of_results, \
+        distinct_field_name, initial_query_limit)
+
+
+
+    # Change the latest date available to yesterday and make the query on that day
+    if rows == []:
+        latest_date_available = datetime.now() - timedelta(days=1)    
+        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+        topic_select_query = f" \
+        SELECT day, repo_name, stars FROM {near_real_time_keyspace}.stats_by_day \
+            WHERE day = '{latest_date_available}' \
+            ORDER BY stars DESC LIMIT 1;\
+        "
+        # Perform the query again should there be no queried rows from today
+        rows = query_distinct_results(session, topic_select_query, number_of_results, \
+        distinct_field_name, initial_query_limit)
+        
+    result = []
+    # Create a JSON-serializable object from the resulting data
+    for row in rows:
+        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+            
+    return jsonify(result)
+
+# Expose most_forked_repos_by_day for Q3
+@app.route('/most_forked_repos_by_day', methods=['GET'])
+def get_most_forked_repos_by_day():
+    distinct_field_name = 'repo_name'
+
+    # Figure the latest date for which data is available (either today or yesterday)
+    latest_date_available = datetime.now().strftime("%Y-%m-%d")
+    topic_select_query = f" \
+    SELECT * FROM {near_real_time_keyspace}.forks_by_day \
+        WHERE day = '{latest_date_available}' \
+        ORDER BY forks DESC LIMIT 1;\
+    "
+    # Query to figure out the latest day for which data is available
+    rows = query_distinct_results(session, topic_select_query, number_of_results, \
+        distinct_field_name, initial_query_limit)
+
+
+
+    # Change the latest date available to yesterday and make the query on that day
+    if rows == []:
+        latest_date_available = datetime.now() - timedelta(days=1)    
+        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+        topic_select_query = f" \
+        SELECT * FROM {near_real_time_keyspace}.forks_by_day \
+            WHERE day = '{latest_date_available}' \
+            ORDER BY forks DESC LIMIT 1;\
+        "
+        # Perform the query again should there be no queried rows from today
+        rows = query_distinct_results(session, topic_select_query, number_of_results, \
+        distinct_field_name, initial_query_limit)
+        
+    result = []
+    # Create a JSON-serializable object from the resulting data
+    for row in rows:
+        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+            
+    return jsonify(result)
+
+
+# Expose popular_languages_by_day for Q4
+@app.route('/popular_languages_by_day', methods=['GET'])
+def get_languages_by_day():
+    distinct_field_name = 'language'
+
+    # Figure the latest date for which data is available (either today or yesterday)
+    latest_date_available = datetime.now().strftime("%Y-%m-%d")
+    topic_select_query = f" \
+    SELECT * FROM {near_real_time_keyspace}.popular_languages_by_day \
+        WHERE day = '{latest_date_available}' \
+        ORDER BY number_of_events DESC LIMIT 1;\
+    "
+    # Query to figure out the latest day for which data is available
+    rows = query_distinct_results(session, topic_select_query, number_of_results, \
+        distinct_field_name, initial_query_limit)
+
+
+
+    # Change the latest date available to yesterday and make the query on that day
+    
+    if rows == []:
+        latest_date_available = datetime.now() - timedelta(days=1)    
+        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+        topic_select_query = f" \
+        SELECT * FROM {near_real_time_keyspace}.popular_languages_by_day \
+            WHERE day = '{latest_date_available}' \
+            ORDER BY number_of_events DESC LIMIT 1;\
+        "
+        # Perform the query again should there be no queried rows from today
+        rows = query_distinct_results(session, topic_select_query, number_of_results, \
+        distinct_field_name, initial_query_limit)
+        
+    result = []
+    # Create a JSON-serializable object from the resulting data
+    for row in rows:
+        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+            
+    return jsonify(result)
+
+# endregion
 
 
 # Screen 2: Bots vs humans
@@ -1750,4 +1912,4 @@ def get_issues_closing_times_by_label(repo_name):
 if __name__ == '__main__':
     # month = "January"
     # get_top_human_contributors_by_month(month)
-    app.run(host="0.0.0.0", port=3000)
+    app.run(host="0.0.0.0", port=3100)
