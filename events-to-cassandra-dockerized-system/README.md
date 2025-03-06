@@ -110,4 +110,47 @@ cd usrlib
 
 
 
+## Ingest near real time events 
+
+### Terminal 1: Compose kafka, cassandra, flink, expose server data, run the flask app
+```sh
+docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-2 python-flask-app python-data-exposing-server 
+```
+
+
+### Terminal 2: Producer
+```sh
+docker compose up python-near-real-time-events-producer
+```
+
+Pyflink jobs to create the datastreams for screen 1 
+
+Deploy the near real time jobs:
+### Terminal 3: Pyflink job 1: Stats and popularity insights 
+```sh
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+```
+
+
+### Terminal 4: Pyflink job 2: Number of events per timestamp
+```sh
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/create_raw_events_per_sec_datastream.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+```
+
+### Terminal 5: Pyflink job 3: Forks and stars
+```sh
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/near-real-time-stars-forks-via-flink.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+```
+
+### Terminal 6: Consume near real time stats and popularity insights
+```sh
+docker compose -f docker-compose-with-near-real-time-events.yaml up python-near-real-time-stats-and-popularity-insights-consumer
+```
+
+
+
+
+
+
+
 
