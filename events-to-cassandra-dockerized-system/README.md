@@ -144,7 +144,7 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python
 
 ### Terminal 6: Consume near real time stats and popularity insights
 ```sh
-docker compose -f docker-compose-with-near-real-time-events.yaml up python-near-real-time-stats-and-popularity-insights-consumer
+docker compose up python-near-real-time-stats-and-popularity-insights-consumer
 ```
 
 
