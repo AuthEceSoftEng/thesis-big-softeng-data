@@ -31,7 +31,6 @@ services:
     networks:
       - data-network
 
-
 # Kafka UI
   kafka-ui:
     container_name: kafka-ui
@@ -46,7 +45,6 @@ services:
       - ./kafka-ui/config.yml:/etc/kafkaui/dynamic_config.yaml
     networks:
       - data-network
-
 
 # Flink taskmanager 1
   taskmanager-1:
@@ -100,7 +98,6 @@ services:
     #   - 36330:36330
     networks:
       - data-network
-
 
 # Flink jobmanager
   jobmanager:
@@ -179,7 +176,46 @@ services:
       - CASSANDRA_HOST=cassandra_stelios
       - CASSANDRA_PORT=9142
 
-# Python historical events producer
+# Python server exposing data
+  python-data-exposing-server:
+    image: python:3.10-script-executing-image
+    container_name: python-data-exposing-server
+    volumes: 
+      - ./flask-material-dashboard/server.py:/usrlib/server.py
+    ports: 
+      # - "127.0.0.1:3100:3100"
+      - "3100:3100"
+    command: ['python', 'server.py']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - cassandra_stelios
+    networks:
+      - data-network
+
+# Python flask UI
+  python-flask-app:
+    image: python:3.10-script-executing-image
+    container_name: python-flask-app
+    volumes: 
+      - ./flask-material-dashboard:/usrlib/flask-material-dashboard
+      - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
+    ports: 
+      - "5000:5000"
+    
+    command: ['python', 'flask-material-dashboard/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+
+
+# # 1. Historical events ingestion
+# Historical events producer
   python-historical-events-producer:
     image: python:3.10-script-executing-image
     container_name: python-historical-events-producer
@@ -209,7 +245,7 @@ services:
     networks:
       - data-network
 
-# Python producer of a small sample of historical events of a file
+# Producer of a small sample of the events of a file (Used for ingestion speed testing)
   python-100.000-events-producer:
     image: python:3.10-script-executing-image
     container_name: python-100.000-events-producer
@@ -240,45 +276,9 @@ services:
     networks:
       - data-network
 
-# Python server exposing the data
-  python-data-exposing-server:
-    image: python:3.10-script-executing-image
-    container_name: python-data-exposing-server
-    volumes: 
-      - ./flask-material-dashboard/server.py:/usrlib/server.py
-    ports: 
-      # - "127.0.0.1:3100:3100"
-      - "3100:3100"
-    command: ['python', 'server.py']
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - cassandra_stelios
-    networks:
-      - data-network
-
-# Python flask dashboard app
-  python-flask-app:
-    image: python:3.10-script-executing-image
-    container_name: python-flask-app
-    volumes: 
-      - ./flask-material-dashboard:/usrlib/flask-material-dashboard
-      - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
-    ports: 
-      - "5000:5000"
-    
-    command: ['python', 'flask-material-dashboard/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
 
 
-
+# # 2. Near real time events ingestion
 
 # Near real time events producer
   python-near-real-time-events-producer:
@@ -351,7 +351,6 @@ services:
     networks:
       - data-network
       
-
 # Near real time events producer
   python-near-real-time-stats-and-popularity-insights-consumer:
     image: python:3.10-script-executing-image
