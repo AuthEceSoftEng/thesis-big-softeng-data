@@ -67,7 +67,7 @@ In terminals 5-7, change the pyclientexec option to the host python environment 
 ```sh
 # Attention: The job to accelerate is the following
 # Original flink job of screen 2 (execution time: ~170 sec)
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 
 
