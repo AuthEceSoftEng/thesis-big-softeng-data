@@ -188,8 +188,10 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     # JSON object to be inserted in the Cassandra database
                     jsonDict = json.loads(lines[i])
                     jsonStr = str(jsonDict)
+                    # TODO: Print introduces latency, Use if for i mod 1000, put time.sleep() in here 
                     sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
                     sys.stdout.flush()
+                    # TODO: Produce in batches (see kafka docs)
                     producer.produce(topic, value=jsonStr, callback=delivery_callback)
                     linesProduced = i+1
                     
@@ -197,7 +199,7 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     # See: https://stackoverflow.com/questions/62408128/buffererror-local-queue-full-in-python
                     producer.poll(0)
                     # # Short time before next JSON object is received
-                    time.sleep(0.00001)
+                    time.sleep(0.0001)
         
         # Case 1.1: Keyboard interrupt while reading the file
         except KeyboardInterrupt:
