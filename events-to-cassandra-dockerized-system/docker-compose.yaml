@@ -374,3 +374,20 @@ services:
     networks:
       - data-network
       
+
+
+# Delete .json.gz file (to free up space)
+  python-delete-json-gz-file:
+    image: python:3.10-script-executing-image
+    container_name: python-delete-json-gz-file
+    volumes: 
+      # Script deleting files in directory 'usrlib/github_data'
+      - ./usrlib/delete_json_gz_file.py:/usrlib/delete_json_gz_file.py
+      # Directory containing the .json.gz file to delete
+      - ./usrlib/github_data:/github_data
+      
+    # Write the path of file to delete (e.g. /github_data/) and run the container delete it
+    command: ['python', 'delete_json_gz_file.py', '/github_data/some_json_gz_file_to_delete.json.gz']
+    environment:
+      - PYTHONUNBUFFERED=1
+      
