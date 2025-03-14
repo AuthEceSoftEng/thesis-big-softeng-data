@@ -170,6 +170,8 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
     the_whole_file_was_read = False
     the_whole_file_was_read_beforehand = False
     
+    number_of_lines_produced_per_print = 1000
+    
     # Read lines of file to be added in kafka topic until keyboard interrupt
     # of EOF
     
@@ -189,8 +191,13 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     jsonDict = json.loads(lines[i])
                     jsonStr = str(jsonDict)
                     # TODO: Print introduces latency, Use if for i mod 1000, put time.sleep() in here 
-                    sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
-                    sys.stdout.flush()
+                    
+                    if i % number_of_lines_produced_per_print == 0:
+                        sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
+                        sys.stdout.flush()
+                        
+                    
+                    
                     # TODO: Produce in batches (see kafka docs)
                     producer.produce(topic, value=jsonStr, callback=delivery_callback)
                     linesProduced = i+1
@@ -198,8 +205,12 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     # Poll to cleanup the producer queue after every message production
                     # See: https://stackoverflow.com/questions/62408128/buffererror-local-queue-full-in-python
                     producer.poll(0)
-                    # # Short time before next JSON object is received
+                    # # Time sleep is used here to capture output
                     time.sleep(0.0001)
+                        
+                sys.stdout.write("\rJSON objects produced: {0}/{1}".format(linesInFile, linesInFile))
+                sys.stdout.flush()
+                        
         
         # Case 1.1: Keyboard interrupt while reading the file
         except KeyboardInterrupt:

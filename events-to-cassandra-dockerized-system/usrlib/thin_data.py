@@ -124,7 +124,7 @@ def thin_data_of_file(input_filepath, output_filepath, do_again=False):
 					thinned_line = json.dumps(thinned_event) + '\n'
 					outstream.write(thinned_line.encode())
 					# Print every e.g. 1000 lines thinned
-					if i % number_of_lines_thinned_per_print == 0
+					if i % number_of_lines_thinned_per_print == 0:
 						sys.stdout.write("\r JSON events thinned: {0}/{1}".format(i+1, linesInFile))
 						sys.stdout.flush()
 						# if i == 17:	
@@ -132,7 +132,7 @@ def thin_data_of_file(input_filepath, output_filepath, do_again=False):
 							# 	break	
 				# Print again at the last line thinned			
 				sys.stdout.write("\r JSON events thinned: {0}/{1}".format(linesInFile, linesInFile))
-    			sys.stdout.flush()
+				sys.stdout.flush()
 							
 	elif os.path.exists(output_filepath) and do_again == False:
 		print(f"{os.path.basename(output_filepath)} with the thinned events already exists.")
