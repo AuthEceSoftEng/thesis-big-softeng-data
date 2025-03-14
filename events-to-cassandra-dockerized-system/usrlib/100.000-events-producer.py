@@ -517,38 +517,50 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 # endregion
  
 
+# Samples GHArchive file to get only its first k lines into another file 
+# for testing the produce-into-kafka-topic process
 def create_file_with_k_first_lines(input_filepath, output_filepath, number_of_lines_to_keep, do_again=False):
 	'''
-	Thins the events of the gharchive filepath `input_filepath` 
+	Sapmles the k first events of the gharchive filepath `input_filepath` 
 	and stores it into `output_filepath`.
 	If the do_again is True, the decompression is done again and 
 	the existing file is overwritten
  
 	`input_filepath`: GHArchive file with thinned events
-	`output_filepath`: GhArchive file with the first ``number_of_lines_to_keep`` first  events 
+	`output_filepath`: GhArchive file with the first ``number_of_lines_to_keep`` 
+    first  events 
 	`do_again`: In case the GHArchuive file with the thinned events
-	already exists, thin the events again and overwrite the 
-	output_filepath contents
+	already exists, if do_again is set to True, 
+    thin the events again and overwrite the output_filepath contents
 	'''
 	# Calculate size of file (number of lines of file)
 	with gzip.open(input_filepath, 'r') as file_object:
 			linesInFile = len(file_object.readlines())
+
+    number_of_lines_thinned_per_print = 1000
 
 	print(f'Dumping {number_of_lines_to_keep} events of {os.path.basename(input_filepath)} into {os.path.basename(output_filepath)}...')
 	if not os.path.exists(output_filepath) or do_again == True:
 		with gzip.open(output_filepath, 'wb') as outstream:
 			with gzip.open(input_filepath) as instream:
 				for i, line in enumerate(instream):
-					sys.stdout.write("\r JSON events dumped: {0}/{1}".format(i, linesInFile))
-					sys.stdout.flush()				
+                    # Show lines produced
+                    if i % number_of_lines_thinned_per_print == 0
+                        sys.stdout.write("\r JSON events dumped: {0}/{1}".format(i, linesInFile))
+                        sys.stdout.flush()				
 					if i == number_of_lines_to_keep:	
 							break	
 					outstream.write(line)
+                # When done producing all the lines, print all lines ingested 
+                # in stdout
+                sys.stdout.write("\r JSON events dumped: {0}/{1}".format(number_of_lines_to_keep, linesInFile))
+                sys.stdout.flush()
+                        
 	elif os.path.exists(output_filepath) and do_again == False:
-		print(f"{os.path.basename(output_filepath)} with the first s{number_of_lines_to_keep} events already exists.")
+		print(f"{os.path.basename(output_filepath)} with the first {number_of_lines_to_keep} events already exists.")
 	print('...Done')
         
-def produce_all_events_of_file(topic=str, filepath=str):   
+def get_config_and_produce_lines(topic=str, filepath=str):   
     # Parse the command line.
     parser = ArgumentParser()
     parser.add_argument('config_file', type=FileType('r'))
@@ -566,7 +578,8 @@ def produce_all_events_of_file(topic=str, filepath=str):
             
     # Produce from file into topic
     produce_all_lines_of_file(topic, filepath, config)
-    
+
+
 def delivery_callback(err, msg):
     '''Optional per-message delivery callback (triggered by poll() or flush())
     when a message has been successfully delivered or permanently
@@ -627,16 +640,23 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
                 # JSON object to be inserted in the Cassandra database
                 jsonDict = json.loads(lines[i])
                 jsonStr = str(jsonDict)
-                sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
-                sys.stdout.flush()
+                # Print only batches of lines produced
+                if i % number_of_lines_thinned_per_print == 0
+                    sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
+                    sys.stdout.flush()
+                    # # Short time before next JSON object is produced
+                    time.sleep(0.0001)
                 producer.produce(topic, value=jsonStr, callback=delivery_callback)
                 linesProduced = i+1
                 
                 # Poll to cleanup the producer queue after every message production
                 # See: https://stackoverflow.com/questions/62408128/buffererror-local-queue-full-in-python
                 producer.poll(0)
-                # # Short time before next JSON object is produced
-                time.sleep(0.0001)
+                
+            
+            # Once the total number of lines were produced, print it
+            sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
+            sys.stdout.flush()
     
     except KeyboardInterrupt:
         print('\nKeyboard interrupt\n')
@@ -710,7 +730,7 @@ if __name__ == '__main__':
         # Sample the first {number_of_lines_to_keep} lines of the thinned file
         # filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
         input_filepath = f'/github_data_for_speed_testing/{date_formatted}-thinned.json.gz'
-        number_of_lines_to_keep = 150000
+        number_of_lines_to_keep = 10000
         limited_number_of_lines_filepath = f'/github_data_for_speed_testing/2024-12-01-10-thinned_first_{number_of_lines_to_keep}_only.json.gz'
         create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
         
@@ -728,7 +748,7 @@ if __name__ == '__main__':
 
         topic_to_produce_into = 'historical-raw-events'
         parsed_files_filepath = "/github_data_for_speed_testing/files_parsed.json"
-        produce_all_events_of_file(topic_to_produce_into, limited_number_of_lines_filepath)
+        get_config_and_produce_lines(topic_to_produce_into, limited_number_of_lines_filepath)
 
 
         et = time.time()
