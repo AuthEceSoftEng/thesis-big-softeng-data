@@ -110,6 +110,8 @@ def thin_data_of_file(input_filepath, output_filepath, do_again=False):
 	with gzip.open(input_filepath, 'r') as file_object:
 			linesInFile = len(file_object.readlines())
 
+	number_of_lines_thinned_per_print = 1000
+
 	print(f'Thinning events of {os.path.basename(input_filepath)}...')
 	if not os.path.exists(output_filepath) or do_again == True:
 		with gzip.open(output_filepath, 'wb') as outstream:
@@ -120,12 +122,18 @@ def thin_data_of_file(input_filepath, output_filepath, do_again=False):
 					# print(event["repo"]["full_name"])
 					thinned_event = process_json_event(event)	
 					thinned_line = json.dumps(thinned_event) + '\n'
-					sys.stdout.write("\r JSON events thinned: {0}/{1}".format(i+1, linesInFile))
-					sys.stdout.flush()				
-					# if i == 17:	
-						# 	print(f"Thinned event repo field: {thinned_event['repo']}")
-						# 	break	
 					outstream.write(thinned_line.encode())
+					# Print every e.g. 1000 lines thinned
+					if i % number_of_lines_thinned_per_print == 0
+						sys.stdout.write("\r JSON events thinned: {0}/{1}".format(i+1, linesInFile))
+						sys.stdout.flush()
+						# if i == 17:	
+							# 	print(f"Thinned event repo field: {thinned_event['repo']}")
+							# 	break	
+				# Print again at the last line thinned			
+				sys.stdout.write("\r JSON events thinned: {0}/{1}".format(linesInFile, linesInFile))
+    			sys.stdout.flush()
+							
 	elif os.path.exists(output_filepath) and do_again == False:
 		print(f"{os.path.basename(output_filepath)} with the thinned events already exists.")
 	print('...Done')
