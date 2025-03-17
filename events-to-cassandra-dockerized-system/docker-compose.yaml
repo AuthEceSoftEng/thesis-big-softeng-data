@@ -77,7 +77,12 @@ services:
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 32
         parallelism.default: 1
-    
+        rest.flamegraph.enabled: true
+        
+    # python.operator-chaining.enabled: false
+    # taskmanager.rpc.port: 36329
+    # taskmanager.data.port: 36330
+
     # Increase resources for the taskmanager-1
     deploy:
       resources:
@@ -88,11 +93,7 @@ services:
           cpus: '2.0'   # Guarantee at least 2 CPUs
           memory: 4g
 
-    # rest.flamegraph.enabled: true
-    # python.operator-chaining.enabled: false
-    # taskmanager.rpc.port: 36329
-    # taskmanager.data.port: 36330
-      
+
     # ports: 
     #   - 36329:36329
     #   - 36330:36330
@@ -135,7 +136,7 @@ services:
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 32
         parallelism.default: 1
-      # rest.flamegraph.enabled: true
+        rest.flamegraph.enabled: true
       # python.operator-chaining.enabled: false
     depends_on: 
       - cassandra_stelios
@@ -390,4 +391,8 @@ services:
     command: ['python', 'delete_json_gz_file.py', '/github_data/some_json_gz_file_to_delete.json.gz']
     environment:
       - PYTHONUNBUFFERED=1
+      
+
+
+
       
