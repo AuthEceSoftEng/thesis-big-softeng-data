@@ -82,7 +82,7 @@ def create_topic(topic=str, config_port=str):
         # then create it 
         if topic not in all_topics_list:
             print(f'Topic {topic} does not exist')
-            new_topic = admin.NewTopic(topic, num_partitions=1, replication_factor=1)
+            new_topic = admin.NewTopic(topic, num_partitions=4, replication_factor=1)
             # client.create_topics([new_topic])
             
             futures = client.create_topics([new_topic])
