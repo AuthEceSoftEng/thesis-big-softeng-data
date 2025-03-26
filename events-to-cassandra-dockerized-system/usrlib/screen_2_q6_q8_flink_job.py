@@ -36,6 +36,7 @@ import os
 # I. Set up the flink execution environment
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
+# env.disable_operator_chaining()
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 # env.set_parallelism(2)
 
@@ -128,47 +129,10 @@ print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create 
         "T7_b: number_of_pull_requests_by_bots, T7_h: number_of_pull_requests_by_humans,\n"
         "T8_b: number_of_events_by_bots, T8_h: number_of_events_by_humans")
 
-raw_events_ds_1 = env.from_source( source=kafka_consumer_second_screen_source_1, \
+raw_events_ds = env.from_source( source=kafka_consumer_second_screen_source_1, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="kafka_source")\
 
-
-second_screen_consumer_group_id_2 = 'second_screen_consumer_group_id_2'
-
-
-kafka_consumer_second_screen_source_2 = KafkaSource.builder() \
-            .set_bootstrap_servers(kafka_bootstrap_servers) \
-            .set_starting_offsets(KafkaOffsetsInitializer\
-                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(second_screen_consumer_group_id_2)\
-            .set_topics(topic_to_consume_from) \
-            .set_value_only_deserializer(SimpleStringSchema()) \
-            .set_properties(kafka_props)\
-            .build()
-
-
-raw_events_ds_2 = env.from_source( source=kafka_consumer_second_screen_source_2, \
-            watermark_strategy=WatermarkStrategy.no_watermarks(),
-            source_name="kafka_source")\
-
-
-
-second_screen_consumer_group_id_3 = 'second_screen_consumer_group_id_3'
-
-
-kafka_consumer_second_screen_source_3 = KafkaSource.builder() \
-            .set_bootstrap_servers(kafka_bootstrap_servers) \
-            .set_starting_offsets(KafkaOffsetsInitializer\
-                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(second_screen_consumer_group_id_3)\
-            .set_topics(topic_to_consume_from) \
-            .set_value_only_deserializer(SimpleStringSchema()) \
-            .set_properties(kafka_props)\
-            .build()
-
-raw_events_ds_3 = env.from_source( source=kafka_consumer_second_screen_source_3, \
-            watermark_strategy=WatermarkStrategy.no_watermarks(),
-            source_name="kafka_source")\
 
 
 #endregion
@@ -270,7 +234,7 @@ bot_contributions_by_month_type_info = \
         Types.STRING()])
     
 # Datastream with extracted fields
-top_bot_contributors_info_ds_q6_b = raw_events_ds_1.filter(filter_out_non_contributing_events_and_humans_q6_b)\
+top_bot_contributors_info_ds_q6_b = raw_events_ds.filter(filter_out_non_contributing_events_and_humans_q6_b)\
                     .map(extract_number_of_contributions_and_create_row_q6_b, \
                            output_type=bot_contributions_by_month_type_info) \
 # Uncomment to print datastream
@@ -396,7 +360,7 @@ human_contributions_by_month_type_info_q6_h = \
         Types.STRING()])
     
 # Datastream with extracted fields
-top_human_contributors_info_ds_q6_h = raw_events_ds_1.filter(filter_out_non_contributing_events_and_bots_q6_h)\
+top_human_contributors_info_ds_q6_h = raw_events_ds.filter(filter_out_non_contributing_events_and_bots_q6_h)\
                     .map(extract_number_of_contributions_and_create_row_q6_h, \
                            output_type=human_contributions_by_month_type_info_q6_h) \
 # Uncomment to print datastream
@@ -493,7 +457,7 @@ number_of_pull_requests_by_bots_by_month_type_info_q7_b = \
         Types.BOOLEAN(), Types.STRING()])
     
 # Datastream with extracted fields
-number_of_pull_requests_info_ds_q7_b = raw_events_ds_2.filter(filter_out_non_pull_request_events_q7_b)\
+number_of_pull_requests_info_ds_q7_b = raw_events_ds.filter(filter_out_non_pull_request_events_q7_b)\
                     .map(extract_number_of_pull_requests_and_create_row_q7_b, \
                            output_type=number_of_pull_requests_by_bots_by_month_type_info_q7_b) \
 # Uncomment to print datastream
@@ -592,7 +556,7 @@ number_of_pull_requests_by_humans_by_month_type_info_q7_h = \
         Types.BOOLEAN(), Types.STRING()])
     
 # Datastream with extracted fields
-number_of_pull_requests_info_ds_q7_h = raw_events_ds_2.filter(filter_out_non_pull_request_events_q7_h)\
+number_of_pull_requests_info_ds_q7_h = raw_events_ds.filter(filter_out_non_pull_request_events_q7_h)\
                     .map(extract_number_of_pull_requests_and_create_row_q7_h, \
                            output_type=number_of_pull_requests_by_humans_by_month_type_info_q7_h) 
 # Uncomment to print the datastream
@@ -679,7 +643,7 @@ number_of_bot_events_per_type_by_month_type_info_q8_b = \
     
     
 # Datastream with extracted fields
-number_of_events_info_ds_q8_b = raw_events_ds_3.filter(filter_out_human_events_q8_b) \
+number_of_events_info_ds_q8_b = raw_events_ds.filter(filter_out_human_events_q8_b) \
                     .map(extract_number_of_bot_events_per_type_and_create_row_q8_b, \
                            output_type=number_of_bot_events_per_type_by_month_type_info_q8_b)
 # Uncomment to print the datastream
@@ -771,7 +735,7 @@ number_of_human_events_per_type_by_month_type_info_q8_h = \
     
     
 # Datastream with extracted fields
-number_of_events_info_ds_q8_h = raw_events_ds_3.filter(filter_out_bot_events_q8_h) \
+number_of_events_info_ds_q8_h = raw_events_ds.filter(filter_out_bot_events_q8_h) \
                     .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
                            output_type=number_of_human_events_per_type_by_month_type_info_q8_h)\
                     

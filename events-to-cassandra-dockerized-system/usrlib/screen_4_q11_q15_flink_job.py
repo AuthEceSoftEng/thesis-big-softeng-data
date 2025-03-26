@@ -36,6 +36,9 @@ import os
 # I. Set up the flink execution environment
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
+
+# env.disable_operator_chaining()
+
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 # env.set_parallelism(2)
 
