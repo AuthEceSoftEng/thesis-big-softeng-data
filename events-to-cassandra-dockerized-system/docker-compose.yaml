@@ -76,8 +76,9 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 32
-        parallelism.default: 1
+        parallelism.default: 4
         rest.flamegraph.enabled: true
+        metrics.latency.interval: 1000
         
     # python.operator-chaining.enabled: false
     # taskmanager.rpc.port: 36329
@@ -135,8 +136,10 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 32
-        parallelism.default: 1
+        parallelism.default: 4
         rest.flamegraph.enabled: true
+        metrics.latency.interval: 1000
+
       # python.operator-chaining.enabled: false
     depends_on: 
       - cassandra_stelios
@@ -246,6 +249,7 @@ services:
     networks:
       - data-network
 
+
 # Producer of a small sample of the events of a file (Used for ingestion speed testing)
   python-100.000-events-producer:
     image: python:3.10-script-executing-image
@@ -352,7 +356,7 @@ services:
     networks:
       - data-network
       
-# Near real time events producer
+# Near real time stats and popularity insights consumer
   python-near-real-time-stats-and-popularity-insights-consumer:
     image: python:3.10-script-executing-image
     container_name: near-real-time-stats-and-popularity-insights-consumer
