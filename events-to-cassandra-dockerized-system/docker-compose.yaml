@@ -65,6 +65,11 @@ services:
       - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
       - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
 
+      # Multiple Screen 2 jobs instead of 1
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
+
+
       # Config file
       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
     depends_on:
@@ -122,8 +127,13 @@ services:
     
     # Screen 2 screen accelerated
       - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
-      - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
-      - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
+      - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
+      - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
+
+    # Multiple Screen 2 jobs instead of 1
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
+
 
 
     # Config file
@@ -329,8 +339,8 @@ services:
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
       
       # Screen 2 screen accelerated
-      - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
-      - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
+      - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
+      - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
 
 
       # Config file
