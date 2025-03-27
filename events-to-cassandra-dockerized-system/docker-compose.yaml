@@ -62,8 +62,8 @@ services:
       
       # Screen 2 screen accelerated
       - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
-      - ./usrlib/screen_2_q6_q8_flink_job_testing.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py
-      - ./usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py
+      - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
+      - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
 
       # Config file
       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
