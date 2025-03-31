@@ -744,13 +744,8 @@ if __name__ == '__main__':
 		# Sample the first {number_of_lines_to_keep} lines of the thinned file
 		# filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
 		input_filepath = f'/github_data_for_speed_testing/{date_formatted}-thinned.json.gz'
-<<<<<<< Updated upstream
 		number_of_lines_to_keep = 30000
 		limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
-=======
-		number_of_lines_to_keep = 200000
-		limited_number_of_lines_filepath = f'/github_data_for_speed_testing/2024-12-01-10-thinned_first_{number_of_lines_to_keep}_only.json.gz'
->>>>>>> Stashed changes
 		create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
 		
 		
