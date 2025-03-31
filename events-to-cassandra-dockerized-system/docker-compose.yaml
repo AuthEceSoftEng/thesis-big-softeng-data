@@ -84,6 +84,7 @@ services:
         parallelism.default: 4
         rest.flamegraph.enabled: true
         metrics.latency.interval: 1000
+    # taskmanager.memory.jvm-metaspace.size: 1728m
         
     # python.operator-chaining.enabled: false
     # taskmanager.rpc.port: 36329
@@ -149,6 +150,7 @@ services:
         parallelism.default: 4
         rest.flamegraph.enabled: true
         metrics.latency.interval: 1000
+      # taskmanager.memory.jvm-metaspace.size: 1728m
 
       # python.operator-chaining.enabled: false
     depends_on: 
@@ -239,6 +241,9 @@ services:
       - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
       - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
       - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
       - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
       - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
       
@@ -269,7 +274,10 @@ services:
       - ./usrlib/100.000-events-producer.py:/usrlib/100.000-events-producer.py
       - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
       - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py     
+      
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
       - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
       - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
       
