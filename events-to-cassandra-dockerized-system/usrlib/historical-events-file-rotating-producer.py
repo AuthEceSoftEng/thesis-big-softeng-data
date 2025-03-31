@@ -7,6 +7,8 @@ from confluent_kafka import Producer, Consumer, admin
 from create_topic_from_inside_the_container import create_topic_from_within_container
 
 from thin_data import thin_data_of_file
+from heavy_thin_of_data import heavy_thin_data_of_file
+
 import time, sys
 # from check_job_status_multiple_jobs import check_if_job_is_busy 
 
@@ -521,8 +523,8 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-01-2'
-    ending_date_formatted =  '2024-12-01-2'
+    starting_date_formatted =  '2024-12-01-21'
+    ending_date_formatted =  '2024-12-01-21'
     
     sections_performance = {"1. Download gharchive file": 0,
                             "2. Thin file": 0,
@@ -572,7 +574,9 @@ if __name__ == '__main__':
         thinned_filename = current_date_formatted + '-thinned.json.gz'
         filepath_of_thinned_file = os.path.join(folderpath_to_download_into, thinned_filename)
 
-        thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
+        heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
+
+        # thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
         
         et = time.time()
         dur = et - st
