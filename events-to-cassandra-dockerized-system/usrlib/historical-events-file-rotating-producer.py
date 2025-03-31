@@ -685,7 +685,8 @@ if __name__ == '__main__':
     
     sections_performance["Total time elapsed"] = total_dur
     print("Execution times of pipeline parts in seconds:\n")
-    print(*sections_performance.items(), sep="\n")
+    for k, v in sections_performance.items():
+        print(f"{k}: {round(v, 1)}")
 
 
 

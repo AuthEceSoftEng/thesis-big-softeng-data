@@ -196,8 +196,6 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                         sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
                         sys.stdout.flush()
                         
-                    
-                    
                     # TODO: Produce in batches (see kafka docs)
                     producer.produce(topic, value=jsonStr, callback=delivery_callback)
                     linesProduced = i+1

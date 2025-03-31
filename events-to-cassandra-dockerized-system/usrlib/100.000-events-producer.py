@@ -7,6 +7,7 @@ from confluent_kafka import Producer, Consumer, admin
 from create_topic_from_inside_the_container import create_topic_from_within_container
 
 from thin_data import thin_data_of_file
+from heavy_thin_of_data import heavy_thin_data_of_file
 import time, sys
 # from check_job_status_multiple_jobs import check_if_job_is_busy 
 
@@ -626,7 +627,7 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
 	line_we_left_off = 0
 	
 	# Declare variable linesProduced to be used in the loop 
-	linesProduced = 0
+	lines_produced = 0
 	
 	number_of_lines_produced_per_print = 1000	
  
@@ -634,26 +635,30 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
 		# Create Producer instance
 		producer = Producer(config)
 		with open(decompressed_file_path, 'r') as file_object:
+			
 			lines = file_object.readlines()
 			print(f"Reading lines of {filename} until EOF or keyboard interrupt...")
 			print(f'Producing events from line No.{line_we_left_off+1} of {filename}')
-			
 			for i in range(line_we_left_off, linesInFile):    
-				# JSON object to be inserted in the Cassandra database
+			# for line in file_object:
+       			# # JSON object to be inserted in the Cassandra database
+				# # Old version
 				jsonDict = json.loads(lines[i])
 				jsonStr = str(jsonDict)
+				
 				# sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
 				# sys.stdout.flush()			
     			# Print only batches of lines produced
-				if i % number_of_lines_produced_per_print == 0:
+				if lines_produced % number_of_lines_produced_per_print == 0:
     
-					sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
+					sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced, linesInFile))
 					sys.stdout.flush()
 				
-	
-     
-				producer.produce(topic, value=jsonStr, callback=delivery_callback)
-				linesProduced = i+1
+				# Old version
+				producer.produce(topic, value= jsonStr, callback=delivery_callback)
+				
+				# producer.produce(topic, value=lines[i], callback=delivery_callback)
+				lines_produced = lines_produced+1
 				
 				# Poll to cleanup the producer queue after every message production
 				# See: https://stackoverflow.com/questions/62408128/buffererror-local-queue-full-in-python
@@ -681,7 +686,7 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
 	# Case 1.2: EOF 
 	# In this case, the file was read up to the last line and
 	# no keyboard interrupt occured
-	if linesProduced == linesInFile:
+	if lines_produced == linesInFile:
 		print('\nEOF\n')
 		if os.path.exists(decompressed_file_path):
 			# Remove the decompressed file
@@ -694,7 +699,7 @@ if __name__ == '__main__':
 	# Code sketch
 	
 	# Designate a date (year, month, day, hour) to download a gharchive file from
-	date_formatted =  '2024-12-01-10'
+	date_formatted =  '2024-12-01-13'
 	
 	sections_performance = []
 	total_dur = 0
@@ -732,13 +737,15 @@ if __name__ == '__main__':
 		folderpath_of_thinned_file = folderpath_to_download_into
 		thinned_filename = date_formatted + '-thinned.json.gz'
 		filepath_of_thinned_file = os.path.join(folderpath_to_download_into, thinned_filename)
-		thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
+		# thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
+  		
+		heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
 
 		# Sample the first {number_of_lines_to_keep} lines of the thinned file
 		# filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
 		input_filepath = f'/github_data_for_speed_testing/{date_formatted}-thinned.json.gz'
-		number_of_lines_to_keep = 10000
-		limited_number_of_lines_filepath = f'/github_data_for_speed_testing/2024-12-01-10-thinned_first_{number_of_lines_to_keep}_only.json.gz'
+		number_of_lines_to_keep = 30000
+		limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
 		create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
 		
 		
@@ -766,73 +773,76 @@ if __name__ == '__main__':
 		# endregion
 
 		
- 
-	# 4. Wait for data transformation (Check if the jobs stopped working)
-	st = time.time()
+	skip_step_4 = False
 
-	hostname = 'jobmanager'
-	# hostname = 'taskmanager'
-	# hostname = 'localhost'
-	
-	running_job_names_in_cluster = get_running_job_names(hostname)
+	if skip_step_4 == False:
+		# 4. Wait for data transformation (Check if the jobs stopped working)
+		st = time.time()
+
+		hostname = 'jobmanager'
+		# hostname = 'taskmanager'
+		# hostname = 'localhost'
 		
-	
-	if running_job_names_in_cluster == []:
-		raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
-	
-	
-	
-	is_a_job_running = None
-	for single_job_name in running_job_names_in_cluster:
-		is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
-		if is_a_job_running == True:        
-			break
-	if (is_a_job_running == False):    
-		print(f"Pyflink jobs have not started working")
-		print("Waiting for the jobs to start")
-	while(is_a_job_running == False):
-
-		for single_job_name in running_job_names_in_cluster:
-			# If one of the pyflink jobs started working, break the while loop 
-			is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-			job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
-			sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-		sys.stdout.flush()
-		if is_a_job_running == True:        
-				break
-
-		time.sleep(5)
-		sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
+		running_job_names_in_cluster = get_running_job_names(hostname)
 			
-
-	# exit(0)
-	
-	print()
-	print(f"Pyflink jobs have started working")
-	print("Waiting for pyflink jobs to stop")
-	while(is_a_job_running == True):
-		# Reset the job status. 
-		is_a_job_running = False
+		
+		if running_job_names_in_cluster == []:
+			raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
+		
+		
+		
+		is_a_job_running = None
 		for single_job_name in running_job_names_in_cluster:
-			#  While there is at least one working job, wait for it to finish
-			is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-			job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)        
-			sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-		sys.stdout.flush()
-		if is_a_job_running == False:        
+			is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
+			if is_a_job_running == True:        
 				break
-		time.sleep(5)
-		sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
-	
-	print()
-	print("All pyflink jobs stopped working")
-	
-	et = time.time()
-	dur = et - st
-	total_dur += dur
-	sections_performance.append(["4. Wait for flink jobs to finish", dur])
+		if (is_a_job_running == False):    
+			print(f"Pyflink jobs have not started working")
+			print("Waiting for the jobs to start")
+		while(is_a_job_running == False):
+
+			for single_job_name in running_job_names_in_cluster:
+				# If one of the pyflink jobs started working, break the while loop 
+				is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+				job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
+				sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+			sys.stdout.flush()
+			if is_a_job_running == True:        
+					break
+
+			time.sleep(5)
+			sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
+				
+
+		# exit(0)
+		
+		print()
+		print(f"Pyflink jobs have started working")
+		print("Waiting for pyflink jobs to stop")
+		while(is_a_job_running == True):
+			# Reset the job status. 
+			is_a_job_running = False
+			for single_job_name in running_job_names_in_cluster:
+				#  While there is at least one working job, wait for it to finish
+				is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+				job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)        
+				sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+			sys.stdout.flush()
+			if is_a_job_running == False:        
+					break
+			time.sleep(5)
+			sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
+		
+		print()
+		print("All pyflink jobs stopped working")
+		
+		et = time.time()
+		dur = et - st
+		total_dur += dur
+		sections_performance.append(["4. Wait for flink jobs to finish", dur])
 	
 	sections_performance.append(["Total time elapsed", total_dur])
 	
 	print("Execution times in seconds:\n")
-	print(*sections_performance, sep="\n")
+	for single_section_performance in sections_performance:
+ 		print(single_section_performance[0], round(single_section_performance[1], 1))
