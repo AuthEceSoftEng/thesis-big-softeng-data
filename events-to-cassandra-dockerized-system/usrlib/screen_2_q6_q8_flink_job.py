@@ -211,6 +211,8 @@ def extract_number_of_contributions_and_create_row_q6_b(eventString):
     created_at_year_month_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
     month = created_at_year_month_only
     
+    # month = created_at
+    
     
     # 'username' and 'number of contributions' 
     # (The number of contributions equals the number of commits of a push  
@@ -265,6 +267,9 @@ cassandra_sink_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
     
 
 #endregion
+
+
+
 
 # Q6_h: Top human contributors by month
 # region
@@ -418,7 +423,7 @@ def filter_out_non_pull_request_events_q7_b(eventString):
     
     # Keep only bot events
     # Exclude human events
-    username = event_dict['payload']['pull_request']['base']['user']
+    username = event_dict["payload"]["pull_request"]["user"]
     if username.endswith('[bot]'):
         is_bot = True
     else:
@@ -517,7 +522,7 @@ def filter_out_non_pull_request_events_q7_h(eventString):
     is_human = False
     username = None
     if (event_type == "PullRequestEvent"):
-        username = event_dict['payload']['pull_request']['base']['user']
+        username = event_dict['payload']['pull_request']['user']
         # Exclude bot events
         if not username.endswith('[bot]'):
             is_human = True
@@ -565,6 +570,7 @@ number_of_pull_requests_info_ds_q7_h = raw_events_ds.filter(filter_out_non_pull_
 
 # Q7_h_2. Create Cassandra table and sink data into it
 # Create the table if not exists
+
 create_number_of_pull_requests_by_humans_q7_h = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_humans "\
     "(month text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((month, "\
