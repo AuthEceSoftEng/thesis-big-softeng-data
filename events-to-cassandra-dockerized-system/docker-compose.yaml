@@ -192,6 +192,7 @@ services:
       - CASSANDRA_HOST=cassandra_stelios
       - CASSANDRA_PORT=9142
 
+
 # Python server exposing data
   python-data-exposing-server:
     image: python:3.10-script-executing-image
@@ -228,6 +229,46 @@ services:
       - kafka
     networks:
       - data-network
+
+
+
+# Python server exposing data for a single month
+  event-data-exposing-server:
+    image: python:3.10-script-executing-image
+    container_name: event-data-exposing-server
+    volumes: 
+      - ./flask-events-dashboard/server.py:/usrlib/server.py
+    ports: 
+      # - "127.0.0.1:3100:3100"
+      - "3200:3200"
+    command: ['python', 'server.py']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - cassandra_stelios
+    networks:
+      - data-network
+
+# Python flask UI for a single month
+  events-flask-app:
+    image: python:3.10-script-executing-image
+    container_name: event-flask-app
+    volumes: 
+      - ./flask-events-dashboard:/usrlib/flask-events-dashboard
+      - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
+    ports: 
+      - "5100:5100"
+    
+    command: ['python', 'flask-events-dashboard/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+
 
 
 # # 1. Historical events ingestion

@@ -103,7 +103,7 @@ cd usrlib
 
 ### Terminal 1: Compose kafka, cassandra, flink, expose server data, run the flask app
 ```sh
-docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-2 python-flask-app python-data-exposing-server 
+docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-2 events-flask-app event-data-exposing-server 
 ```
 
 
