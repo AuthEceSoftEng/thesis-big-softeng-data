@@ -93,7 +93,7 @@
       var third_column_name = 'number_of_contributions'
 
       // Get the data URL 
-      let data_url = 'http://localhost:3000/bots_vs_humans/top_contributing_humans/' + month_selected;
+      let data_url = 'http://localhost:3100/bots_vs_humans/top_contributing_humans/' + month_selected;
       // Create the table
       create_ranking_table_html_body(table_html_id, data_url, html_head, 
         second_column_name, third_column_name);
@@ -118,7 +118,7 @@
 
       // Get the data URL 
       
-      let data_url = 'http://localhost:3000/bots_vs_humans/top_contributing_bots/' + month_selected;
+      let data_url = 'http://localhost:3100/bots_vs_humans/top_contributing_bots/' + month_selected;
       // Create the table
       create_ranking_table_html_body(table_html_id, data_url, html_head, 
         second_column_name, third_column_name);
@@ -129,7 +129,7 @@
   <!-- Update pull-requests made by humans -->
   <script>
     function update_pull_requests_by_humans(month_selected){
-      data_url = 'http://localhost:3000/bots_vs_humans/pull_requests_by_humans/' + month_selected;
+      data_url = 'http://localhost:3100/bots_vs_humans/pull_requests_by_humans/' + month_selected;
       //  Create the html_body of the table
       fetch(data_url)
         .then(response => response.json())
@@ -163,7 +163,7 @@
   <!-- Update pull-requests made by bots -->
   <script>
     function update_pull_requests_by_bots(month_selected){
-      data_url = 'http://localhost:3000/bots_vs_humans/pull_requests_by_bots/' + month_selected;
+      data_url = 'http://localhost:3100/bots_vs_humans/pull_requests_by_bots/' + month_selected;
       //  Create the html_body of the table
       fetch(data_url)
         .then(response => response.json())
@@ -196,7 +196,7 @@
   <!-- Update number of events made by humans and bots -->
   <script>
     function update_number_of_events_by_humans_and_bots(month_selected){
-      data_url = 'http://localhost:3000/bots_vs_humans/number_of_events_by_humans_and_bots/' 
+      data_url = 'http://localhost:3100/bots_vs_humans/number_of_events_by_humans_and_bots/' 
         + month_selected;
       
       //  Create the html_body of the table
@@ -290,6 +290,7 @@
                   <option >September</option>
                   <option >October</option>
                   <option >November</option>
+                  <option >December</option>
                 </select>
               </ul>
             </div>

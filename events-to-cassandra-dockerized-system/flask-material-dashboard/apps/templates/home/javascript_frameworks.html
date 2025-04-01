@@ -66,7 +66,7 @@
                 type: "line",
                 data: {
                   labels: ["2024-01", "2024-02", "2024-03", "2024-04", "2024-05", 
-                          "2024-06", "2024-07", "2024-08", "2024-09", "2024-10", "2024-11"],
+                          "2024-06", "2024-07", "2024-08", "2024-09", "2024-10", "2024-11", "2024-12"],
                   datasets: [],
                 },
                 options: {
@@ -142,7 +142,7 @@
               <!-- create_js_repo_star_history_graph -->
               <script>
                 function create_js_repo_star_history_graph(){
-                  const data_url = 'http://localhost:3000/javascript_frameworks/number_of_stars_by_repo';
+                  const data_url = 'http://localhost:3100/javascript_frameworks/number_of_stars_by_repo';
                   //  Create the html_body of the table
                   fetch(data_url)
                     .then(response => response.json())
@@ -195,7 +195,7 @@
               <!-- create_js_repo_star_history_graph_given_num_of_js_repos -->
               <script>
                 function create_js_repo_star_history_graph_given_num_of_js_repos(num_of_js_repos_to_show){
-                  const data_url = 'http://localhost:3000/javascript_frameworks/number_of_stars_by_repo';
+                  const data_url = 'http://localhost:3100/javascript_frameworks/number_of_stars_by_repo';
                   //  Create the html_body of the table
                   fetch(data_url)
                     .then(response => response.json())
@@ -474,7 +474,7 @@
                 // Arguments to create the table
                 var table_html_id = "top_js_repo_contributors_table"
                 // Get the data URL 
-                let data_url = 'http://localhost:3000/javascript_frameworks/top_contributors_of_js_repo/' 
+                let data_url = 'http://localhost:3100/javascript_frameworks/top_contributors_of_js_repo/' 
                                     + repo_selected;
                 var html_head = `<thead class="text-warning">
                                   <tr>
