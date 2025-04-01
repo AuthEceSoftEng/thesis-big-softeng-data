@@ -125,7 +125,7 @@ kafka_consumer_second_screen_source_1 = KafkaSource.builder() \
 
 print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
         f"Cassandra tables\n"
-        "T6_b: top_bot_contributions_by_month, T6_h: top_human_contributors_by_month,\n"
+        "T6_b: top_bot_contributions_by_day, T6_h: top_human_contributors_by_day,\n"
         "T7_b: number_of_pull_requests_by_bots, T7_h: number_of_pull_requests_by_humans,\n"
         "T8_b: number_of_events_by_bots, T8_h: number_of_events_by_humans")
 
@@ -142,7 +142,7 @@ raw_events_ds = env.from_source( source=kafka_consumer_second_screen_source_1, \
 
 max_concurrent_requests = 1000
 
-# Q6_b: Top bot contributors by month
+# Q6_b: Top bot contributors by day
 # region
 
 # Q6_b_1. Transform the original stream 
@@ -204,15 +204,13 @@ def extract_number_of_contributions_and_create_row_q6_b(eventString):
     
     event_dict = eval(eventString)
     
-    # Extract [month, username, number_of_contributions]
-    # month
+    # Extract [day, username, number_of_contributions]
+    # day
     created_at = event_dict["created_at"]
     created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
-    month = created_at_year_month_only
-    
-    # month = created_at
-    
+    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
+    day = created_at_year_month_day_only
+        
     
     # 'username' and 'number of contributions' 
     # (The number of contributions equals the number of commits of a push  
@@ -226,36 +224,36 @@ def extract_number_of_contributions_and_create_row_q6_b(eventString):
         username = event_dict["payload"]["pull_request"]["user"]
         number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
     
-    bots_contributions_info_row = Row(number_of_contributions, username, month)
+    bots_contributions_info_row = Row(number_of_contributions, username, day)
     return bots_contributions_info_row
 
-# Type info for bot contributions by month
-bot_contributions_by_month_type_info = \
-    Types.ROW_NAMED(['number_of_contributions', 'username', 'month'], \
+# Type info for bot contributions by day
+bot_contributions_by_day_type_info = \
+    Types.ROW_NAMED(['number_of_contributions', 'username', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
     
 # Datastream with extracted fields
 top_bot_contributors_info_ds_q6_b = raw_events_ds.filter(filter_out_non_contributing_events_and_humans_q6_b)\
                     .map(extract_number_of_contributions_and_create_row_q6_b, \
-                           output_type=bot_contributions_by_month_type_info) \
+                           output_type=bot_contributions_by_day_type_info) \
 # Uncomment to print datastream
 # top_bot_contributors_info_ds_q6_b.print()
 
 # Q6_b_2. Create Cassandra table sink data into it
 # Create the table if not exists
 create_top_bot_contributors_table_q6_b = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.top_bot_contributors_by_month "\
-    "(month text, username text, number_of_contributions counter, PRIMARY KEY ((month), "\
+    "CREATE TABLE IF NOT EXISTS prod_gharchive.top_bot_contributors_by_day "\
+    "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
     "username)) WITH CLUSTERING ORDER BY "\
     "(username ASC);"
 session.execute(create_top_bot_contributors_table_q6_b)
 
 # Upsert query to be executed for every element
 upsert_element_into_top_bot_contributors_q6_b = \
-            "UPDATE prod_gharchive.top_bot_contributors_by_month "\
+            "UPDATE prod_gharchive.top_bot_contributors_by_day "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
-            "username = ? AND month = ?;"
+            "username = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
 cassandra_sink_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
@@ -269,9 +267,7 @@ cassandra_sink_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
 #endregion
 
 
-
-
-# Q6_h: Top human contributors by month
+# Q6_h: Top human contributors by day
 # region
 
 # Q6_h_1. Transform the original stream 
@@ -335,12 +331,12 @@ def extract_number_of_contributions_and_create_row_q6_h(eventString):
     
     event_dict = eval(eventString)
     
-    # Extract [month, username, number_of_contributions]
-    # month
+    # Extract [day, username, number_of_contributions]
+    # day
     created_at = event_dict["created_at"]
     created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
-    month = created_at_year_month_only
+    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
+    day = created_at_year_month_day_only
         
     # username and number of contributions 
     # (It equals the number of commits of a push  
@@ -353,38 +349,38 @@ def extract_number_of_contributions_and_create_row_q6_h(eventString):
     elif event_type == "PullRequestEvent":
         username = event_dict["payload"]["pull_request"]["user"]
         number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
-    humans_contributions_info_row = Row(number_of_contributions, username, month)
+    humans_contributions_info_row = Row(number_of_contributions, username, day)
     return humans_contributions_info_row
 
 output_type_of_process = [Types.LONG(), Types.STRING(), Types.STRING()]
 
-# Type info for human contributions by month
-human_contributions_by_month_type_info_q6_h = \
-    Types.ROW_NAMED(['number_of_contributions', 'username', 'month'], \
+# Type info for human contributions by day
+human_contributions_by_day_type_info_q6_h = \
+    Types.ROW_NAMED(['number_of_contributions', 'username', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
     
 # Datastream with extracted fields
 top_human_contributors_info_ds_q6_h = raw_events_ds.filter(filter_out_non_contributing_events_and_bots_q6_h)\
                     .map(extract_number_of_contributions_and_create_row_q6_h, \
-                           output_type=human_contributions_by_month_type_info_q6_h) \
+                           output_type=human_contributions_by_day_type_info_q6_h) \
 # Uncomment to print datastream
 # top_human_contributors_info_ds_q6_h.print()
 
 # Q6_h_2. Create Cassandra table and sink data into it
 # Create the table if not exists
 create_top_human_contributors_table_q6_h = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.top_human_contributors_by_month "\
-    "(month text, username text, number_of_contributions counter, PRIMARY KEY ((month), "\
+    "CREATE TABLE IF NOT EXISTS prod_gharchive.top_human_contributors_by_day "\
+    "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
     "username)) WITH CLUSTERING ORDER BY "\
     "(username ASC);"
 session.execute(create_top_human_contributors_table_q6_h)
 
 # Upsert query to be executed for every element
 upsert_element_into_top_human_contributors_q6_h = \
-            "UPDATE prod_gharchive.top_human_contributors_by_month "\
+            "UPDATE prod_gharchive.top_human_contributors_by_day "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
-            "username = ? AND month = ?;"
+            "username = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
 cassandra_sink_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h)\
@@ -439,12 +435,12 @@ def extract_number_of_pull_requests_and_create_row_q7_b(eventString):
     event_dict = eval(eventString)
     # event_dict = json.loads(eventString)
     
-    # Extract [month, username, number_of_contributions]
-    # month
+    # Extract [day, username, number_of_contributions]
+    # day
     created_at = event_dict["created_at"]
     created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
-    month = created_at_year_month_only
+    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
+    day = created_at_year_month_day_only
     
     # Number of pull requests
     number_of_pull_requests = 1
@@ -452,19 +448,19 @@ def extract_number_of_pull_requests_and_create_row_q7_b(eventString):
         were_accepted = True
     else:
         were_accepted = False
-    pull_requests_by_bots_info_row = Row(number_of_pull_requests, were_accepted, month)
+    pull_requests_by_bots_info_row = Row(number_of_pull_requests, were_accepted, day)
     return pull_requests_by_bots_info_row
 
-# Type info for number of pull requests by bots by month
-number_of_pull_requests_by_bots_by_month_type_info_q7_b = \
-    Types.ROW_NAMED(['number_of_pull_requests', 'were_accepted', 'month'], \
+# Type info for number of pull requests by bots by day
+number_of_pull_requests_by_bots_by_day_type_info_q7_b = \
+    Types.ROW_NAMED(['number_of_pull_requests', 'were_accepted', 'day'], \
     [Types.LONG(),\
         Types.BOOLEAN(), Types.STRING()])
     
 # Datastream with extracted fields
 number_of_pull_requests_info_ds_q7_b = raw_events_ds.filter(filter_out_non_pull_request_events_q7_b)\
                     .map(extract_number_of_pull_requests_and_create_row_q7_b, \
-                           output_type=number_of_pull_requests_by_bots_by_month_type_info_q7_b) \
+                           output_type=number_of_pull_requests_by_bots_by_day_type_info_q7_b) \
 # Uncomment to print datastream
 # number_of_pull_requests_info_ds_q7_b.print()
 
@@ -473,7 +469,7 @@ number_of_pull_requests_info_ds_q7_b = raw_events_ds.filter(filter_out_non_pull_
 # Create the table if not exists
 create_number_of_pull_requests_by_bots_q7_b = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_bots "\
-    "(month text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((month, "\
+    "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
     "were_accepted)));"
 session.execute(create_number_of_pull_requests_by_bots_q7_b)
 
@@ -481,7 +477,7 @@ session.execute(create_number_of_pull_requests_by_bots_q7_b)
 upsert_element_into_T7_b_number_of_pull_requests_by_bots = \
             "UPDATE prod_gharchive.number_of_pull_requests_by_bots "\
             "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
-            "were_accepted = ? AND month = ?;"
+            "were_accepted = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
 cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_b)\
@@ -538,12 +534,12 @@ def extract_number_of_pull_requests_and_create_row_q7_h(eventString):
     event_dict = eval(eventString)
     # event_dict = json.loads(eventString)
     
-    # Extract [month, username, number_of_contributions]
-    # month
+    # Extract [day, username, number_of_contributions]
+    # day
     created_at = event_dict["created_at"]
     created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
-    month = created_at_year_month_only
+    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
+    day = created_at_year_month_day_only
     
     # Number of pull requests
     number_of_pull_requests = 1
@@ -551,19 +547,19 @@ def extract_number_of_pull_requests_and_create_row_q7_h(eventString):
         were_accepted = True
     else:
         were_accepted = False    
-    pull_requests_by_humans_info_row = Row(number_of_pull_requests, were_accepted, month)
+    pull_requests_by_humans_info_row = Row(number_of_pull_requests, were_accepted, day)
     return pull_requests_by_humans_info_row
 
-# Type info for number of pull requests by bots by month
-number_of_pull_requests_by_humans_by_month_type_info_q7_h = \
-    Types.ROW_NAMED(['number_of_pull_requests', 'were_accepted', 'month'], \
+# Type info for number of pull requests by bots by day
+number_of_pull_requests_by_humans_by_day_type_info_q7_h = \
+    Types.ROW_NAMED(['number_of_pull_requests', 'were_accepted', 'day'], \
     [Types.LONG(),\
         Types.BOOLEAN(), Types.STRING()])
     
 # Datastream with extracted fields
 number_of_pull_requests_info_ds_q7_h = raw_events_ds.filter(filter_out_non_pull_request_events_q7_h)\
                     .map(extract_number_of_pull_requests_and_create_row_q7_h, \
-                           output_type=number_of_pull_requests_by_humans_by_month_type_info_q7_h) 
+                           output_type=number_of_pull_requests_by_humans_by_day_type_info_q7_h) 
 # Uncomment to print the datastream
 # number_of_pull_requests_info_ds_q7_h.print()
 
@@ -573,7 +569,7 @@ number_of_pull_requests_info_ds_q7_h = raw_events_ds.filter(filter_out_non_pull_
 
 create_number_of_pull_requests_by_humans_q7_h = \
     "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_humans "\
-    "(month text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((month, "\
+    "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
     "were_accepted)));"
 session.execute(create_number_of_pull_requests_by_humans_q7_h)
 
@@ -581,7 +577,7 @@ session.execute(create_number_of_pull_requests_by_humans_q7_h)
 upsert_element_into_T7_h_number_of_pull_requests_by_humans = \
             "UPDATE prod_gharchive.number_of_pull_requests_by_humans "\
             "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
-            "were_accepted = ? AND month = ?;"
+            "were_accepted = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
 cassandra_sink_q7_h = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_h)\
@@ -616,18 +612,18 @@ def filter_out_human_events_q8_b(eventString):
     if is_bot:
         return True   
     
-# Extract the number of events made by humans per type and month
+# Extract the number of events made by humans per type and day
 def extract_number_of_bot_events_per_type_and_create_row_q8_b(eventString):
     
     event_dict = eval(eventString)
     # event_dict = json.loads(eventString)
     
-    # Extract [month, event_type, number_of_events]
-    # month
+    # Extract [day, event_type, number_of_events]
+    # day
     created_at = event_dict["created_at"]
     created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
-    month = created_at_year_month_only
+    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
+    day = created_at_year_month_day_only
     
     # event_type 
     event_type = event_dict["type"]
@@ -635,15 +631,15 @@ def extract_number_of_bot_events_per_type_and_create_row_q8_b(eventString):
     # number_of_events
     number_of_events = 1
     
-    number_of_bot_events_per_type_by_month_info_row = Row(number_of_events, event_type, month)
-    return number_of_bot_events_per_type_by_month_info_row
+    number_of_bot_events_per_type_by_day_info_row = Row(number_of_events, event_type, day)
+    return number_of_bot_events_per_type_by_day_info_row
 
 
 
 
-# Type info for number of pull requests by bots by month
-number_of_bot_events_per_type_by_month_type_info_q8_b = \
-    Types.ROW_NAMED(['number_of_events', 'event_type', 'month'], \
+# Type info for number of pull requests by bots by day
+number_of_bot_events_per_type_by_day_type_info_q8_b = \
+    Types.ROW_NAMED(['number_of_events', 'event_type', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
     
@@ -651,7 +647,7 @@ number_of_bot_events_per_type_by_month_type_info_q8_b = \
 # Datastream with extracted fields
 number_of_events_info_ds_q8_b = raw_events_ds.filter(filter_out_human_events_q8_b) \
                     .map(extract_number_of_bot_events_per_type_and_create_row_q8_b, \
-                           output_type=number_of_bot_events_per_type_by_month_type_info_q8_b)
+                           output_type=number_of_bot_events_per_type_by_day_type_info_q8_b)
 # Uncomment to print the datastream
 # number_of_events_info_ds_q8_b.print()
 
@@ -662,22 +658,22 @@ number_of_events_info_ds_q8_b = raw_events_ds.filter(filter_out_human_events_q8_
 
 # Create the table if not exists
 create_number_of_pull_requests_by_bots_q8_b = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_bot_events_per_type_by_month "\
-    "(month text, event_type text, number_of_events counter, PRIMARY KEY ((month), "\
+    "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_bot_events_per_type_by_day "\
+    "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
     "event_type)) WITH CLUSTERING ORDER BY "\
     "(event_type ASC);"
 session.execute(create_number_of_pull_requests_by_bots_q8_b)
 
 
 # Upsert query to be executed for every element
-upsert_element_into_number_of_bot_events_per_type_by_month_q8_b = \
-            "UPDATE prod_gharchive.number_of_bot_events_per_type_by_month "\
+upsert_element_into_number_of_bot_events_per_type_by_day_q8_b = \
+            "UPDATE prod_gharchive.number_of_bot_events_per_type_by_day "\
             "SET number_of_events = number_of_events + ? WHERE "\
-            "event_type = ? AND month = ?;"
+            "event_type = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
 cassandra_sink_q8_b = CassandraSink.add_sink(number_of_events_info_ds_q8_b)\
-    .set_query(upsert_element_into_number_of_bot_events_per_type_by_month_q8_b)\
+    .set_query(upsert_element_into_number_of_bot_events_per_type_by_day_q8_b)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
@@ -709,18 +705,18 @@ def filter_out_bot_events_q8_h(eventString):
         return True   
     
     
-# Extract the number of events made by humans per type and month
+# Extract the number of events made by humans per type and day
 def extract_number_of_human_events_per_type_and_create_row_q8_h(eventString):
     
     event_dict = eval(eventString)
     # event_dict = json.loads(eventString)
     
-    # Extract [month, event_type, number_of_events]
-    # month
+    # Extract [day, event_type, number_of_events]
+    # day
     created_at = event_dict["created_at"]
     created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
-    month = created_at_year_month_only
+    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
+    day = created_at_year_month_day_only
     
     # event_type 
     event_type = event_dict["type"]
@@ -728,14 +724,14 @@ def extract_number_of_human_events_per_type_and_create_row_q8_h(eventString):
     # number_of_events
     number_of_events = 1
     
-    number_of_human_events_per_type_by_month_info_row = Row(number_of_events, event_type, month)
-    return number_of_human_events_per_type_by_month_info_row
+    number_of_human_events_per_type_by_day_info_row = Row(number_of_events, event_type, day)
+    return number_of_human_events_per_type_by_day_info_row
 
 
 
-# Type info for number of pull requests by bots by month
-number_of_human_events_per_type_by_month_type_info_q8_h = \
-    Types.ROW_NAMED(['number_of_events', 'event_type', 'month'], \
+# Type info for number of pull requests by bots by day
+number_of_human_events_per_type_by_day_type_info_q8_h = \
+    Types.ROW_NAMED(['number_of_events', 'event_type', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
     
@@ -743,30 +739,30 @@ number_of_human_events_per_type_by_month_type_info_q8_h = \
 # Datastream with extracted fields
 number_of_events_info_ds_q8_h = raw_events_ds.filter(filter_out_bot_events_q8_h) \
                     .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
-                           output_type=number_of_human_events_per_type_by_month_type_info_q8_h)\
+                           output_type=number_of_human_events_per_type_by_day_type_info_q8_h)\
                     
 # Uncomment to print the datastream elements
 # number_of_events_info_ds_q8_h.print()
 
 
-# Q8_h_2. Create Cassandra table number_of_human_events_per_type_by_month and sink data into it
+# Q8_h_2. Create Cassandra table number_of_human_events_per_type_by_day and sink data into it
 # Create the table if not exists
 create_number_of_pull_requests_by_humans_q8_h = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_human_events_per_type_by_month "\
-    "(month text, event_type text, number_of_events counter, PRIMARY KEY ((month), "\
+    "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_human_events_per_type_by_day "\
+    "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
     "event_type)) WITH CLUSTERING ORDER BY "\
     "(event_type ASC);"
 session.execute(create_number_of_pull_requests_by_humans_q8_h)
 
 # Upsert query to be executed for every element
-upsert_element_into_number_of_human_events_per_type_by_month_q8_h = \
-            "UPDATE prod_gharchive.number_of_human_events_per_type_by_month "\
+upsert_element_into_number_of_human_events_per_type_by_day_q8_h = \
+            "UPDATE prod_gharchive.number_of_human_events_per_type_by_day "\
             "SET number_of_events = number_of_events + ? WHERE "\
-            "event_type = ? AND month = ?;"
+            "event_type = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
 cassandra_sink_q8_h = CassandraSink.add_sink(number_of_events_info_ds_q8_h)\
-    .set_query(upsert_element_into_number_of_human_events_per_type_by_month_q8_h)\
+    .set_query(upsert_element_into_number_of_human_events_per_type_by_day_q8_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
