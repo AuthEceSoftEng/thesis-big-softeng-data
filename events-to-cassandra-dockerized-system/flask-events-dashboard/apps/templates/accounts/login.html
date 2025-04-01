@@ -46,7 +46,7 @@
             <p class="text-sm mb-0 text-capitalize">Today's Commits</p>
             <h4 id='todays-commits' class="mb-0">---</h4>
             <script>
-              fetch('http://localhost:3100/stats_by_day')
+              fetch('http://localhost:3200/stats_by_day')
                 .then(response => response.json())
                 .then(data => {
                   const total_commits = data[0].total_commits;
@@ -72,7 +72,7 @@
             <p class="text-sm mb-0 text-capitalize">Today's Stars</p>
             <h4 id="todays-stars" class="mb-0">---</h4>
             <script>
-              fetch('http://localhost:3100/stats_by_day')
+              fetch('http://localhost:3200/stats_by_day')
                 .then(response => response.json())
                 .then(data => {
                   const total_stars = data[0].total_stars;
@@ -97,7 +97,7 @@
             <p class="text-sm mb-0 text-capitalize">Today's forks</p>
             <h4 id="todays-forks" class="mb-0">---</h4>
             <script>
-              fetch('http://localhost:3100/stats_by_day')
+              fetch('http://localhost:3200/stats_by_day')
                 .then(response => response.json())
                 .then(data => {
                   const total_forks = data[0].total_forks;
@@ -122,7 +122,7 @@
             <p class="text-sm mb-0 text-capitalize">Today's pull-requests</p>
             <h4 id="todays-pull-requests" class="mb-0">---</h4>
             <script>
-              fetch('http://localhost:3100/stats_by_day')
+              fetch('http://localhost:3200/stats_by_day')
                 .then(response => response.json())
                 .then(data => {
                   const pull_requests = data[0].total_pull_requests;
@@ -151,7 +151,7 @@
               function format_date(element_class_for_date) {
                 var my_date_arg;
 
-                fetch('http://localhost:3100/stats_by_day')
+                fetch('http://localhost:3200/stats_by_day')
                   .then(response => response.json())
                   .then(data => {
                     
@@ -220,7 +220,7 @@
 
               }
               
-              var data_url = 'http://localhost:3100/most_starred_repos_by_day';
+              var data_url = 'http://localhost:3200/most_starred_repos_by_day';
               create_ranking_table_html_body("stars_table", data_url, html_head, 
                 'repo_name', 'stars');
             </script>
@@ -253,7 +253,7 @@
                 </tr>
               </thead>`
               
-              var data_url = 'http://localhost:3100/most_forked_repos_by_day';
+              var data_url = 'http://localhost:3200/most_forked_repos_by_day';
               create_ranking_table_html_body("forks_table", data_url, html_head, 
                 'repo_name', 'forks');
             </script>
@@ -287,7 +287,7 @@
                 </tr>
               </thead>`
               
-              var data_url = 'http://localhost:3100/popular_languages_by_day';
+              var data_url = 'http://localhost:3200/popular_languages_by_day';
               create_ranking_table_html_body("trending_languages_table", data_url, html_head, 
                 'language', 'number_of_events');
             </script>
@@ -315,7 +315,7 @@
                 </tr>
               </thead>`
               
-              var data_url = 'http://localhost:3100/popular_topics_by_day';
+              var data_url = 'http://localhost:3200/popular_topics_by_day';
               create_ranking_table_html_body("trending_topics_table", data_url, html_head, 
                 'topic', 'number_of_events');
             </script>

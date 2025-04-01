@@ -343,7 +343,7 @@
 
             function create_pull_request_closing_times_histogram(repo_name_1, repo_name_2){
               const data_url = 
-                'http://localhost:3100/deep_insights_issues/pull_request_closing_times/' + repo_name_1
+                'http://localhost:3200/deep_insights_issues/pull_request_closing_times/' + repo_name_1
                 + '/vs/' + repo_name_2;
               
 
@@ -757,7 +757,7 @@
             
             function create_issue_closing_times_histogram(repo_name_1, repo_name_2){
               const data_url = 
-                'http://localhost:3100/deep_insights_issues/issues_closing_times/' + repo_name_1
+                'http://localhost:3200/deep_insights_issues/issues_closing_times/' + repo_name_1
                 + '/vs/' + repo_name_2;
               
               
@@ -1028,7 +1028,7 @@
         // Arguments to create the table
         var table_html_id = "issue_closing_times_by_label"
         // Get the data URL 
-        let data_url = 'http://localhost:3100/deep_insights_issues/issues_closing_times_by_label/' 
+        let data_url = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' 
                             + repo_selected;
         var html_head = `<thead class="text-warning">
                           <tr>
