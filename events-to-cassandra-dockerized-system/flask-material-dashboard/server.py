@@ -384,7 +384,7 @@ def get_top_human_contributors_by_month(month):
         WHERE month = '{month_only}';"
     
     
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -440,7 +440,7 @@ def get_top_bot_contributors_by_month(month):
         WHERE month = '{month_only}';\
     "
     
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -482,7 +482,7 @@ def get_number_of_all_pull_requests_by_humans_by_month(month):
     SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_humans \
         WHERE month = '{month_only}' and were_accepted = True;\
     "
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -504,7 +504,7 @@ def get_number_of_all_pull_requests_by_humans_by_month(month):
     SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_humans \
         WHERE month = '{month_only}' and were_accepted = False;\
     "
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -542,7 +542,7 @@ def get_number_of_all_pull_requests_by_bots_by_month(month):
     SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_bots \
         WHERE month = '{month_only}' and were_accepted = True;\
     "
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -566,7 +566,7 @@ def get_number_of_all_pull_requests_by_bots_by_month(month):
     SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_bots \
         WHERE month = '{month_only}' and were_accepted = False;\
     "
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -634,7 +634,7 @@ def get_number_of_events_for_humans_and_bots_by_month(month):
     SELECT number_of_events, event_type FROM prod_gharchive.number_of_human_events_per_type_by_month \
         WHERE month = '{month_only}';\
     "
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -728,7 +728,7 @@ def get_number_of_stars_of_js_repo_by_month():
     """
     
     
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -805,7 +805,7 @@ def get_top_js_repo_contributors(js_repo):
     Example JSON to be exposed:
     
     """
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -864,7 +864,7 @@ def get_top_js_repo_contributors_given_js_repo_name(js_repo):
     }
     """
     unquoted_js_repo = unquote(js_repo)
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -1022,7 +1022,7 @@ def get_pull_request_closing_times():
     """
     
     # Query Cassandra
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -1280,7 +1280,7 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     print(f"Repo 2: {repo_name_2}")
     
     # Query Cassandra
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -1533,7 +1533,7 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     # All repos
    
     # Query Cassandra
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
@@ -1835,7 +1835,7 @@ def get_issues_closing_times_by_label(repo_name):
     """
     
     # Query Cassandra
-    cassandra_container_name = 'cassandra'
+    cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace_to_use)
