@@ -523,8 +523,8 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-01-21'
-    ending_date_formatted =  '2024-12-01-21'
+    starting_date_formatted =  '2024-12-05-21'
+    ending_date_formatted =  '2024-12-06-21'
     
     sections_performance = {"1. Download gharchive file": 0,
                             "2. Thin file": 0,
@@ -574,7 +574,7 @@ if __name__ == '__main__':
         thinned_filename = current_date_formatted + '-thinned.json.gz'
         filepath_of_thinned_file = os.path.join(folderpath_to_download_into, thinned_filename)
 
-        heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
+        heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file, delete_original_file=True)
 
         # thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
         
@@ -597,11 +597,11 @@ if __name__ == '__main__':
         # If the file was read beforehand, then the producer will not produce more events
         the_whole_file_was_produced_already, the_whole_file_was_read_beforehand = produce_from_last_line_of_file(topic_to_produce_into, filepath_of_thinned_file, parsed_files_filepath)
 
+
         if the_whole_file_was_read_beforehand:
             current_date = current_date + timedelta(hours=1)
             continue
     
-
         current_date = current_date + timedelta(hours=1)
 
         et = time.time()
@@ -611,78 +611,79 @@ if __name__ == '__main__':
         # endregion
 
         
-        
-    # 4. Wait for flink jobs to finish
-    # region
-    st = time.time()
-
-    running_job_names_in_cluster = get_running_job_names()
-        
-    if running_job_names_in_cluster == []:
-        raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
-
-    
-    # # Uncomment code below if all the jobs should be deployed
-    # # in the cluster
-    # names_of_jobs_that_should_be_running = ["screen_2_q6_q8_via_flink_local_run", "screen_3_q9_q10_via_flink_local_run", "screen_4_q11_q15_via_flink_local_run"]
-    # for name_of_job_that_should_be_running in names_of_jobs_that_should_be_running:
-    #     if name_of_job_that_should_be_running not in running_job_names_in_cluster:
-    #         raise Exception("Not all jobs are running in the Flink cluster")
-    
-    
-    hostname = 'jobmanager'
-    is_a_job_running = None
-    for single_job_name in running_job_names_in_cluster:
-        is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
-        if is_a_job_running == True:        
-            break
-
-    if (is_a_job_running == False):    
-        print(f"Pyflink jobs have not started working")
-        print("Waiting for the jobs to start")
-    
-    
-    while(is_a_job_running == False):
-
-        for single_job_name in running_job_names_in_cluster:
-            # If one of the pyflink jobs started working, break the while loop 
-            is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-            job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
-            sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-        sys.stdout.flush()
-        if is_a_job_running == True:        
-                break
-
-        time.sleep(5)
-        sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
             
-    print()
-    print(f"Pyflink jobs have started working")
-    print("Waiting for pyflink jobs to stop")
-    while(is_a_job_running == True):
-        # Reset the job status. 
-        is_a_job_running = False
+        # 4. Wait for flink jobs to finish
+        # region
+        
+        st = time.time()
+
+        running_job_names_in_cluster = get_running_job_names()
+            
+        if running_job_names_in_cluster == []:
+            raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
+
+        
+        # # Uncomment code below if all the jobs should be deployed
+        # # in the cluster
+        # names_of_jobs_that_should_be_running = ["screen_2_q6_q8_via_flink_local_run", "screen_3_q9_q10_via_flink_local_run", "screen_4_q11_q15_via_flink_local_run"]
+        # for name_of_job_that_should_be_running in names_of_jobs_that_should_be_running:
+        #     if name_of_job_that_should_be_running not in running_job_names_in_cluster:
+        #         raise Exception("Not all jobs are running in the Flink cluster")
+        
+        
+        hostname = 'jobmanager'
+        is_a_job_running = None
         for single_job_name in running_job_names_in_cluster:
-            #  While there is at least one working job, wait for it to finish
-            is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-            job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)        
-            sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-        sys.stdout.flush()
-        if is_a_job_running == False:        
+            is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
+            if is_a_job_running == True:        
                 break
-        time.sleep(5)
-        sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
-    
-    print()
-    print("All pyflink jobs stopped working")
-    
-    
-    et = time.time()
-    dur = et - st
-    total_dur += dur
-    sections_performance["4. Wait for flink jobs to finish"] += dur
-    # endregion
-    
+
+        if (is_a_job_running == False):    
+            print(f"Pyflink jobs have not started working")
+            print("Waiting for the jobs to start")
+        
+        
+        while(is_a_job_running == False):
+
+            for single_job_name in running_job_names_in_cluster:
+                # If one of the pyflink jobs started working, break the while loop 
+                is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+                job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
+                sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+            sys.stdout.flush()
+            if is_a_job_running == True:        
+                    break
+
+            time.sleep(5)
+            sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
+                
+        print()
+        print(f"Pyflink jobs have started working")
+        print("Waiting for pyflink jobs to stop")
+        while(is_a_job_running == True):
+            # Reset the job status. 
+            is_a_job_running = False
+            for single_job_name in running_job_names_in_cluster:
+                #  While there is at least one working job, wait for it to finish
+                is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+                job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)        
+                sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+            sys.stdout.flush()
+            if is_a_job_running == False:        
+                    break
+            time.sleep(5)
+            sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
+        
+        print()
+        print("All pyflink jobs stopped working")
+        
+        
+        et = time.time()
+        dur = et - st
+        total_dur += dur
+        sections_performance["4. Wait for flink jobs to finish"] += dur
+        # endregion
+        
     sections_performance["Total time elapsed"] = total_dur
     print("Execution times of pipeline parts in seconds:\n")
     for k, v in sections_performance.items():
