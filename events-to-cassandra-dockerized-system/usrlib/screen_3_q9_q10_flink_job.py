@@ -122,7 +122,7 @@ kafka_consumer_third_source = KafkaSource.builder() \
 
 print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
         f"Cassandra tables\n"
-        "T9: stars_per_month_on_js_repo, T10: top_contributors_of_js_repo\n")
+        "T9: stars_per_day_on_js_repo, T10: top_contributors_of_js_repo\n")
         
 raw_events_ds = env.from_source( source=kafka_consumer_third_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
@@ -134,19 +134,10 @@ raw_events_ds = env.from_source( source=kafka_consumer_third_source, \
 #region 
 
 max_concurrent_requests = 1000
-# Q9: Total stars per month on Javascript repo
+# Q9: Total stars by day on Javascript repo
 # region
 
 # Q9_1. Transform the original stream 
-# Event types for stars:
-js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
-    'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
-    'spine/spine', 'vuejs/vue', 'vuejs/core', 'Polymer/polymer', 'facebook/react', 
-    'finom/seemple', 'aurelia/framework', 'optimizely/nuclear-js', 'jashkenas/backbone', 
-    'dojo/dojo', 'jorgebucaran/hyperapp', 'riot/riot', 'daemonite/material', 
-    'polymer/lit-element', 'aurelia/aurelia', 'sveltejs/svelte', 'neomjs/neo', 
-    'preactjs/preact', 'hotwired/stimulus', 'alpinejs/alpine', 'solidjs/solid', 
-    'ionic-team/stencil', 'jquery/jquery']
 
 # Filter out events of type that contain no info we need
 def filter_out_non_star_events_and_non_js_repos_q9(eventString):
@@ -169,7 +160,15 @@ def filter_out_non_star_events_and_non_js_repos_q9(eventString):
     # Keep only events on the list of js_repos
     is_js_repo = False
     repo_name = eventDict["repo"]["full_name"]
-    global js_repos_list
+    # Event types for stars:
+    js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
+        'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
+        'spine/spine', 'vuejs/vue', 'vuejs/core', 'Polymer/polymer', 'facebook/react', 
+        'finom/seemple', 'aurelia/framework', 'optimizely/nuclear-js', 'jashkenas/backbone', 
+        'dojo/dojo', 'jorgebucaran/hyperapp', 'riot/riot', 'daemonite/material', 
+        'polymer/lit-element', 'aurelia/aurelia', 'sveltejs/svelte', 'neomjs/neo', 
+        'preactjs/preact', 'hotwired/stimulus', 'alpinejs/alpine', 'solidjs/solid', 
+        'ionic-team/stencil', 'jquery/jquery']
     
     if repo_name in js_repos_list:
         is_js_repo = True
@@ -184,12 +183,12 @@ def extract_stars_on_js_repo_and_create_row_q9(eventString):
     eventDict = eval(eventString)
     # eventDict = json.loads(eventString)
     
-    # Extract [month, username, number_of_contributions]
-    # month
+    # Extract [day, username, number_of_contributions]
+    # day
     created_at = eventDict["created_at"]
     created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
-    month = created_at_year_month_only
+    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
+    day = created_at_year_month_day_only
     
     # repo_name
     repo_name = eventDict["repo"]["full_name"]
@@ -197,40 +196,40 @@ def extract_stars_on_js_repo_and_create_row_q9(eventString):
     # number_of_stars 
     number_of_stars = 1
     
-    stars_per_month_on_js_repo_info_row = Row(number_of_stars, repo_name, month)
-    return stars_per_month_on_js_repo_info_row
+    stars_per_day_on_js_repo_info_row = Row(number_of_stars, repo_name, day)
+    return stars_per_day_on_js_repo_info_row
 
-# Type info for number of stars of js repo by month
-number_of_stars_on_js_repo_by_month_type_info_q9 = \
-    Types.ROW_NAMED(['number_of_stars', 'username', 'month'], \
+# Type info for number of stars of js repo by day
+number_of_stars_on_js_repo_by_day_type_info_q9 = \
+    Types.ROW_NAMED(['number_of_stars', 'username', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
     
 # Datastream with extracted fields
-number_of_stars_of_js_repo_by_month_info_ds_q9 = raw_events_ds.filter(filter_out_non_star_events_and_non_js_repos_q9)\
+number_of_stars_of_js_repo_by_day_info_ds_q9 = raw_events_ds.filter(filter_out_non_star_events_and_non_js_repos_q9)\
                     .map(extract_stars_on_js_repo_and_create_row_q9, \
-                           output_type=number_of_stars_on_js_repo_by_month_type_info_q9) \
+                           output_type=number_of_stars_on_js_repo_by_day_type_info_q9) \
 # Uncomment to print the datastream elementss
-# number_of_stars_of_js_repo_by_month_info_ds_q9.print()
+# number_of_stars_of_js_repo_by_day_info_ds_q9.print()
 
 
 # Q9_2. Create Cassandra table and sink data into it
 # Create the table if not exists
-create_stars_per_month_on_js_repo_table_q9 = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.stars_per_month_on_js_repo "\
-    "(month text, repo_name text, number_of_stars counter, PRIMARY KEY ((month, "\
+create_stars_per_day_on_js_repo_table_q9 = \
+    "CREATE TABLE IF NOT EXISTS prod_gharchive.stars_per_day_on_js_repo "\
+    "(day text, repo_name text, number_of_stars counter, PRIMARY KEY ((day, "\
     "repo_name)));"
-session.execute(create_stars_per_month_on_js_repo_table_q9)
+session.execute(create_stars_per_day_on_js_repo_table_q9)
 
 # Upsert query to be executed for every element
-upsert_element_into_number_of_stars_of_js_repo_per_month_q9 = \
-            "UPDATE prod_gharchive.stars_per_month_on_js_repo "\
+upsert_element_into_number_of_stars_of_js_repo_per_day_q9 = \
+            "UPDATE prod_gharchive.stars_per_day_on_js_repo "\
             "SET number_of_stars = number_of_stars + ? WHERE "\
-            "repo_name = ? AND month = ?;"
+            "repo_name = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
-cassandra_sink_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_month_info_ds_q9)\
-    .set_query(upsert_element_into_number_of_stars_of_js_repo_per_month_q9)\
+cassandra_sink_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_day_info_ds_q9)\
+    .set_query(upsert_element_into_number_of_stars_of_js_repo_per_day_q9)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
@@ -242,8 +241,6 @@ cassandra_sink_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_month_i
 # region
 
 # Q10_1. Transform the original stream 
-# Event types where the needed fields reside:
-event_types_with_info_q10 = ["PushEvent", "PullRequestEvent"]
 
 # Filter out events of type that contain no info we need
 def filter_out_non_contributing_events_and_non_js_repos_q10(eventString):
@@ -253,7 +250,6 @@ def filter_out_non_contributing_events_and_non_js_repos_q10(eventString):
     '''
 
     # Turn the json event object into event into a dict
-    global event_types_with_info_q10
     # eventDict = json.loads(eventString)
     eventDict = eval(eventString)
 
@@ -271,7 +267,16 @@ def filter_out_non_contributing_events_and_non_js_repos_q10(eventString):
     # Keep only events on the list of js_repos
     is_js_repo = False
     repo_name = eventDict["repo"]["full_name"]
-    global js_repos_list
+    # Event types for stars:
+    js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
+            'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
+            'spine/spine', 'vuejs/vue', 'vuejs/core', 'Polymer/polymer', 'facebook/react', 
+            'finom/seemple', 'aurelia/framework', 'optimizely/nuclear-js', 'jashkenas/backbone', 
+            'dojo/dojo', 'jorgebucaran/hyperapp', 'riot/riot', 'daemonite/material', 
+            'polymer/lit-element', 'aurelia/aurelia', 'sveltejs/svelte', 'neomjs/neo', 
+            'preactjs/preact', 'hotwired/stimulus', 'alpinejs/alpine', 'solidjs/solid', 
+            'ionic-team/stencil', 'jquery/jquery']    
+    
     if repo_name in js_repos_list:
         is_js_repo = True
     
@@ -289,8 +294,8 @@ def extract_top_contributors_on_js_repo_and_create_row_q10(eventString):
     # month
     created_at = eventDict["created_at"]
     created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
-    month = created_at_year_month_only
+    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
+    month = created_at_year_month_day_only
     
     # repo_name
     repo_name = eventDict["repo"]["full_name"]
