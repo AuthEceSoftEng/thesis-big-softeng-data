@@ -19,11 +19,11 @@
 
   <!-- Change all months based on UI selection -->
   <script>
-    function listen_to_selected_month(){
-      document.getElementById("month_dropdown_list_selection").addEventListener(
+    function listen_to_selected_day(){
+      document.getElementById("day_dropdown_list_selection").addEventListener(
       "change", function() {
         const month_from_ui = this.value; 
-        let month_placeholders_elements =  document.getElementsByClassName("month_selection")
+        let month_placeholders_elements =  document.getElementsByClassName("day_selection")
         for (var month_placeholders_index = 0; 
           month_placeholders_index < month_placeholders_elements.length;
           month_placeholders_index++){
@@ -79,7 +79,7 @@
 
   <!-- Create top human contributors table -->
   <script>
-    function update_top_human_contributors_table(month_selected){
+    function update_top_human_contributors_table(day_selected){
       // Arguments to create the table
       var table_html_id = "top_human_contributors_table"
       var html_head = `<thead class="text-warning">
@@ -93,7 +93,7 @@
       var third_column_name = 'number_of_contributions'
 
       // Get the data URL 
-      let data_url = 'http://localhost:3200/bots_vs_humans/top_contributing_humans/' + month_selected;
+      let data_url = 'http://localhost:3200/bots_vs_humans/top_contributing_humans/' + day_selected;
       // Create the table
       create_ranking_table_html_body(table_html_id, data_url, html_head, 
         second_column_name, third_column_name);
@@ -103,7 +103,7 @@
 
   <!-- Create top human contributors table -->
   <script>
-    function update_top_bot_contributors_table(month_selected){
+    function update_top_bot_contributors_table(day_selected){
       // Arguments to create the table
       var table_html_id = "top_bot_contributors_table"
       var html_head = `<thead class="text-warning">
@@ -118,7 +118,7 @@
 
       // Get the data URL 
       
-      let data_url = 'http://localhost:3200/bots_vs_humans/top_contributing_bots/' + month_selected;
+      let data_url = 'http://localhost:3200/bots_vs_humans/top_contributing_bots/' + day_selected;
       // Create the table
       create_ranking_table_html_body(table_html_id, data_url, html_head, 
         second_column_name, third_column_name);
@@ -128,8 +128,8 @@
 
   <!-- Update pull-requests made by humans -->
   <script>
-    function update_pull_requests_by_humans(month_selected){
-      data_url = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + month_selected;
+    function update_pull_requests_by_humans(day_selected){
+      data_url = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + day_selected;
       //  Create the html_body of the table
       fetch(data_url)
         .then(response => response.json())
@@ -162,8 +162,8 @@
 
   <!-- Update pull-requests made by bots -->
   <script>
-    function update_pull_requests_by_bots(month_selected){
-      data_url = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + month_selected;
+    function update_pull_requests_by_bots(day_selected){
+      data_url = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + day_selected;
       //  Create the html_body of the table
       fetch(data_url)
         .then(response => response.json())
@@ -195,9 +195,9 @@
 
   <!-- Update number of events made by humans and bots -->
   <script>
-    function update_number_of_events_by_humans_and_bots(month_selected){
+    function update_number_of_events_by_humans_and_bots(day_selected){
       data_url = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' 
-        + month_selected;
+        + day_selected;
       
       //  Create the html_body of the table
       fetch(data_url)
@@ -269,28 +269,51 @@
   </nav>
 
   <div class="container-fluid py-4">
-    <!-- Select month  -->
+    <!-- Select day  -->
     <div class="row mb-4">
       <div class="col-lg-4 col-md-6">
         <div class="card h-100">
           <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-            <!-- <h5>Selected month</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
-            <span class="text-dark font-weight-bold ms-sm-2">Select month:</span>
+            <!-- <h5>Selected day</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
+            <span class="text-dark font-weight-bold ms-sm-2">Select a day of December 2024:</span>
             
             <div class="dropdown float-lg-end pe-4">
               <ul>
-                <select id = "month_dropdown_list_selection" class="drop_down_list_select bg-gradient-success" name="month">
-                  <option >January</option>
-                  <option >February</option>
-                  <option >March</option>
-                  <option >April</option>
-                  <option >May</option>
-                  <option >June</option>
-                  <option >July</option>
-                  <option >September</option>
-                  <option >October</option>
-                  <option >November</option>
-                  <option >December</option>
+                <select id = "day_dropdown_list_selection" class="drop_down_list_select bg-gradient-success" name="day">
+                  <option >1</option>
+                  <option >2</option>
+                  <option >3</option>
+                  <option >3</option>
+                  <option >4</option>
+                  <option >5</option>
+                  <option >6</option>
+                  <option >7</option>
+                  <option >8</option>
+                  <option >9</option>
+                  <option >10</option>
+                  <option >11</option>
+                  <option >12</option>
+                  <option >13</option>
+                  <option >13</option>
+                  <option >14</option>
+                  <option >15</option>
+                  <option >16</option>
+                  <option >17</option>
+                  <option >18</option>
+                  <option >19</option>
+                  <option >20</option>
+                  <option >21</option>
+                  <option >22</option>
+                  <option >23</option>
+                  <option >23</option>
+                  <option >24</option>
+                  <option >25</option>
+                  <option >26</option>
+                  <option >27</option>
+                  <option >28</option>
+                  <option >29</option>
+                  <option >30</option>
+                  <option >31</option>
                 </select>
               </ul>
             </div>
@@ -301,26 +324,26 @@
 
     <!-- Humans vs bots title -->
     <script>
-      listen_to_selected_month();
-      document.getElementById("month_dropdown_list_selection").addEventListener(
+      listen_to_selected_day();
+      document.getElementById("day_dropdown_list_selection").addEventListener(
           "change", function() {
-        let month_selected = this.value;
-        update_top_human_contributors_table(month_selected);
-        update_top_bot_contributors_table(month_selected);
-        update_pull_requests_by_humans(month_selected);
-        update_pull_requests_by_bots(month_selected);
-        update_number_of_events_by_humans_and_bots(month_selected);
+        let day_selected = this.value;
+        update_top_human_contributors_table(day_selected);
+        update_top_bot_contributors_table(day_selected);
+        update_pull_requests_by_humans(day_selected);
+        update_pull_requests_by_bots(day_selected);
+        update_number_of_events_by_humans_and_bots(day_selected);
       })
     </script>
 
-    <!-- Initialize the tables for January -->
+    <!-- Initialize the tables for 1st of the month -->
     <script>
-      const month_preselected = 'January';
-      update_top_human_contributors_table(month_preselected);
-      update_top_bot_contributors_table(month_preselected);
-      update_pull_requests_by_humans(month_preselected);
-      update_pull_requests_by_bots(month_preselected);
-      update_number_of_events_by_humans_and_bots(month_preselected);
+      const day_preselected = '1';
+      update_top_human_contributors_table(day_preselected);
+      update_top_bot_contributors_table(day_preselected);
+      update_pull_requests_by_humans(day_preselected);
+      update_pull_requests_by_bots(day_preselected);
+      update_number_of_events_by_humans_and_bots(day_preselected);
     </script>
 
 
@@ -332,7 +355,7 @@
           <div class="card-header card-header-warning">
             <h4 class="card-title">Top contributing users</h4>
             <p class="card-category">Based on commits (direct or merged pull-requests) on 
-              <span class="month_selection">January</span>
+              <span class="day_selection">1</span>/12/2024
             </p>
           </div>
           <div class="card-body table-responsive">
@@ -347,7 +370,7 @@
           <div class="card-header card-header-warning">
             <h4 class="card-title">Top contributing bots</h4>
             <p class="card-category">Based on commits (direct or merged pull-requests) on 
-              <span class="month_selection">January</span>
+              <span class="day_selection">1</span>/12/2024
             </p>
           </div>
           <div class="card-body table-responsive">
