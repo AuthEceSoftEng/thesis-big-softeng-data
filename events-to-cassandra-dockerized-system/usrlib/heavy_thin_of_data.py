@@ -76,7 +76,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 
-def heavy_thin_data_of_file(input_filepath, output_filepath, do_again=False):
+def heavy_thin_data_of_file(input_filepath, output_filepath, do_again=False, delete_original_file=True):
 	'''
 	Thins the events of the gharchive filepath `input_filepath` 
 	and stores it into `output_filepath`.
@@ -120,7 +120,10 @@ def heavy_thin_data_of_file(input_filepath, output_filepath, do_again=False):
 	elif os.path.exists(output_filepath) and do_again == False:
 		print(f"{os.path.basename(output_filepath)} with the thinned events already exists.")
 	print('...Done')
-  
+	
+	if delete_original_file == True:
+		os.remove(input_filepath)	
+		print(f"Deleted original file: '{os.path.basename(input_filepath)}'")
   
   
 # # Demo
