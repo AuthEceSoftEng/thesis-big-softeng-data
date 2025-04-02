@@ -699,7 +699,7 @@ if __name__ == '__main__':
 	# Code sketch
 	
 	# Designate a date (year, month, day, hour) to download a gharchive file from
-	date_formatted =  '2024-12-01-13'
+	date_formatted =  '2024-12-03-1'
 	
 	sections_performance = []
 	total_dur = 0
@@ -845,4 +845,4 @@ if __name__ == '__main__':
 	
 	print("Execution times in seconds:\n")
 	for single_section_performance in sections_performance:
- 		print(single_section_performance[0], round(single_section_performance[1], 1))
+ 		print(f"{single_section_performance[0]}: {round(single_section_performance[1], 1)} sec")

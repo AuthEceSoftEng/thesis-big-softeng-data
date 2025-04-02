@@ -350,13 +350,13 @@ def get_topics_by_day():
 # region
 
 # Expose top contributing humans
-@app.route('/bots_vs_humans/top_contributing_humans/<month>', methods=['GET'])
-def get_top_human_contributors_by_month(month):
+@app.route('/bots_vs_humans/top_contributing_humans/<day>', methods=['GET'])
+def get_top_human_contributors_by_day(day):
     
     """
     Example JSON to be exposed:
     {
-        "month": "2024-03",
+        "day": "2024-03-01",
         "top_contributors": [
             {
             "number_of_contributions": 56991,
@@ -374,14 +374,14 @@ def get_top_human_contributors_by_month(month):
     }
     """
     
-    # Month
-    month_datetime_formatted = datetime.strptime(month, "%B")
-    month_only = datetime.strftime(month_datetime_formatted, "2024-%m")
+    # day
+    day_datetime_formatted = datetime.strptime(day, "%d")
+    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
     # Top contributors 
     prepared_query = f" \
-    SELECT username, number_of_contributions FROM prod_gharchive.top_human_contributors_by_month \
-        WHERE month = '{month_only}';"
+    SELECT username, number_of_contributions FROM prod_gharchive.top_human_contributors_by_day \
+        WHERE day = '{day_only}';"
     
     
     cassandra_container_name = 'cassandra_stelios'
@@ -393,7 +393,7 @@ def get_top_human_contributors_by_month(month):
     rows = session.execute(prepared_query)
     
     # Sort the rows based on number of contributions
-    dict_to_expose = {'month': month_only, 'top_contributors': []}
+    dict_to_expose = {'day': day_only, 'top_contributors': []}
     
     
     result = []
@@ -410,12 +410,12 @@ def get_top_human_contributors_by_month(month):
 
 
 # Expose top contributing bots
-@app.route('/bots_vs_humans/top_contributing_bots/<month>', methods=['GET'])
-def get_top_bot_contributors_by_month(month):
+@app.route('/bots_vs_humans/top_contributing_bots/<day>', methods=['GET'])
+def get_top_bot_contributors_by_day(day):
     """
     Example JSON to be exposed:
     {
-        "month": "2024-03",
+        "day": "2024-03-01",
         "top_contributors": [
             {
             "number_of_contributions": 20423,
@@ -432,12 +432,12 @@ def get_top_bot_contributors_by_month(month):
         ]
     }
     """
-    month_datetime_formatted = datetime.strptime(month, "%B")
-    month_only = datetime.strftime(month_datetime_formatted, "2024-%m")
+    day_datetime_formatted = datetime.strptime(day, "%d")
+    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
     prepared_query = f" \
-    SELECT username, number_of_contributions FROM prod_gharchive.top_bot_contributors_by_month\
-        WHERE month = '{month_only}';\
+    SELECT username, number_of_contributions FROM prod_gharchive.top_bot_contributors_by_day\
+        WHERE day = '{day_only}';\
     "
     
     cassandra_container_name = 'cassandra_stelios'
@@ -449,7 +449,7 @@ def get_top_bot_contributors_by_month(month):
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     
-    dict_to_expose = {'month': month_only, 'top_contributors': []}
+    dict_to_expose = {'day': day_only, 'top_contributors': []}
     result = []
     # Create a JSON-serializable object from the queried data
     for row in rows:
@@ -462,25 +462,25 @@ def get_top_bot_contributors_by_month(month):
     return jsonify(dict_to_expose)
 
 # Expose pull-requests that were accepted and initiated by humans   
-@app.route('/bots_vs_humans/pull_requests_by_humans/<month>', methods=['GET'])
-def get_number_of_all_pull_requests_by_humans_by_month(month):
+@app.route('/bots_vs_humans/pull_requests_by_humans/<day>', methods=['GET'])
+def get_number_of_all_pull_requests_by_humans_by_day(day):
     """
     Example JSON to be exposed:
     {
-        "month": "2024-03",
+        "day": "2024-03-14",
         "number_of_accepted_pull_requests": 3493,
         "number_of_rejected_pull_requests": 626
     }
     """
     
     # month
-    month_datetime_formatted = datetime.strptime(month, "%B")
-    month_only = datetime.strftime(month_datetime_formatted, "2024-%m")
+    day_datetime_formatted = datetime.strptime(day, "%d")
+    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
     # number_of_accepted_pull_requests
     prepared_query = f" \
     SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_humans \
-        WHERE month = '{month_only}' and were_accepted = True;\
+        WHERE day = '{day_only}' and were_accepted = True;\
     "
     cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
@@ -490,7 +490,7 @@ def get_number_of_all_pull_requests_by_humans_by_month(month):
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     if rows == []:
-        dict_to_expose = {'month': month_only, 
+        dict_to_expose = {'day': day_only, 
                       "number_of_accepted_pull_requests": None,
                       "number_of_rejected_pull_requests": None}    
         return jsonify(dict_to_expose)
@@ -502,7 +502,7 @@ def get_number_of_all_pull_requests_by_humans_by_month(month):
     # number_of_rejected_pull_requests
     prepared_query = f" \
     SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_humans \
-        WHERE month = '{month_only}' and were_accepted = False;\
+        WHERE day = '{day_only}' and were_accepted = False;\
     "
     cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
@@ -515,32 +515,32 @@ def get_number_of_all_pull_requests_by_humans_by_month(month):
     number_of_rejected_pull_requests = getattr(rows[0], "number_of_pull_requests")
     
     
-    dict_to_expose = {'month': month_only, 
+    dict_to_expose = {'day': day_only, 
                       "number_of_accepted_pull_requests": number_of_accepted_pull_requests,
                       "number_of_rejected_pull_requests": number_of_rejected_pull_requests}    
     
     return jsonify(dict_to_expose)
 
 # Expose pull-requests (accepted and rejected) that were initiated by bots
-@app.route('/bots_vs_humans/pull_requests_by_bots/<month>', methods=['GET'])
-def get_number_of_all_pull_requests_by_bots_by_month(month):
+@app.route('/bots_vs_humans/pull_requests_by_bots/<day>', methods=['GET'])
+def get_number_of_all_pull_requests_by_bots_by_day(day):
     """
     Example JSON to be exposed:
     {
-        "month": "2024-03",
+        "day": "2024-03-10",
         "number_of_accepted_pull_requests": 434,
         "number_of_rejected_pull_requests": 166
     }
     """
     
     # month
-    month_datetime_formatted = datetime.strptime(month, "%B")
-    month_only = datetime.strftime(month_datetime_formatted, "2024-%m")
+    day_datetime_formatted = datetime.strptime(day, "%d")
+    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
     # number_of_accepted_pull_requests
     prepared_query = f" \
     SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_bots \
-        WHERE month = '{month_only}' and were_accepted = True;\
+        WHERE day = '{day_only}' and were_accepted = True;\
     "
     cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
@@ -551,7 +551,7 @@ def get_number_of_all_pull_requests_by_bots_by_month(month):
     rows = session.execute(prepared_query)
     rows = session.execute(prepared_query)
     if rows == []:
-        dict_to_expose = {'month': month_only, 
+        dict_to_expose = {'day': day_only, 
                       "number_of_accepted_pull_requests": None,
                       "number_of_rejected_pull_requests": None}    
         return jsonify(dict_to_expose)
@@ -564,7 +564,7 @@ def get_number_of_all_pull_requests_by_bots_by_month(month):
     # number_of_rejected_pull_requests
     prepared_query = f" \
     SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_bots \
-        WHERE month = '{month_only}' and were_accepted = False;\
+        WHERE day = '{day_only}' and were_accepted = False;\
     "
     cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
@@ -578,20 +578,20 @@ def get_number_of_all_pull_requests_by_bots_by_month(month):
     number_of_rejected_pull_requests = getattr(row, "number_of_pull_requests")
     
     
-    dict_to_expose = {'month': month_only, 
+    dict_to_expose = {'day': day_only, 
                       "number_of_accepted_pull_requests": number_of_accepted_pull_requests,
                       "number_of_rejected_pull_requests": number_of_rejected_pull_requests}    
     
     return jsonify(dict_to_expose)
 
 # Expose number of events made by humans and bots
-@app.route('/bots_vs_humans/number_of_events_by_humans_and_bots/<month>', methods=['GET'])
-def get_number_of_events_for_humans_and_bots_by_month(month):
+@app.route('/bots_vs_humans/number_of_events_by_humans_and_bots/<day>', methods=['GET'])
+def get_number_of_events_for_humans_and_bots_by_day(day):
     """
     Example JSON to be exposed:
     {
         "bots": {
-            "month": "2024-06",
+            "day": "2024-06-10",
             "number_of_events_per_type": [
             {
                 "event_type": "PushEvent",
@@ -605,7 +605,7 @@ def get_number_of_events_for_humans_and_bots_by_month(month):
             "total_number_of_events": 62701
         },
         "humans": {
-            "month": "2024-06",
+            "day": "2024-06-09",
             "number_of_events_per_type": [
             {
                 "event_type": "PushEvent",
@@ -621,9 +621,9 @@ def get_number_of_events_for_humans_and_bots_by_month(month):
     }
     """
     
-    # month
-    month_datetime_formatted = datetime.strptime(month, "%B")
-    month_only = datetime.strftime(month_datetime_formatted, "2024-%m")
+    # day
+    day_datetime_formatted = datetime.strptime(day, "%d")
+    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
     # Humans
     # number_of_events_per_type and total_number_of_events
@@ -631,8 +631,8 @@ def get_number_of_events_for_humans_and_bots_by_month(month):
     total_number_of_events = 0
     
     prepared_query = f" \
-    SELECT number_of_events, event_type FROM prod_gharchive.number_of_human_events_per_type_by_month \
-        WHERE month = '{month_only}';\
+    SELECT number_of_events, event_type FROM prod_gharchive.number_of_human_events_per_type_by_day \
+        WHERE day = '{day_only}';\
     "
     cassandra_container_name = 'cassandra_stelios'
     keyspace_to_use = 'prod_gharchive'
@@ -647,7 +647,7 @@ def get_number_of_events_for_humans_and_bots_by_month(month):
             append({col_name: getattr(row, col_name) for col_name in row._fields})
         total_number_of_events += row.number_of_events
     
-    humans_dict_to_expose = {'month': month_only, 
+    humans_dict_to_expose = {'day': day_only, 
                       "total_number_of_events": total_number_of_events,
                       "number_of_events_per_type": number_of_events_per_type}    
     
@@ -657,8 +657,8 @@ def get_number_of_events_for_humans_and_bots_by_month(month):
     total_number_of_events = 0
     
     prepared_query = f" \
-    SELECT number_of_events, event_type FROM prod_gharchive.number_of_bot_events_per_type_by_month \
-        WHERE month = '{month_only}';\
+    SELECT number_of_events, event_type FROM prod_gharchive.number_of_bot_events_per_type_by_day \
+        WHERE day = '{day_only}';\
     "
     
     # Query to figure out the latest day for which data is available
@@ -669,7 +669,7 @@ def get_number_of_events_for_humans_and_bots_by_month(month):
             append({col_name: getattr(row, col_name) for col_name in row._fields})
         total_number_of_events += row.number_of_events
     
-    bots_dict_to_expose = {'month': month_only, 
+    bots_dict_to_expose = {'day': day_only, 
                       "total_number_of_events": total_number_of_events,
                       "number_of_events_per_type": number_of_events_per_type}   
     
@@ -686,12 +686,12 @@ def get_number_of_events_for_humans_and_bots_by_month(month):
 
 # Expose number of stars per repo by month for all repos
 @app.route('/javascript_frameworks/number_of_stars_by_repo', methods=['GET'])
-def get_number_of_stars_of_js_repo_by_month():
+def get_number_of_stars_of_js_repo_by_day():
     """
     Example JSON to be exposed:
     {
         "Polymer/polymer": {
-            "stars_by_month": {
+            "stars_by_day": {
             "2024-01": 0,
             "2024-02": 0,
             "2024-03": 0,
@@ -704,13 +704,13 @@ def get_number_of_stars_of_js_repo_by_month():
             "2024-10": 0,
             "2024-11": 0
             },
-            "total_stars_for_all_months": 0
+            "total_stars_for_all_days": 0
         },
     
         ...,
 
         "alpinejs/alpine": {
-            "stars_by_month":{
+            "stars_by_day":{
             "2024-01": 0,
             "2024-02": 0,
             "2024-03": 0,
@@ -723,7 +723,7 @@ def get_number_of_stars_of_js_repo_by_month():
             "2024-10": 0,
             "2024-11": 0
             },
-            "total_stars_for_all_months": 5
+            "total_stars_for_all_days": 5
     }
     """
     
@@ -751,45 +751,45 @@ def get_number_of_stars_of_js_repo_by_month():
     for js_repo in js_repos_list:
         # Initialize the stars history of the js repo with zeros (we set as date arbitrarily
         # the first of the month (day = 1))
-        starting_datetime = datetime(year=2024, month=1, day=1)
-        stars_by_month_dict = {}
+        starting_datetime = datetime(year=2024, month=12, day=1)
+        stars_by_day_dict = {}
         
-        for month_delta in range(11):
-            new_month = starting_datetime + relativedelta(months=+month_delta)
-            new_month_stringified = datetime.strftime(new_month, "%Y-%m") 
-            stars_by_month_dict[new_month_stringified] = 0
+        for day_delta in range(30):
+            new_day = starting_datetime + relativedelta(days=+day_delta)
+            new_day_stringified = datetime.strftime(new_day, "%Y-%m-%d") 
+            stars_by_day_dict[new_day_stringified] = 0
         
         
         
-        total_stars_for_all_months = 0
+        total_stars_for_all_days = 0
         # Prepare the query
-        prepared_query = f" SELECT month, number_of_stars \
-            FROM prod_gharchive.stars_per_month_on_js_repo \
+        prepared_query = f" SELECT day, number_of_stars \
+            FROM prod_gharchive.stars_per_day_on_js_repo \
             WHERE repo_name = '{js_repo}' ALLOW FILTERING;"    
         rows = session.execute(prepared_query)
         rows_list = rows.all()
         
         # Populate the dict to expose
         for row in rows_list:
-            month_of_row = getattr(row, 'month')
-            number_of_stars_of_month = getattr(row, 'number_of_stars')
-            stars_by_month_dict[month_of_row] = number_of_stars_of_month
-            total_stars_for_all_months += number_of_stars_of_month
+            day_of_row = getattr(row, 'day')
+            number_of_stars_of_day = getattr(row, 'number_of_stars')
+            stars_by_day_dict[day_of_row] = number_of_stars_of_day
+            total_stars_for_all_days += number_of_stars_of_day
         
         # print(dict_to_be_exposed[js_repo])
-        # stars_by_month_dict['total_stars_for_all_months'] = \
-        #     total_stars_for_all_months
+        # stars_by_day_dict['total_stars_for_all_days'] = \
+        #     total_stars_for_all_days
     
         dict_to_be_exposed[js_repo] = {}
-        dict_to_be_exposed[js_repo]["stars_by_month"] = stars_by_month_dict
+        dict_to_be_exposed[js_repo]["stars_by_day"] = stars_by_day_dict
     
-        dict_to_be_exposed[js_repo]['total_stars_for_all_months'] = \
-            total_stars_for_all_months
+        dict_to_be_exposed[js_repo]['total_stars_for_all_days'] = \
+            total_stars_for_all_days
     
     
     
     dict_to_be_exposed_ordered_by_total_number_of_stars = OrderedDict( \
-        sorted(dict_to_be_exposed.items(), key=lambda x: x[1]['total_stars_for_all_months'],\
+        sorted(dict_to_be_exposed.items(), key=lambda x: x[1]['total_stars_for_all_days'],\
             reverse=True)
     )
     
@@ -798,45 +798,45 @@ def get_number_of_stars_of_js_repo_by_month():
     
     
 # TODO: Expose top contributors of js repo
-@app.route('/javascript_frameworks/top_contributors_of_js_repo/<js_repo>', methods=['GET'])
-def get_top_js_repo_contributors(js_repo):
+# @app.route('/javascript_frameworks/top_contributors_of_js_repo/<js_repo>', methods=['GET'])
+# def get_top_js_repo_contributors(js_repo):
     
-    """
-    Example JSON to be exposed:
+#     """
+#     Example JSON to be exposed:
     
-    """
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+#     """
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace_to_use = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace_to_use)
+#     session.execute(f'USE {keyspace_to_use}')
     
-    # Top contributors of given js_repo
-    js_repo_unquoted = unquote(js_repo)
-    prepared_query = f" \
-        select * from prod_gharchive.top_contributors_of_js_repo \
-        where repo_name = '{js_repo_unquoted}' ALLOW FILTERING;\
-    "
+#     # Top contributors of given js_repo
+#     js_repo_unquoted = unquote(js_repo)
+#     prepared_query = f" \
+#         select * from prod_gharchive.top_contributors_of_js_repo \
+#         where repo_name = '{js_repo_unquoted}' ALLOW FILTERING;\
+#     "
     
-    # Query to figure out the latest day for which data is available
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
+#     # Query to figure out the latest day for which data is available
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
     
-    username_dict = {}
+#     username_dict = {}
     
-    # Initialize the dict with zeros
-    for row_list_index in range(len(rows_list)):
-        username_of_row = rows_list[row_list_index]["username"]
-        username_dict[username_of_row] = 0
-    
-    
-    for row_list_index in range(len(rows_list)):
-        number_of_contributions_of_row = \
-            rows_list[row_list_index]["number_of_contributions"]
-        username_dict[username_of_row] += number_of_contributions_of_row
+#     # Initialize the dict with zeros
+#     for row_list_index in range(len(rows_list)):
+#         username_of_row = rows_list[row_list_index]["username"]
+#         username_dict[username_of_row] = 0
     
     
-    return jsonify(username_dict)
+#     for row_list_index in range(len(rows_list)):
+#         number_of_contributions_of_row = \
+#             rows_list[row_list_index]["number_of_contributions"]
+#         username_dict[username_of_row] += number_of_contributions_of_row
+    
+    
+#     return jsonify(username_dict)
 
 
 
@@ -1954,5 +1954,7 @@ def get_issues_closing_times_by_label(repo_name):
 
 if __name__ == '__main__':
     # month = "January"
-    # get_top_human_contributors_by_month(month)
+    # get_top_human_contributors_by_day(month)
     app.run(host="0.0.0.0", port=3200)
+    
+    

@@ -190,7 +190,6 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     # JSON object to be inserted in the Cassandra database
                     jsonDict = json.loads(lines[i])
                     jsonStr = str(jsonDict)
-                    # TODO: Print introduces latency, Use if for i mod 1000, put time.sleep() in here 
                     
                     if i % number_of_lines_produced_per_print == 0:
                         sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
