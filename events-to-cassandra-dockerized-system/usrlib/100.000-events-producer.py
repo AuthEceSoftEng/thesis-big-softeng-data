@@ -714,7 +714,19 @@ if __name__ == '__main__':
 		
 		gharchive_file_URL = 'https://data.gharchive.org/' + date_formatted + '.json.gz'
 		folderpath_to_download_into = '/github_data_for_speed_testing'
-		download_compressed_GHA_file(gharchive_file_URL, folderpath_to_download_into)
+  
+		# Thinned file name and path
+		filename = date_formatted + '.json.gz'
+		filepath_to_download_into = os.path.join(folderpath_to_download_into, filename)
+		filepath_of_file_to_thin = filepath_to_download_into
+		# Thinned output
+		folderpath_of_thinned_file = folderpath_to_download_into
+		thinned_filename = date_formatted + '-thinned.json.gz'
+		filepath_of_thinned_file = os.path.join(folderpath_to_download_into, thinned_filename)
+  
+		# If neither the original or the thinned file exist, download the original to produce it
+		if not os.path.exists(filepath_of_file_to_thin) and not os.path.exists(filepath_of_thinned_file):
+			download_compressed_GHA_file(gharchive_file_URL, folderpath_to_download_into)
 
 		et = time.time()
 		dur = et - st
@@ -723,20 +735,12 @@ if __name__ == '__main__':
 
 		#endregion 
 
-		
-
 		# 2. Thin the gharchive file (filename -> filename-thinned.json.gz)
 		# region
 		st = time.time()
 
 		# Input to thin
-		filename = date_formatted + '.json.gz'
-		filepath_to_download_into = os.path.join(folderpath_to_download_into, filename)
-		filepath_of_file_to_thin = filepath_to_download_into
-		# Thinned output
-		folderpath_of_thinned_file = folderpath_to_download_into
-		thinned_filename = date_formatted + '-thinned.json.gz'
-		filepath_of_thinned_file = os.path.join(folderpath_to_download_into, thinned_filename)
+		
 		# thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
   		
 		heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
@@ -744,7 +748,7 @@ if __name__ == '__main__':
 		# Sample the first {number_of_lines_to_keep} lines of the thinned file
 		# filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
 		input_filepath = f'/github_data_for_speed_testing/{date_formatted}-thinned.json.gz'
-		number_of_lines_to_keep = 30000
+		number_of_lines_to_keep = 100000
 		limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
 		create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
 		
