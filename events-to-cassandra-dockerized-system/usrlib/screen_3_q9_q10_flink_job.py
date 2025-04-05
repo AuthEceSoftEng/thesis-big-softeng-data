@@ -85,19 +85,7 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
 cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
-
-# Connect without creating keyspace. Once connected create the keyspace
-session = cluster.connect()
-create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
-    "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
-    "'replication_factor': '1'} AND durable_writes = true;"
-session.execute(create_keyspace)
-
-
 cassandra_keyspace = 'prod_gharchive'
-session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
-session.execute(f'USE {cassandra_keyspace}')
-
 # endregion
 
 # IV. Consume the original datastream 'near-real-time-raw-events'
@@ -209,17 +197,8 @@ number_of_stars_on_js_repo_by_day_type_info_q9 = \
 number_of_stars_of_js_repo_by_day_info_ds_q9 = raw_events_ds.filter(filter_out_non_star_events_and_non_js_repos_q9)\
                     .map(extract_stars_on_js_repo_and_create_row_q9, \
                            output_type=number_of_stars_on_js_repo_by_day_type_info_q9) \
-# Uncomment to print the datastream elementss
-# number_of_stars_of_js_repo_by_day_info_ds_q9.print()
 
-
-# Q9_2. Create Cassandra table and sink data into it
-# Create the table if not exists
-create_stars_per_day_on_js_repo_table_q9 = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.stars_per_day_on_js_repo "\
-    "(day text, repo_name text, number_of_stars counter, PRIMARY KEY ((day, "\
-    "repo_name)));"
-session.execute(create_stars_per_day_on_js_repo_table_q9)
+# Q9_2. Sink data into the Cassandra table
 
 # Upsert query to be executed for every element
 upsert_element_into_number_of_stars_of_js_repo_per_day_q9 = \
@@ -326,20 +305,9 @@ human_contributions_by_month_type_info_q10 = \
 top_contributors_of_js_repo_ds_q10 = raw_events_ds.filter(filter_out_non_contributing_events_and_non_js_repos_q10)\
                     .map(extract_top_contributors_on_js_repo_and_create_row_q10, \
                            output_type=human_contributions_by_month_type_info_q10)
-# Uncomment to print the datastream elements
-# top_contributors_of_js_repo_ds_q10.print()
 
 
-# Q10_2. Create Cassandra table and sink data into it
-# Create the table if not exists
-create_top_contributors_of_js_repo_table_q10 = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.top_contributors_of_js_repo "\
-    "(month text, username text, repo_name text, number_of_contributions counter, PRIMARY KEY ((repo_name, month), "\
-    "username)) WITH CLUSTERING ORDER BY "\
-    "(username ASC);"
-session.execute(create_top_contributors_of_js_repo_table_q10)
-
-# Upsert query to be executed for every element
+# Q10_2. Sink data into the Cassandra table
 upsert_element_into_top_contributors_of_js_repo_q10 = \
             "UPDATE prod_gharchive.top_contributors_of_js_repo "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
@@ -360,6 +328,40 @@ cassandra_sink_q10 = CassandraSink.add_sink(top_contributors_of_js_repo_ds_q10)\
 
 
 if __name__ == '__main__':
+    # Create cassandra keyspace if not exist
+    cassandra_host = 'cassandra_stelios'
+    cassandra_port = 9142
+    cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
+
+    # Connect without creating keyspace. Once connected create the keyspace
+    session = cluster.connect()
+    create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
+        "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
+        "'replication_factor': '1'} AND durable_writes = true;"
+    session.execute(create_keyspace)
+
+    cassandra_keyspace = 'prod_gharchive'
+    session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
+    session.execute(f'USE {cassandra_keyspace}')
+
+        
+    # Screen 3
+    create_stars_per_day_on_js_repo_table_q9 = \
+    "CREATE TABLE IF NOT EXISTS prod_gharchive.stars_per_day_on_js_repo "\
+    "(day text, repo_name text, number_of_stars counter, PRIMARY KEY ((day, "\
+    "repo_name)));"
+    session.execute(create_stars_per_day_on_js_repo_table_q9)
+
+    # Create the table if not exists
+    create_top_contributors_of_js_repo_table_q10 = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.top_contributors_of_js_repo "\
+        "(month text, username text, repo_name text, number_of_contributions counter, PRIMARY KEY ((repo_name, month), "\
+        "username)) WITH CLUSTERING ORDER BY "\
+        "(username ASC);"
+    session.execute(create_top_contributors_of_js_repo_table_q10)
+            
+    cluster.shutdown()
+    
     # Execute the flink streaming environment
     env.execute(os.path.splitext(os.path.basename(__file__))[0])
 

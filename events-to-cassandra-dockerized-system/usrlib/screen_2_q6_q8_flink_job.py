@@ -81,27 +81,12 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 
 # III. Create a Cassandra cluster, connect to it and use a keyspace
 # region
-
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
-
-# Connect without creating keyspace. Once connected create the keyspace
-session = cluster.connect()
-create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
-    "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
-    "'replication_factor': '1'} AND durable_writes = true;"
-session.execute(create_keyspace)
-
-cassandra_keyspace = 'prod_gharchive'
-session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
-session.execute(f'USE {cassandra_keyspace}')
-# endregion
 
 
 # IV. Consume the original datastream 'historical-raw-events'
 #region 
-
 kafka_props = {'enable.auto.commit': 'true',
                'auto.commit.interval.ms': '1000',
                'auto.offset.reset': 'smallest'}
@@ -237,17 +222,8 @@ bot_contributions_by_day_type_info = \
 top_bot_contributors_info_ds_q6_b = raw_events_ds.filter(filter_out_non_contributing_events_and_humans_q6_b)\
                     .map(extract_number_of_contributions_and_create_row_q6_b, \
                            output_type=bot_contributions_by_day_type_info) \
-# Uncomment to print datastream
-# top_bot_contributors_info_ds_q6_b.print()
 
 # Q6_b_2. Create Cassandra table sink data into it
-# Create the table if not exists
-create_top_bot_contributors_table_q6_b = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.top_bot_contributors_by_day "\
-    "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
-    "username)) WITH CLUSTERING ORDER BY "\
-    "(username ASC);"
-session.execute(create_top_bot_contributors_table_q6_b)
 
 # Upsert query to be executed for every element
 upsert_element_into_top_bot_contributors_q6_b = \
@@ -368,13 +344,6 @@ top_human_contributors_info_ds_q6_h = raw_events_ds.filter(filter_out_non_contri
 # top_human_contributors_info_ds_q6_h.print()
 
 # Q6_h_2. Create Cassandra table and sink data into it
-# Create the table if not exists
-create_top_human_contributors_table_q6_h = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.top_human_contributors_by_day "\
-    "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
-    "username)) WITH CLUSTERING ORDER BY "\
-    "(username ASC);"
-session.execute(create_top_human_contributors_table_q6_h)
 
 # Upsert query to be executed for every element
 upsert_element_into_top_human_contributors_q6_h = \
@@ -466,12 +435,6 @@ number_of_pull_requests_info_ds_q7_b = raw_events_ds.filter(filter_out_non_pull_
 
 
 # Q7_b_2. Create Cassandra table and sink data into it
-# Create the table if not exists
-create_number_of_pull_requests_by_bots_q7_b = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_bots "\
-    "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
-    "were_accepted)));"
-session.execute(create_number_of_pull_requests_by_bots_q7_b)
 
 # Upsert query to be executed for every element
 upsert_element_into_T7_b_number_of_pull_requests_by_bots = \
@@ -492,7 +455,6 @@ cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_
 # Q7_h: Number of pull requests by humans
 # region
 
-# Q7_h_1. Transform the original stream 
 # Filter out events of type that contain no info we need
 def filter_out_non_pull_request_events_q7_h(eventString):
     '''
@@ -560,18 +522,9 @@ number_of_pull_requests_by_humans_by_day_type_info_q7_h = \
 number_of_pull_requests_info_ds_q7_h = raw_events_ds.filter(filter_out_non_pull_request_events_q7_h)\
                     .map(extract_number_of_pull_requests_and_create_row_q7_h, \
                            output_type=number_of_pull_requests_by_humans_by_day_type_info_q7_h) 
-# Uncomment to print the datastream
-# number_of_pull_requests_info_ds_q7_h.print()
 
 
-# Q7_h_2. Create Cassandra table and sink data into it
-# Create the table if not exists
-
-create_number_of_pull_requests_by_humans_q7_h = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_humans "\
-    "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
-    "were_accepted)));"
-session.execute(create_number_of_pull_requests_by_humans_q7_h)
+# Q7_h_2. Sink data into the Cassandra table
 
 # Upsert query to be executed for every element
 upsert_element_into_T7_h_number_of_pull_requests_by_humans = \
@@ -648,21 +601,10 @@ number_of_bot_events_per_type_by_day_type_info_q8_b = \
 number_of_events_info_ds_q8_b = raw_events_ds.filter(filter_out_human_events_q8_b) \
                     .map(extract_number_of_bot_events_per_type_and_create_row_q8_b, \
                            output_type=number_of_bot_events_per_type_by_day_type_info_q8_b)
-# Uncomment to print the datastream
-# number_of_events_info_ds_q8_b.print()
 
 
 
-
-# Q8_b_2. Create Cassandra table and sink data into it
-
-# Create the table if not exists
-create_number_of_pull_requests_by_bots_q8_b = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_bot_events_per_type_by_day "\
-    "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
-    "event_type)) WITH CLUSTERING ORDER BY "\
-    "(event_type ASC);"
-session.execute(create_number_of_pull_requests_by_bots_q8_b)
+# Q8_b_2. Sink data into the Cassandra table
 
 
 # Upsert query to be executed for every element
@@ -741,18 +683,8 @@ number_of_events_info_ds_q8_h = raw_events_ds.filter(filter_out_bot_events_q8_h)
                     .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
                            output_type=number_of_human_events_per_type_by_day_type_info_q8_h)\
                     
-# Uncomment to print the datastream elements
-# number_of_events_info_ds_q8_h.print()
-
-
-# Q8_h_2. Create Cassandra table number_of_human_events_per_type_by_day and sink data into it
-# Create the table if not exists
-create_number_of_pull_requests_by_humans_q8_h = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_human_events_per_type_by_day "\
-    "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
-    "event_type)) WITH CLUSTERING ORDER BY "\
-    "(event_type ASC);"
-session.execute(create_number_of_pull_requests_by_humans_q8_h)
+                    
+# Q8_h_2. Sink data into the Cassandra table
 
 # Upsert query to be executed for every element
 upsert_element_into_number_of_human_events_per_type_by_day_q8_h = \
@@ -775,8 +707,71 @@ cassandra_sink_q8_h = CassandraSink.add_sink(number_of_events_info_ds_q8_h)\
 
 if __name__ =='__main__':
     
-    
+    # Create cassandra keyspace if not exist
+    cassandra_host = 'cassandra_stelios'
+    cassandra_port = 9142
+    cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
 
+    # Connect without creating keyspace. Once connected create the keyspace
+    session = cluster.connect()
+    create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
+        "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
+        "'replication_factor': '1'} AND durable_writes = true;"
+    session.execute(create_keyspace)
+
+    cassandra_keyspace = 'prod_gharchive'
+    session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
+    session.execute(f'USE {cassandra_keyspace}')
+
+
+    # Screen 2
+    create_top_bot_contributors_table_q6_b = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.top_bot_contributors_by_day "\
+        "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
+        "username)) WITH CLUSTERING ORDER BY "\
+        "(username ASC);"
+    session.execute(create_top_bot_contributors_table_q6_b)
+
+
+    create_top_human_contributors_table_q6_h = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.top_human_contributors_by_day "\
+        "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
+        "username)) WITH CLUSTERING ORDER BY "\
+        "(username ASC);"
+    session.execute(create_top_bot_contributors_table_q6_b)
+
+    create_number_of_pull_requests_by_bots_q7_b = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_bots "\
+        "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
+        "were_accepted)));"
+    session.execute(create_number_of_pull_requests_by_bots_q7_b)
+
+
+    create_number_of_pull_requests_by_humans_q7_h = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_humans "\
+        "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
+        "were_accepted)));"
+    session.execute(create_number_of_pull_requests_by_humans_q7_h)
+
+
+    # Create the table if not exists
+    create_number_of_pull_requests_by_bots_q8_b = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_bot_events_per_type_by_day "\
+        "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
+        "event_type)) WITH CLUSTERING ORDER BY "\
+        "(event_type ASC);"
+    session.execute(create_number_of_pull_requests_by_bots_q8_b)
+
+
+    create_number_of_pull_requests_by_humans_q8_h = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_human_events_per_type_by_day "\
+        "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
+        "event_type)) WITH CLUSTERING ORDER BY "\
+        "(event_type ASC);"
+    session.execute(create_number_of_pull_requests_by_humans_q8_h)
+        
+    cluster.shutdown()
+    
     # Execute the flink streaming environment
     env.execute(os.path.splitext(os.path.basename(__file__))[0])
 

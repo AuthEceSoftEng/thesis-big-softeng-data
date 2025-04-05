@@ -84,18 +84,8 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
 cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
-
-# Connect without creating keyspace. Once connected create the keyspace
-session = cluster.connect()
-create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
-    "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
-    "'replication_factor': '1'} AND durable_writes = true;"
-session.execute(create_keyspace)
-
-
 cassandra_keyspace = 'prod_gharchive'
-session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
-session.execute(f'USE {cassandra_keyspace}')
+
 # endregion
 
 
@@ -191,21 +181,8 @@ pull_request_closing_times_type_info_q11_12 = \
 pull_request_closing_times_info_ds_q11_12 = raw_events_ds.filter(filter_out_non_pull_request_events_q11_12)\
                     .map(extract_opening_and_closing_times_of_pull_requests_and_create_row_q11_12, \
                            output_type=pull_request_closing_times_type_info_q11_12) 
-# Uncomment to print the datastream elementss
-# pull_request_closing_times_info_ds_q11_12.print()
 
-# Q11_12_2. Create Cassandra table and sink data into it
-# Create the table if not exists
-create_pull_request_closing_times_table_q11_12 = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.pull_request_closing_times "\
-    "(repo_name text, pull_request_number int, opening_time text, "\
-    "closing_time text, PRIMARY KEY ((repo_name), "\
-    "pull_request_number)) WITH CLUSTERING ORDER BY "\
-    "(pull_request_number ASC);"
-session.execute(create_pull_request_closing_times_table_q11_12)
-
-# In this case update is the same as insert (only new pull request opening and closing times are inserted,
-# no data is updated)
+# Q11_12_2. Sink data into the Cassandra table
 upsert_element_into_pull_request_closing_times_q11_12 = \
             "UPDATE prod_gharchive.pull_request_closing_times "\
             "SET opening_time = ?, closing_time = ? WHERE "\
@@ -282,17 +259,7 @@ issue_closing_times_ds_q13_14 = raw_events_ds.filter(filter_out_non_issue_events
 # Uncomment to print the datastream elements
 # issue_closing_times_ds_q13_14.print()
 
-# Q13_14_2. Create Cassandra table and sink data into it
-# Create the table if not exists
-create_issue_closing_times_table_q13_14 = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.issue_closing_times "\
-    "(repo_name text, issue_number int, opening_time text, "\
-    "closing_time text, PRIMARY KEY ((repo_name), "\
-    "issue_number)) WITH CLUSTERING ORDER BY "\
-    "(issue_number ASC);"
-session.execute(create_issue_closing_times_table_q13_14)
-
-# Upsert query to be executed for every element
+# Q13_14_2. Sink data into the Cassandra table
 upsert_element_into_issue_closing_times_q13_14 = \
             "UPDATE prod_gharchive.issue_closing_times "\
             "SET opening_time = ?, closing_time = ? WHERE "\
@@ -400,18 +367,8 @@ issue_closing_times_by_label_ds_q15 = raw_events_ds.filter(filter_out_non_issue_
                     .map(extract_opening_and_closing_times_of_issues_and_create_row_q15, \
                            output_type=issue_closing_times_type_info_with_list_of_labels_q15)\
                     .flat_map(split_issue_labels, output_type=issue_closing_times_type_info_with_single_label)
-# Uncomment to print the datastream elements
-# issue_closing_times_by_label_ds_q15.print()
 
-# Q15_2. Create Cassandra table and sink data into it
-# Create the table if not exists
-create_issue_closing_times_by_label_table_q15 = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.issue_closing_times_by_label "\
-    "(repo_name text, issue_number int, opening_time text, "\
-    "closing_time text, label text, PRIMARY KEY ((repo_name), "\
-    "label, issue_number)) WITH CLUSTERING ORDER BY "\
-    "(label ASC, issue_number ASC);"
-session.execute(create_issue_closing_times_by_label_table_q15)
+# Q15_2. Sink data into the Cassandra table
 
 # Insert query to be executed for every element
 insert_element_into_issue_closing_times_by_label_q15 = \
@@ -432,6 +389,49 @@ cassandra_sink_q15 = CassandraSink.add_sink(issue_closing_times_by_label_ds_q15)
 # endregion
 
 if __name__ == "__main__":
+    # Create cassandra keyspace if not exist
+    cassandra_host = 'cassandra_stelios'
+    cassandra_port = 9142
+    cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
+
+    # Connect without creating keyspace. Once connected create the keyspace
+    session = cluster.connect()
+    create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
+        "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
+        "'replication_factor': '1'} AND durable_writes = true;"
+    session.execute(create_keyspace)
+
+    cassandra_keyspace = 'prod_gharchive'
+    session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
+    session.execute(f'USE {cassandra_keyspace}')
+
+    # Screen 4
+    create_pull_request_closing_times_table_q11_12 = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.pull_request_closing_times "\
+        "(repo_name text, pull_request_number int, opening_time text, "\
+        "closing_time text, PRIMARY KEY ((repo_name), "\
+        "pull_request_number)) WITH CLUSTERING ORDER BY "\
+        "(pull_request_number ASC);"
+    session.execute(create_pull_request_closing_times_table_q11_12)
+
+    create_issue_closing_times_table_q13_14 = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.issue_closing_times "\
+        "(repo_name text, issue_number int, opening_time text, "\
+        "closing_time text, PRIMARY KEY ((repo_name), "\
+        "issue_number)) WITH CLUSTERING ORDER BY "\
+        "(issue_number ASC);"
+
+    create_issue_closing_times_by_label_table_q15 = \
+        "CREATE TABLE IF NOT EXISTS prod_gharchive.issue_closing_times_by_label "\
+        "(repo_name text, issue_number int, opening_time text, "\
+        "closing_time text, label text, PRIMARY KEY ((repo_name), "\
+        "label, issue_number)) WITH CLUSTERING ORDER BY "\
+        "(label ASC, issue_number ASC);"
+    session.execute(create_issue_closing_times_by_label_table_q15)
+    
+        
+    cluster.shutdown()
+    
     # Execute the flink streaming environment
     env.execute(os.path.splitext(os.path.basename(__file__))[0])
 
