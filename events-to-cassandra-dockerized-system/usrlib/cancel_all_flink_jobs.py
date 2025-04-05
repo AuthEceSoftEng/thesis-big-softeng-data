@@ -1,12 +1,12 @@
 import requests
-import subprocess
 
 def get_running_job_ids(flink_local_port):
     """
     Returns a list with the names of the running pyflink jobs
     If no pyflink job is running, returns an empty list ([])
     """
-    jobs_endpoint = f"http://localhost:{flink_local_port}/jobs"
+    jobmanager_name = 'jobmanager'
+    jobs_endpoint = f"http://{jobmanager_name}:{flink_local_port}/jobs"
     try:
         jobs_res = requests.get(jobs_endpoint, timeout=5)
     except Exception as e:
@@ -41,7 +41,7 @@ job_id_to_name_dict = get_running_job_ids(flink_local_port)
 jobmanager_name = "jobmanager"
 
 for job_id in job_id_to_name_dict.keys():
-    cancel_job_endpoint = f"http://localhost:{flink_local_port}/jobs/{job_id}"
+    cancel_job_endpoint = f"http://{jobmanager_name}:{flink_local_port}/jobs/{job_id}"
     print(f"Canceling job '{job_id_to_name_dict[job_id]}' with id {job_id}...")
     patch_res = requests.patch(cancel_job_endpoint)
     print("Done")

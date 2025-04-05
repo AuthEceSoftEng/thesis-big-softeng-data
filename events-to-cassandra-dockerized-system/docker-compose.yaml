@@ -351,7 +351,7 @@ services:
       - data-network
 
 # Cancel all jobs
-  python-cancel-all-flink-jobs:
+  cancel-all-flink-jobs:
     image: python:3.10-script-executing-image
     container_name: python-cancel-all-flink-jobs
     volumes: 
