@@ -49,7 +49,7 @@ services:
 # Flink taskmanager 1
   taskmanager-1:
     image: pyflink:1.18.1
-    container_name: taskmanager-1
+    # container_name: taskmanager-1
     volumes:
       # Connectors in opt/flink/opt
       - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
@@ -59,6 +59,7 @@ services:
       - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
       - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
+      
       
       # Screen 2 screen accelerated
       - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
@@ -75,12 +76,12 @@ services:
     depends_on:
       - jobmanager
     command: taskmanager
-    # scale: 3
+    scale: 3
     environment:
       - | 
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 32
+        taskmanager.numberOfTaskSlots: 4
         parallelism.default: 4
         rest.flamegraph.enabled: true
         metrics.latency.interval: 1000
@@ -94,11 +95,14 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4.0'   # Limit this container to 4 CPUs
-          memory: 8g
-        reservations:
-          cpus: '2.0'   # Guarantee at least 2 CPUs
-          memory: 4g
+          cpus: '2.0'   # Limit this container to 4 CPUs
+          # memory: 600m
+        
+        # cpus: '4.0'   # Limit this container to 4 CPUs
+        # memory: 8g
+        # reservations:
+        #   cpus: '2.0'   # Guarantee at least 2 CPUs
+        #   memory: 4g
 
 
     # ports: 
@@ -126,6 +130,10 @@ services:
       - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
     
+    # Cancel all jobs
+      - ./usrlib/cancel_all_flink_jobs.py:/opt/flink/usrlib/cancel_all_flink_jobs.py
+    
+
     # Screen 2 screen accelerated
       - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
       - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
@@ -146,12 +154,13 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 32
         parallelism.default: 4
         rest.flamegraph.enabled: true
         metrics.latency.interval: 1000
+      # jobmanager.memory.process.size: 1g
+      
+      # taskmanager.numberOfTaskSlots: 8
       # taskmanager.memory.jvm-metaspace.size: 1728m
-
       # python.operator-chaining.enabled: false
     depends_on: 
       - cassandra_stelios
@@ -306,6 +315,7 @@ services:
       - data-network
 
 
+
 # Producer of a small sample of the events of a file (Used for ingestion speed testing)
   python-100.000-events-producer:
     image: python:3.10-script-executing-image
@@ -340,7 +350,23 @@ services:
     networks:
       - data-network
 
+# Cancel all jobs
+  python-cancel-all-flink-jobs:
+    image: python:3.10-script-executing-image
+    container_name: python-cancel-all-flink-jobs
+    volumes: 
+      - ./usrlib/cancel_all_flink_jobs.py:/usrlib/cancel_all_flink_jobs.py
+    command: ['python', 'cancel_all_flink_jobs.py']
 
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+
+
+      
 
 # # 2. Near real time events ingestion
 
@@ -397,13 +423,13 @@ services:
     depends_on:
       - jobmanager
     command: taskmanager
-    # scale: 3
+    # scale: 8
     environment:
       - | 
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        parallelism.default: 1
-        taskmanager.numberOfTaskSlots: 16
+        parallelism.default: 4
+        taskmanager.numberOfTaskSlots: 4
 
       # taskmanager.rpc.port: 36429
       # taskmanager.data.port: 36430
