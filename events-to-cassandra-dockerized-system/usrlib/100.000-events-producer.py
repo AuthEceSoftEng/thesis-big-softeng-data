@@ -20,6 +20,7 @@ import requests
 import os
 
 import gzip
+from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, delete_and_recreate_topic
 
 
 def download_compressed_GHA_file(gha_file_url, folderpath):
@@ -739,7 +740,6 @@ if __name__ == '__main__':
 		# region
 		st = time.time()
 
-		# Input to thin
 		
 		# thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
   		
@@ -748,7 +748,7 @@ if __name__ == '__main__':
 		# Sample the first {number_of_lines_to_keep} lines of the thinned file
 		# filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
 		input_filepath = f'/github_data_for_speed_testing/{date_formatted}-thinned.json.gz'
-		number_of_lines_to_keep = 100000
+		number_of_lines_to_keep = 10001
 		limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
 		create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
 		
@@ -777,7 +777,7 @@ if __name__ == '__main__':
 		# endregion
 
 		
-	skip_step_4 = False
+	skip_step_4 = True
 
 	if skip_step_4 == False:
 		# 4. Wait for data transformation (Check if the jobs stopped working)
@@ -812,13 +812,10 @@ if __name__ == '__main__':
 				sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
 			sys.stdout.flush()
 			if is_a_job_running == True:        
-					break
-
+				break
 			time.sleep(5)
 			sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
 				
-
-		# exit(0)
 		
 		print()
 		print(f"Pyflink jobs have started working")
@@ -846,7 +843,27 @@ if __name__ == '__main__':
 		sections_performance.append(["4. Wait for flink jobs to finish", dur])
 	
 	sections_performance.append(["Total time elapsed", total_dur])
+
+
+	topic = topic_to_produce_into
+	parser = ArgumentParser()
+	parser.add_argument('config_file', type=FileType('r'))
+	args = parser.parse_args()
+
+	# Parse the configuration.
+	# See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
+	config_parser = ConfigParser()
+	config_parser.read_file(args.config_file)
+	config = dict(config_parser['default_producer'])
 	
+	bootstrap_servers = str(config['bootstrap.servers'])
+
+# TODO: Check correct function of these
+	number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
+	max_number_of_messages = 10000
+	delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
+	
+ 
 	print("Execution times in seconds:\n")
 	for single_section_performance in sections_performance:
  		print(f"{single_section_performance[0]}: {round(single_section_performance[1], 1)} sec")
