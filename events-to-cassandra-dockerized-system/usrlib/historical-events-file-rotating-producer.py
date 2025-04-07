@@ -524,9 +524,14 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-05-21'
-    ending_date_formatted =  '2024-12-05-21'
+    starting_date_formatted =  '2024-12-05-20'
+    ending_date_formatted =  '2024-12-05-20'
+    current_date_formatted = starting_date_formatted
+    starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
+    ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
+    current_date = starting_date
     
+    # Performance of pipeline sections: Download, Thin events, produce and transform data
     sections_performance = {"1. Download gharchive file": 0,
                             "2. Thin file": 0,
                             "3. Produce thinned events": 0,
@@ -534,47 +539,48 @@ if __name__ == '__main__':
                             "Total time elapsed": 0}
     total_dur = 0
 
-    starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
-    ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
-    current_date = starting_date
-    
-    # Download files, thin contents, produce thinned events 
-    # from the starting date up to the ending date
+    # Pipeline from starting date to the ending date
     # region
+    # Check dates validity
+    if starting_date > ending_date:
+        raise ValueError(f"Starting date '{starting_date}' should be earlier than the ending date '{ending_date}'")
     
+    # Pipeline (download, thin, produce, transform) for all dates from start to end
     while current_date <= ending_date:
         
         # 1. Download gharchive file
         # region
         st = time.time()
         
-        current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
         gharchive_file_URL = 'https://data.gharchive.org/' + current_date_formatted + '.json.gz'
         folderpath_to_download_into = '/github_data'
-        download_compressed_GHA_file(gharchive_file_URL, folderpath_to_download_into)
+        
+        # Raw events file
+        filename = current_date_formatted + '.json.gz'
+        filepath_to_download_into = os.path.join(folderpath_to_download_into, filename)
+        filepath_of_file_to_thin = filepath_to_download_into
+        # Thinned events file
+        folderpath_of_thinned_file = folderpath_to_download_into
+        thinned_filename = current_date_formatted + '-thinned.json.gz'
+        filepath_of_thinned_file = os.path.join(folderpath_to_download_into, thinned_filename)
+        # If neither the original or the thinned file exist, download the original to produce it
+        if not os.path.exists(filepath_of_file_to_thin) and not os.path.exists(filepath_of_thinned_file):
+            download_compressed_GHA_file(gharchive_file_URL, folderpath_to_download_into)
+
 
         et = time.time()
         dur = et - st
         total_dur += dur
-        # Add the new file download time to the existing time taken for 
-        # previous downloads
-        sections_performance["1. Download gharchive file"] += dur
+        sections_performance["1. Download gharchive file"] += dur        
         # endregion
 
+        # raise Exception("Check if the raw file is downloaded even though the thinned one exists") 
 
         # 2. Thin file
         # region
         st = time.time()
 
-        # Input
-        filename = current_date_formatted + '.json.gz'
-        filepath_to_download_into = os.path.join(folderpath_to_download_into, filename)
-        filepath_of_file_to_thin = filepath_to_download_into
-
-        # Output
-        folderpath_of_thinned_file = folderpath_to_download_into
-        thinned_filename = current_date_formatted + '-thinned.json.gz'
-        filepath_of_thinned_file = os.path.join(folderpath_to_download_into, thinned_filename)
+       
 
         heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file, delete_original_file=True)
 
@@ -602,9 +608,11 @@ if __name__ == '__main__':
 
         if the_whole_file_was_read_beforehand:
             current_date = current_date + timedelta(hours=1)
+            current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
             continue
-    
         current_date = current_date + timedelta(hours=1)
+        current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
+ 
 
         et = time.time()
         dur = et - st
@@ -614,83 +622,83 @@ if __name__ == '__main__':
 
         
             
-        # # 4. Wait for flink jobs to finish
-        # # region
+        # 4. Wait for flink jobs to finish
+        # region
         
-        # st = time.time()
+        st = time.time()
 
-        # running_job_names_in_cluster = get_running_job_names()
+        running_job_names_in_cluster = get_running_job_names()
             
-        # if running_job_names_in_cluster == []:
-        #     raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
+        if running_job_names_in_cluster == []:
+            raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
 
         
-        # # # Uncomment code below if all the jobs should be deployed
-        # # # in the cluster
-        # # names_of_jobs_that_should_be_running = ["screen_2_q6_q8_via_flink_local_run", "screen_3_q9_q10_via_flink_local_run", "screen_4_q11_q15_via_flink_local_run"]
-        # # for name_of_job_that_should_be_running in names_of_jobs_that_should_be_running:
-        # #     if name_of_job_that_should_be_running not in running_job_names_in_cluster:
-        # #         raise Exception("Not all jobs are running in the Flink cluster")
+        # # Uncomment code below if all the jobs should be deployed
+        # # in the cluster
+        # names_of_jobs_that_should_be_running = ["screen_2_q6_q8_via_flink_local_run", "screen_3_q9_q10_via_flink_local_run", "screen_4_q11_q15_via_flink_local_run"]
+        # for name_of_job_that_should_be_running in names_of_jobs_that_should_be_running:
+        #     if name_of_job_that_should_be_running not in running_job_names_in_cluster:
+        #         raise Exception("Not all jobs are running in the Flink cluster")
         
         
-        # hostname = 'jobmanager'
-        # is_a_job_running = None
-        # for single_job_name in running_job_names_in_cluster:
-        #     is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
-        #     if is_a_job_running == True:        
-        #         break
+        hostname = 'jobmanager'
+        is_a_job_running = None
+        for single_job_name in running_job_names_in_cluster:
+            is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
+            if is_a_job_running == True:        
+                break
 
-        # if (is_a_job_running == False):    
-        #     print(f"Pyflink jobs have not started working")
-        #     print("Waiting for the jobs to start")
+        if (is_a_job_running == False):    
+            print(f"Pyflink jobs have not started working")
+            print("Waiting for the jobs to start")
         
         
-        # while(is_a_job_running == False):
+        while(is_a_job_running == False):
 
-        #     for single_job_name in running_job_names_in_cluster:
-        #         # If one of the pyflink jobs started working, break the while loop 
-        #         is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-        #         job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
-        #         sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-        #     sys.stdout.flush()
-        #     if is_a_job_running == True:        
-        #             break
+            for single_job_name in running_job_names_in_cluster:
+                # If one of the pyflink jobs started working, break the while loop 
+                is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+                job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
+                sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+            sys.stdout.flush()
+            if is_a_job_running == True:        
+                    break
 
-        #     time.sleep(5)
-        #     sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
+            time.sleep(5)
+            sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
                 
-        # print()
-        # print(f"Pyflink jobs have started working")
-        # print("Waiting for pyflink jobs to stop")
-        # while(is_a_job_running == True):
-        #     # Reset the job status. 
-        #     is_a_job_running = False
-        #     for single_job_name in running_job_names_in_cluster:
-        #         #  While there is at least one working job, wait for it to finish
-        #         is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-        #         job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)        
-        #         sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-        #     sys.stdout.flush()
-        #     if is_a_job_running == False:        
-        #             break
-        #     time.sleep(5)
-        #     sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
+        print()
+        print(f"Pyflink jobs have started working")
+        print("Waiting for pyflink jobs to stop")
+        while(is_a_job_running == True):
+            # Reset the job status. 
+            is_a_job_running = False
+            for single_job_name in running_job_names_in_cluster:
+                #  While there is at least one working job, wait for it to finish
+                is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+                job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)        
+                sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+            sys.stdout.flush()
+            if is_a_job_running == False:        
+                    break
+            time.sleep(5)
+            sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
         
-        # print()
-        # print("All pyflink jobs stopped working")
+        print()
+        print("All pyflink jobs stopped working")
         
         
-        # et = time.time()
-        # dur = et - st
-        # total_dur += dur
-        # sections_performance["4. Wait for flink jobs to finish"] += dur
-        # # endregion
+        et = time.time()
+        dur = et - st
+        total_dur += dur
+        sections_performance["4. Wait for flink jobs to finish"] += dur
+        # endregion
         
         # Delete and recreate the topic if too large
         topic = topic_to_produce_into
         bootstrap_servers = get_kafka_broker_config(topic)        
         number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-        max_number_of_messages = 1000000
+        max_number_of_messages = 10000
         delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
         
     sections_performance["Total time elapsed"] = total_dur
