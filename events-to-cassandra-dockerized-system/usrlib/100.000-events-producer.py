@@ -857,26 +857,17 @@ if __name__ == '__main__':
         
     sections_performance.append(["Total time elapsed", total_dur])
 
+    skip_topic_deletion = True
+    
+    if skip_topic_deletion == False:
+        # Delete and recreate the topic if too large
+        topic = topic_to_produce_into
+        bootstrap_servers = get_kafka_broker_config(topic)
+        number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
+        max_number_of_messages = 20003
+        delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
+        
 
-    topic = topic_to_produce_into
-    parser = ArgumentParser()
-    parser.add_argument('config_file', type=FileType('r'))
-    args = parser.parse_args()
-
-    # Parse the configuration.
-    # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
-    config_parser = ConfigParser()
-    config_parser.read_file(args.config_file)
-    config = dict(config_parser['default_producer'])
-    
-    bootstrap_servers = str(config['bootstrap.servers'])
-    
-    # Delete and recreate the topic if too large
-    number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-    max_number_of_messages = 20003
-    delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
-    
- 
     print("Execution times in seconds:\n")
     for single_section_performance in sections_performance:
          print(f"{single_section_performance[0]}: {round(single_section_performance[1], 1)} sec")
