@@ -77,21 +77,19 @@ def create_topic(topic=str, config_port=str):
         client = admin.AdminClient({"bootstrap.servers": config_port})
         topic_metadata = client.list_topics(timeout=5)
         all_topics_list = topic_metadata.topics.keys()
+        print(all_topics_list)
         
-        # If the topic does not exist, delete the contents of the file, 
+        # If the topic does not exist,
         # then create it 
         if topic not in all_topics_list:
             print(f'Topic {topic} does not exist')
             new_topic = admin.NewTopic(topic, num_partitions=4, replication_factor=1)
             # client.create_topics([new_topic])
             
-            futures = client.create_topics([new_topic])
-            for all_topics, future in futures.items():
-                try:
-                    future.result()  # Wait for topic creation
-                    print(f"Topic {topic} created successfully")
-                except Exception as e:
-                    print(f"Failed to create topic {topic}: {e}")
+            create_topics_futures = client.create_topics([new_topic], operation_timeout=5)
+            for create_topic_future in create_topics_futures.values():
+                create_topic_future.result()  # Wait for topic creation
+                print(f"Topic {topic} created successfully")
         else: 
             print(f"Topic {topic} already exists")
                 
@@ -106,7 +104,7 @@ def delete_topic(topic=str, config_port=str):
     returns: True if topic exists or False if it does not
     '''
     client = admin.AdminClient({"bootstrap.servers": config_port})
-    topic_metadata = client.list_topics()
+    topic_metadata = client.list_topics(timeout=5)
     all_topics_list = topic_metadata.topics.keys()
     
     # If the topic does not exist, delete the contents of the file, 
@@ -199,6 +197,10 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     producer.produce(topic, value=jsonStr, callback=delivery_callback)
                     linesProduced = i+1
                     
+                    # Break production if only 10000 events have been sent
+                    if i > line_we_left_off + 20000:
+                        break
+                    
                     # Poll to cleanup the producer queue after every message production
                     # See: https://stackoverflow.com/questions/62408128/buffererror-local-queue-full-in-python
                     producer.poll(0)
@@ -226,7 +228,7 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
             producer.flush()
             print('Producer closed properly')
             
-            
+        
         
         # Case 1.2: EOF 
         # In this case, the file was read up to the last line and
@@ -248,7 +250,7 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                 # producer.flush()
                 # print('Producer closed properly')
             
-            
+    
             
     # Case 2: If the whole file was read before the execution of the script
     # (line_we_left_off = flinesInFile)
@@ -291,47 +293,8 @@ def produce_from_last_line_of_file(topic=str, filepath=str, parsed_files_filepat
     
     config_port = str(config['bootstrap.servers'])
     
-    
-    # topic = 'raw-events'
-    
-    # # Check if the topic has no messages 
-    
-    # consumer_config = config
-    # consumer_config.update(config_parser['consumer'])
-    # consumer = Consumer(config)
-    # consumer.subscribe([topic])
-    # # Poll for messages with a short timeout
-    # msg = consumer.poll(timeout=1.0)
-    # if msg is None:
-    #     print(f'The topic {topic} has no messages')    
-    # consumer.close()    
-    
-    # msg = 0
-    # # If topic does not exist or has no messages, delete the contents 
-    # if topic not in all_topics_list or msg is None:
-    #     print('Deleting the parsed files contents...\n')
-    #     # Truncate the file to start writing new events to it
-    #     with open(parsed_files_filepath, 'w'):
-    #         pass
-              
-    
-    # # If the topic does not exist, create it and delete the parsed files file
-    # if assert_topic_and_create(topic, config_port):
-    #     print('Deleting the parsed files contents...\n')
-    #     # Truncate the file to start writing new events to it
-    #     with open(parsed_files_filepath, 'w'):
-    #         pass
-    
-        
-
     create_topic(topic, config_port)
-            
-    # # Get the compressed file filepath
-    # folder_path = '/home2/output/2024-04-01'
-    # filename = '2024-04-01-1.json.gz'
-    # filepath = os.path.join(folder_path, filename)
-
-    # filepath = '/home2/other_data/2015-01-01-15-thinned.json.gz'
+     
     # Produce from file into topic
     the_whole_file_was_read, the_whole_file_was_read_beforehand = produce_from_line_we_left_off(topic, filepath, parsed_files_filepath, config)
     return the_whole_file_was_read, the_whole_file_was_read_beforehand
