@@ -59,8 +59,7 @@ services:
       - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
       - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
-      
-      
+
       # Screen 2 screen accelerated
       - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
       - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
@@ -297,6 +296,9 @@ services:
       - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
       - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
       
+      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
+      
+
       # usrlib/helpers
       - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
 
@@ -332,6 +334,9 @@ services:
       - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
       - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
       
+      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
+      
+      
       # usrlib/helpers
       - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
 
@@ -350,7 +355,7 @@ services:
     networks:
       - data-network
 
-# Cancel all jobs
+# Cancel all running jobs
   cancel-all-flink-jobs:
     image: python:3.10-script-executing-image
     container_name: python-cancel-all-flink-jobs
@@ -364,9 +369,25 @@ services:
       - kafka
     networks:
       - data-network
-
-
       
+# TODO: Delete and recreate topic
+  delete_and_recreate_topic:
+    image: python:3.10-script-executing-image
+    container_name: delete_and_recreate_topic
+    volumes: 
+      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
+      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
+
+    command: ['python', 'delete_and_recreate_topic.py', '/usrlib/helpers/getting-started-in-docker.ini']
+
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+      
+
 
 # # 2. Near real time events ingestion
 
