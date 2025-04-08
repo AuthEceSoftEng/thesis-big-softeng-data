@@ -86,7 +86,7 @@ def create_topic(topic=str, config_port=str):
             new_topic = admin.NewTopic(topic, num_partitions=4, replication_factor=1)
             # client.create_topics([new_topic])
             
-            create_topics_futures = client.create_topics([new_topic], operation_timeout=5)
+            create_topics_futures = client.create_topics([new_topic], request_timeout=5)
             for create_topic_future in create_topics_futures.values():
                 create_topic_future.result()  # Wait for topic creation
                 print(f"Topic {topic} created successfully")

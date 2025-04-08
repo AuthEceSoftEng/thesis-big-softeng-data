@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 import requests
 import os
 
-from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, delete_and_recreate_topic, delete_and_recreate_topic_with_client
+from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, delete_and_recreate_topic
 
 
 def download_compressed_GHA_file(gha_file_url, folderpath):
@@ -524,8 +524,8 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-05-22'
-    ending_date_formatted =  '2024-12-05-23'
+    starting_date_formatted =  '2024-12-05-1'
+    ending_date_formatted =  '2024-12-05-2'
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -536,6 +536,7 @@ if __name__ == '__main__':
                             "2. Thin file": 0,
                             "3. Produce thinned events": 0,
                             "4. Wait for flink jobs to finish": 0,
+                            "5. Delete and recreate topic": 0,
                             "Total time elapsed": 0}
     total_dur = 0
 
@@ -695,27 +696,22 @@ if __name__ == '__main__':
         
         
         # 5. Delete and recreate the topic if too large
-        
+        # region
         should_delete_and_recreate_topic = True
         
+        st = time.time()
         if should_delete_and_recreate_topic == True:
             topic = topic_to_produce_into
             bootstrap_servers = get_kafka_broker_config(topic)        
-            
-            
             number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
             max_number_of_messages = 20000
-            
-            
-            # client = admin.AdminClient({"bootstrap.servers": bootstrap_servers})
-            # print(client.list_topics(timeout=5).topics.keys())
-            # client.delete_topics([topic])
-
             delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
-            
-            
-            # delete_and_recreate_topic_with_client(client, topic, max_number_of_messages, bootstrap_servers)
-            
+    
+        et = time.time()
+        dur = et - st
+        total_dur += dur
+        sections_performance["5. Delete and recreate topic"] += dur
+        # endregion
         
     sections_performance["Total time elapsed"] = total_dur
     print("Execution times of pipeline parts in seconds:\n")

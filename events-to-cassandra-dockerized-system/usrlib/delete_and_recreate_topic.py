@@ -61,8 +61,8 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
         if message_count >= max_number_of_messages:
             print(f"Number of messages in topic {topic} ({message_count}) exceeds max ({max_number_of_messages}). Deleting topic...")
             
+            # Wait until the topic is deleted
             delete_topic_to_future_dict = client.delete_topics([topic])
-            # Block until the topic is deleted
             for delete_topic_future in delete_topic_to_future_dict.values():
                 delete_topic_future.result()
             
@@ -76,15 +76,13 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
             #     time.sleep(1)
             print("Done")
     else:
-        raise Exception(f"Topic {topic} does not exist")    
+        raise Exception(f"Cannot delete and recreate topic {topic} as it does not exist")    
     
     
     
     
     # Get kafka topics after deletion
     list_topics_futures = client.list_topics(timeout=5)
-    for list_topic_future in list_topics_futures.values():
-        list_topic_future.result()
     all_topics_list = list_topics_futures.topics.keys()
     
     # If the topic was deleted, recreate it    
@@ -94,18 +92,22 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
         print("Recreating topic...")
         recreated_topic = admin.NewTopic(topic, num_partitions=number_of_partitions, replication_factor=replication_factor)
         # Wait until topic is created
-        create_topic_to_future_dict = client.create_topics([recreated_topic])
+        create_topic_to_future_dict = client.create_topics([recreated_topic], operation_timeout=5)
         for create_topic_future in create_topic_to_future_dict.values():
             create_topic_future.result()
-        # Increase partitions to 4
-        new_partitions = admin.NewPartitions(topic, new_total_count=number_of_partitions)
-        # Wait for partitions to be created
-        create_partitions_futures = client.create_partitions([new_partitions])
-        for create_partition_future in create_partitions_futures.values():
-            create_partition_future.result()
+        
+        # # Code below replaced by create_topic_future.result()
+        # # Increase partitions to 4
+        # new_partitions = admin.NewPartitions(topic, new_total_count=number_of_partitions)
+        # # Wait for partitions to be created
+        # create_partitions_futures = client.create_partitions([new_partitions])
+        # for create_partition_future in create_partitions_futures.values():
+        #     create_partition_future.result()
             
-        topic_metadata = client.list_topics(timeout=5)
-        number_of_partitions = len(topic_metadata.topics[topic].partitions)
+        # topic_metadata = client.list_topics(timeout=5)
+        # number_of_partitions = len(topic_metadata.topics[topic].partitions)
+        
+        
         
         # Code below replaced by create_partition_future.result()
         # print("Topic still exists but is empty")

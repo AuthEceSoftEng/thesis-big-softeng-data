@@ -89,14 +89,17 @@ def heavy_thin_data_of_file(input_filepath, output_filepath, do_again=False, del
 	already exists, thin the events again and overwrite the 
 	output_filepath contents
 	'''
-	# Calculate size of file (number of lines of file)
-	with gzip.open(input_filepath, 'r') as file_object:
-			linesInFile = len(file_object.readlines())
+	
 
 	number_of_lines_thinned_per_print = 1000
 
 	print(f'Thinning events of {os.path.basename(input_filepath)}...')
 	if not os.path.exists(output_filepath) or do_again == True:
+      
+      	# Calculate size of file (number of lines of file)
+		with gzip.open(input_filepath, 'r') as file_object:
+			linesInFile = len(file_object.readlines())
+
 		with gzip.open(output_filepath, 'wb') as outstream:
 			with gzip.open(input_filepath) as instream:
 				for i, line in enumerate(instream):
@@ -121,7 +124,7 @@ def heavy_thin_data_of_file(input_filepath, output_filepath, do_again=False, del
 		print(f"{os.path.basename(output_filepath)} with the thinned events already exists.")
 	print('...Done')
 	
-	if delete_original_file == True:
+	if os.path.exists(input_filepath) and delete_original_file == True:
 		os.remove(input_filepath)	
 		print(f"Deleted original file: '{os.path.basename(input_filepath)}'")
   

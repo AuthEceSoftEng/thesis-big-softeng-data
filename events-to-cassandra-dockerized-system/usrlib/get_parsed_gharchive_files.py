@@ -23,10 +23,9 @@ def save_files_parsed(files_parsed=dict, filepath_to_store_files_parsed=str):
     # filename = os.path.basename(filepath_to_store_files_parsed)
     # print(f'Parsed lines of file {filename} were updated:')
     
-    
-    # Uncomment the following section to get all the files parsed and 
-    # the line we left off in each one
     print(f'\nParsed lines of files were updated')
+    # # Uncomment the following section to print all the files parsed and 
+    # # the line we left off in each one
     for parsed_file in files_parsed.keys():
         print(parsed_file, ':', files_parsed[parsed_file])
     print()
