@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 import requests
 import os
 
-from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, delete_and_recreate_topic
+from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, delete_and_recreate_topic, delete_and_recreate_topic_with_client
 
 
 def download_compressed_GHA_file(gha_file_url, folderpath):
@@ -524,8 +524,8 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-05-20'
-    ending_date_formatted =  '2024-12-05-20'
+    starting_date_formatted =  '2024-12-05-22'
+    ending_date_formatted =  '2024-12-05-23'
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -580,10 +580,7 @@ if __name__ == '__main__':
         # region
         st = time.time()
 
-       
-
         heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file, delete_original_file=True)
-
         # thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
         
         et = time.time()
@@ -599,7 +596,7 @@ if __name__ == '__main__':
         parsed_files_filepath = "/github_data/files_parsed.json"
         topic_to_produce_into = 'historical-raw-events'
         
-        the_whole_file_was_produced_already = None
+        # the_whole_file_was_produced_already = None
         the_whole_file_was_read_beforehand = None
                 
         # If the file was read beforehand, then the producer will not produce more events
@@ -624,82 +621,101 @@ if __name__ == '__main__':
             
         # 4. Wait for flink jobs to finish
         # region
-        
+        wait_for_flink_jobs_to_finish = False
         st = time.time()
 
-        running_job_names_in_cluster = get_running_job_names()
-            
-        if running_job_names_in_cluster == []:
-            raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
-
-        
-        # # Uncomment code below if all the jobs should be deployed
-        # # in the cluster
-        # names_of_jobs_that_should_be_running = ["screen_2_q6_q8_via_flink_local_run", "screen_3_q9_q10_via_flink_local_run", "screen_4_q11_q15_via_flink_local_run"]
-        # for name_of_job_that_should_be_running in names_of_jobs_that_should_be_running:
-        #     if name_of_job_that_should_be_running not in running_job_names_in_cluster:
-        #         raise Exception("Not all jobs are running in the Flink cluster")
-        
-        
-        hostname = 'jobmanager'
-        is_a_job_running = None
-        for single_job_name in running_job_names_in_cluster:
-            is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
-            if is_a_job_running == True:        
-                break
-
-        if (is_a_job_running == False):    
-            print(f"Pyflink jobs have not started working")
-            print("Waiting for the jobs to start")
-        
-        
-        while(is_a_job_running == False):
-
-            for single_job_name in running_job_names_in_cluster:
-                # If one of the pyflink jobs started working, break the while loop 
-                is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-                job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
-                sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-            sys.stdout.flush()
-            if is_a_job_running == True:        
-                    break
-
-            time.sleep(5)
-            sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
+        if wait_for_flink_jobs_to_finish == True:
+            running_job_names_in_cluster = get_running_job_names()
                 
-        print()
-        print(f"Pyflink jobs have started working")
-        print("Waiting for pyflink jobs to stop")
-        while(is_a_job_running == True):
-            # Reset the job status. 
-            is_a_job_running = False
+            if running_job_names_in_cluster == []:
+                raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
+
+            
+            # # Uncomment code below if all the jobs should be deployed
+            # # in the cluster
+            # names_of_jobs_that_should_be_running = ["screen_2_q6_q8_via_flink_local_run", "screen_3_q9_q10_via_flink_local_run", "screen_4_q11_q15_via_flink_local_run"]
+            # for name_of_job_that_should_be_running in names_of_jobs_that_should_be_running:
+            #     if name_of_job_that_should_be_running not in running_job_names_in_cluster:
+            #         raise Exception("Not all jobs are running in the Flink cluster")
+            
+            
+            hostname = 'jobmanager'
+            is_a_job_running = None
             for single_job_name in running_job_names_in_cluster:
-                #  While there is at least one working job, wait for it to finish
-                is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-                job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)        
-                sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-            sys.stdout.flush()
-            if is_a_job_running == False:        
+                is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
+                if is_a_job_running == True:        
+                    print()
+                    print(f"Pyflink jobs have started working")
+                    print("Waiting for pyflink jobs to stop")        
                     break
-            time.sleep(5)
-            sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
-        
-        print()
-        print("All pyflink jobs stopped working")
-        
-        
+
+            # # Uncomment to wait for the jobs to start working
+            # if (is_a_job_running == False):    
+            #     print(f"Pyflink jobs have not started working")
+            #     print("Waiting for the jobs to start")        
+            # while(is_a_job_running == False):
+            #     for single_job_name in running_job_names_in_cluster:
+            #         # If one of the pyflink jobs started working, break the while loop 
+            #         is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+            #         job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
+            #         sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+            #     sys.stdout.flush()
+            #     if is_a_job_running == True:        
+            #             print()
+            #             print(f"Pyflink jobs have started working")
+            #             print("Waiting for pyflink jobs to stop")        
+            #             break
+            #     time.sleep(5)
+            #     sys.stdout.write("\033[F" * len(running_job_names_in_cluster))         
+                        
+                        
+            # If there are running jobs, wait for them, else continue
+            if is_a_job_running == True: 
+                while(is_a_job_running == True):
+                    # Reset the job status. 
+                    is_a_job_running = False
+                    for single_job_name in running_job_names_in_cluster:
+                        #  While there is at least one working job, wait for it to finish
+                        is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+                        job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)        
+                        sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+                    sys.stdout.flush()
+                    if is_a_job_running == False:        
+                        print()
+                        print("All pyflink jobs stopped working")
+                        break
+                    time.sleep(5)
+                    sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
+                
         et = time.time()
         dur = et - st
         total_dur += dur
         sections_performance["4. Wait for flink jobs to finish"] += dur
         # endregion
         
-        # Delete and recreate the topic if too large
-        topic = topic_to_produce_into
-        bootstrap_servers = get_kafka_broker_config(topic)        
-        number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-        max_number_of_messages = 10000
-        delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
+        
+        # 5. Delete and recreate the topic if too large
+        
+        should_delete_and_recreate_topic = True
+        
+        if should_delete_and_recreate_topic == True:
+            topic = topic_to_produce_into
+            bootstrap_servers = get_kafka_broker_config(topic)        
+            
+            
+            number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
+            max_number_of_messages = 20000
+            
+            
+            # client = admin.AdminClient({"bootstrap.servers": bootstrap_servers})
+            # print(client.list_topics(timeout=5).topics.keys())
+            # client.delete_topics([topic])
+
+            delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
+            
+            
+            # delete_and_recreate_topic_with_client(client, topic, max_number_of_messages, bootstrap_servers)
+            
         
     sections_performance["Total time elapsed"] = total_dur
     print("Execution times of pipeline parts in seconds:\n")
@@ -709,4 +725,29 @@ if __name__ == '__main__':
 
 
 
-        
+
+
+
+
+# Test to increase the topic partitions
+    # topic = 'historical-raw-events'
+    # bootstrap_servers = get_kafka_broker_config(topic)
+    # client = admin.AdminClient({"bootstrap.servers": bootstrap_servers})
+
+    # # # Create topic
+    # # create_topic_future = client.create_topics([topic])
+    # # print(create_topic_future)
+    # # print(create_topic_future[topic])
+    # # print(create_topic_future[topic].result())
+    
+    # # # Delete topic
+    # # delete_topic_future = client.delete_topics([topic])
+    # # print(delete_topic_future[topic].result())
+    
+    
+    # # Increase topic partition
+    # number_of_partitions = 4
+    # new_partitions = admin.NewPartitions(topic, new_total_count=number_of_partitions)
+    # create_topic_partitions_future = client.create_partitions([new_partitions])
+    
+    # print(create_topic_partitions_future[topic].result())
