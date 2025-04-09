@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
-from confluent_kafka import Producer, Consumer, admin, TopicPartition
+from confluent_kafka import Producer, Consumer, admin, TopicPartition, KafkaException
 import time
 
 
@@ -45,6 +45,7 @@ def get_topic_number_of_messages(topic, bootstrap_servers):
         return None
 
 
+# TODO: Simplify use cases and delete and recreate pipeline of topics
 def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
     """
     If the number of messages in the ``topic`` exceeds ``max_number_of_messages``, delete and recreate it 
@@ -65,25 +66,15 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
             delete_topic_to_future_dict = client.delete_topics([topic])
             for delete_topic_future in delete_topic_to_future_dict.values():
                 delete_topic_future.result()
-            
-            # Code below replaced by delete_topic_future.result()
-            # # Wait until topic or topic messages are deleted
-            # while((topic in all_topics_list) and get_topic_number_of_messages(topic, bootstrap_servers) > 0):
-            #     print("Waiting for topic or topic's messages to be deleted")
-            #     topic_metadata = client.list_topics(timeout=5)
-            #     all_topics_list = topic_metadata.topics.keys()
-            #     # print(f"Topics in broker: {all_topics_list}")
-            #     time.sleep(1)
             print("Done")
     else:
         raise Exception(f"Cannot delete and recreate topic {topic} as it does not exist")    
     
     
-    
-    
     # Get kafka topics after deletion
     list_topics_futures = client.list_topics(timeout=5)
     all_topics_list = list_topics_futures.topics.keys()
+    # print(all_topics_list)
     
     # If the topic was deleted, recreate it    
     if topic not in all_topics_list:
@@ -94,37 +85,23 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
         # Wait until topic is created
         create_topic_to_future_dict = client.create_topics([recreated_topic], operation_timeout=5)
         for create_topic_future in create_topic_to_future_dict.values():
-            create_topic_future.result()
-        
-        # # Code below replaced by create_topic_future.result()
-        # # Increase partitions to 4
-        # new_partitions = admin.NewPartitions(topic, new_total_count=number_of_partitions)
-        # # Wait for partitions to be created
-        # create_partitions_futures = client.create_partitions([new_partitions])
-        # for create_partition_future in create_partitions_futures.values():
-        #     create_partition_future.result()
-            
-        # topic_metadata = client.list_topics(timeout=5)
-        # number_of_partitions = len(topic_metadata.topics[topic].partitions)
-        
-        
-        
-        # Code below replaced by create_partition_future.result()
-        # print("Topic still exists but is empty")
-        # print(f"New number of partitions for topic {topic}: {number_of_partitions}")
-        
-        # # Code below replaced by create_topic_future.result()
-        # while(topic not in all_topics_list):
-        #     print("Waiting for topic to be created")
-        #     topic_metadata = client.list_topics(timeout=5)
-        #     all_topics_list = topic_metadata.topics.keys()
-        #     # print(f"Topics in broker: {all_topics_list}")
-        #     time.sleep(1)
-        # print("Done")
+            try:
+                create_topic_future.result()
+            except KafkaException as e:
+                err_obj = e.args[0]
+                err_name = err_obj.name()
+                if err_name == 'TOPIC_ALREADY_EXISTS':
+                    # Topic already exists, do nothing
+                    pass
+                else:
+                    # Catch other errors
+                    raise Exception(e)
+                    
+        print("Done")
     
         
     # If only the topic messages were deleted, increase the topic's partitions to 4
-    elif (topic in all_topics_list) and get_topic_number_of_messages(topic, bootstrap_servers) == 0:
+    if (topic in all_topics_list) and get_topic_number_of_messages(topic, bootstrap_servers) == 0:
 
         new_partitions = admin.NewPartitions(topic, new_total_count=number_of_partitions)
         # Wait until the number of the topic partitions is increased
@@ -132,11 +109,10 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
         for create_partition_future in create_partitions_futures.values():
             create_partition_future.result()
 
-        # # Uncomment to print increased number of partitions (code replaced by create_partitions_futures)
-        # topic_metadata = client.list_topics(timeout=5)
-        # number_of_partitions = len(topic_metadata.topics[topic].partitions)
-        # print(f"New number of partitions for topic {topic}: {number_of_partitions}")
-        
+    elif (topic in all_topics_list) and get_topic_number_of_messages(topic, bootstrap_servers) > 0:
+        # Topic exists and has some messages - do nothing
+        pass
+    
     # Error: Topic does not exist or its messages are not 0
     else:
         raise Exception(f"Topic {topic} does not exist in kafka cluster or it exists but its messages are not 0 despite having deleted it")
