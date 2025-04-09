@@ -453,7 +453,7 @@ max_concurrent_requests = 100
     
 #     # Keep only bot events
 #     # Exclude human events
-#     username = event_dict['payload']['pull_request']['base']['user']
+#     username = event_dict['payload']['pull_request']['user']
 #     if username.endswith('[bot]'):
 #         is_bot = True
 #     else:
@@ -552,7 +552,7 @@ max_concurrent_requests = 100
 #     is_human = False
 #     username = None
 #     if (event_type == "PullRequestEvent"):
-#         username = event_dict['payload']['pull_request']['base']['user']
+#         username = event_dict['payload']['pull_request']['user']
 #         # Exclude bot events
 #         if not username.endswith('[bot]'):
 #             is_human = True
