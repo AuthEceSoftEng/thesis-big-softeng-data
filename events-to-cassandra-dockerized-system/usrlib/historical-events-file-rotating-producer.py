@@ -524,8 +524,8 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-05-5'
-    ending_date_formatted =  '2024-12-05-6'
+    starting_date_formatted =  '2024-12-05-7'
+    ending_date_formatted =  '2024-12-05-10'
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -551,6 +551,9 @@ if __name__ == '__main__':
         
         # 1. Download gharchive file
         # region
+        print(f"Gharchive file: {current_date_formatted}")
+        print("1. Download gharchive file")
+        
         st = time.time()
         
         gharchive_file_URL = 'https://data.gharchive.org/' + current_date_formatted + '.json.gz'
@@ -567,6 +570,8 @@ if __name__ == '__main__':
         # If neither the original or the thinned file exist, download the original to produce it
         if not os.path.exists(filepath_of_file_to_thin) and not os.path.exists(filepath_of_thinned_file):
             download_compressed_GHA_file(gharchive_file_URL, folderpath_to_download_into)
+        elif os.path.exists(filepath_of_thinned_file):
+            print(f"Thinned file {thinned_filename} already exists.")
 
 
         et = time.time()
@@ -579,6 +584,8 @@ if __name__ == '__main__':
 
         # 2. Thin file
         # region
+        print("2. Thin file:")
+
         st = time.time()
 
         heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file, delete_original_file=True)
@@ -593,6 +600,7 @@ if __name__ == '__main__':
 
         # 3. Produce thinned events
         # region
+        print("3. Produce thinned events:")
         # Store the files produced and up to which point
         parsed_files_filepath = "/github_data/files_parsed.json"
         topic_to_produce_into = 'historical-raw-events'
@@ -626,6 +634,8 @@ if __name__ == '__main__':
         st = time.time()
 
         if wait_for_flink_jobs_to_finish == True:
+            print("4. Wait for flink jobs to finish")
+            
             running_job_names_in_cluster = get_running_job_names()
                 
             if running_job_names_in_cluster == []:
@@ -714,6 +724,7 @@ if __name__ == '__main__':
         
         # 5. Delete and recreate the topic if too large
         # region
+        print("5. Delete and recreate topic")
         should_delete_and_recreate_topic = True
         
         st = time.time()
@@ -731,7 +742,7 @@ if __name__ == '__main__':
         # endregion
         
     sections_performance["Total time elapsed"] = total_dur
-    print("Execution times of pipeline parts in seconds:\n")
+    print("Execution times of pipeline parts in seconds:")
     for k, v in sections_performance.items():
         print(f"{k}: {round(v, 1)}")
 

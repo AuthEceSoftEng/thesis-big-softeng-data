@@ -78,8 +78,6 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
     
     # If the topic was deleted, recreate it    
     if topic not in all_topics_list:
-        
-        
         print("Recreating topic...")
         recreated_topic = admin.NewTopic(topic, num_partitions=number_of_partitions, replication_factor=replication_factor)
         # Wait until topic is created
@@ -96,19 +94,17 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
                 else:
                     # Catch other errors
                     raise Exception(e)
-                    
         print("Done")
+    
     
         
     # If only the topic messages were deleted, increase the topic's partitions to 4
-    if (topic in all_topics_list) and get_topic_number_of_messages(topic, bootstrap_servers) == 0:
-
+    elif (topic in all_topics_list) and get_topic_number_of_messages(topic, bootstrap_servers) == 0:
         new_partitions = admin.NewPartitions(topic, new_total_count=number_of_partitions)
         # Wait until the number of the topic partitions is increased
         create_partitions_futures = client.create_partitions([new_partitions])
         for create_partition_future in create_partitions_futures.values():
             create_partition_future.result()
-
     elif (topic in all_topics_list) and get_topic_number_of_messages(topic, bootstrap_servers) > 0:
         # Topic exists and has some messages - do nothing
         pass

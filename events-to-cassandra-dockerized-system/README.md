@@ -88,7 +88,12 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python
 
 ```
 
-### Terminal 8 (optional): Delete messages of the 'historical-raw-events' topic if the topic takes up too much space
+### Terminal 8: Cancel all jobs
+```sh
+docker compose up cancel-all-flink-jobs
+```
+
+### Terminal 9 (optional): Delete messages of the 'historical-raw-events' topic if the topic takes up too much space
 ```sh
 # Free up the space of the topic (delete its messages and make its size = 0)
 cd usrlib
