@@ -93,9 +93,8 @@ def heavy_thin_data_of_file(input_filepath, output_filepath, do_again=False, del
 
 	number_of_lines_thinned_per_print = 1000
 
-	print(f'Thinning events of {os.path.basename(input_filepath)}...')
 	if not os.path.exists(output_filepath) or do_again == True:
-      
+		print(f'Thinning events of {os.path.basename(input_filepath)}...')
       	# Calculate size of file (number of lines of file)
 		with gzip.open(input_filepath, 'r') as file_object:
 			linesInFile = len(file_object.readlines())
@@ -119,10 +118,11 @@ def heavy_thin_data_of_file(input_filepath, output_filepath, do_again=False, del
 				# Print again at the last line thinned			
 				sys.stdout.write("\r JSON events thinned: {0}/{1}".format(linesInFile, linesInFile))
 				sys.stdout.flush()
-							
+		print('...Done')	
+ 						
 	elif os.path.exists(output_filepath) and do_again == False:
 		print(f"{os.path.basename(output_filepath)} with the thinned events already exists.")
-	print('...Done')
+	
 	
 	if os.path.exists(input_filepath) and delete_original_file == True:
 		os.remove(input_filepath)	

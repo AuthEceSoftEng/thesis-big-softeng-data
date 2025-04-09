@@ -17,7 +17,7 @@ from get_parsed_gharchive_files import save_files_parsed, restore_parsed_files
 import sys, json, time, os, gzip
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
-from confluent_kafka import Producer, Consumer, admin
+from confluent_kafka import Producer, Consumer, admin, KafkaException
 import shutil
 from pathlib import Path
 
@@ -69,29 +69,55 @@ def delivery_callback(err, msg):
         #     topic=msg.topic(), value=msg.value().decode('utf-8')))
 
 def create_topic(topic=str, config_port=str):
-        '''
-        Checks if a topic exists and if it does not, it creates it
-        `topic`: topic name 
-        `config_port`: the port of the kafka cluster (e.g. localhost:44352)
-        '''
-        client = admin.AdminClient({"bootstrap.servers": config_port})
-        topic_metadata = client.list_topics(timeout=5)
-        all_topics_list = topic_metadata.topics.keys()
-        print(all_topics_list)
-        
-        # If the topic does not exist,
-        # then create it 
-        if topic not in all_topics_list:
-            print(f'Topic {topic} does not exist')
-            new_topic = admin.NewTopic(topic, num_partitions=4, replication_factor=1)
-            # client.create_topics([new_topic])
+    '''
+    Checks if a topic exists and if it does not, it creates it
+    `topic`: topic name 
+    `config_port`: the port of the kafka cluster (e.g. localhost:44352)
+    '''
+    client = admin.AdminClient({"bootstrap.servers": config_port})
+    topic_metadata = client.list_topics(timeout=5)
+    all_topics_list = topic_metadata.topics.keys()
+    # # Uncomment to show new topics upon topic creation 
+    # print(all_topics_list)
+    
+    increased_number_of_partitions = 4
+    replication_factor = 1
+    
+    # If the topic does not exist, create it 
+    if topic not in all_topics_list:
+        print(f'Topic {topic} does not exist')
+        new_topic = admin.NewTopic(topic, num_partitions=increased_number_of_partitions, replication_factor=replication_factor)
+        create_topics_futures = client.create_topics([new_topic], request_timeout=5)
             
-            create_topics_futures = client.create_topics([new_topic], request_timeout=5)
+        try:
             for create_topic_future in create_topics_futures.values():
                 create_topic_future.result()  # Wait for topic creation
                 print(f"Topic {topic} created successfully")
-        else: 
-            print(f"Topic {topic} already exists")
+        
+        except KafkaException as e:
+            err_dict = e.args[0]
+            err_name = err_dict.name()
+            if err_name == 'TOPIC_ALREADY_EXISTS':
+                pass # Topic already exists. Do nothing
+            else:
+                raise Exception(e) # Catch other errors 
+            
+    elif topic in all_topics_list: 
+        client = admin.AdminClient({"bootstrap.servers": config_port})
+        topic_metadata = client.list_topics(timeout=5)
+        all_topics_list = topic_metadata.topics.keys()    
+        number_of_partitions = len(topic_metadata.topics[topic].partitions)
+        
+        if number_of_partitions == increased_number_of_partitions:
+            print(f"Topic {topic} already exists and has {number_of_partitions} partitions")
+        else:
+            print(f"Increasing partitions of topic {topic} from {number_of_partitions} to {increased_number_of_partitions}...")
+            new_partitions = admin.NewPartitions(topic, new_total_count=increased_number_of_partitions)
+            create_partitions_futures = client.create_partitions([new_partitions])
+            # Wait until the number of the topic partitions is increased
+            for create_partition_future in create_partitions_futures.values():
+                create_partition_future.result()
+            print("Done")
                 
 
         
