@@ -223,7 +223,8 @@
 
                     for (let js_repo_index = 0; js_repo_index < num_of_js_repos_to_appear; js_repo_index++){
                       var js_repo_name = Object.keys(data)[js_repo_index];
-                      var stars_per_month = Object.values(data)[js_repo_index]['stars_by_month'];
+                      var stars_per_month = Object.values(data)[js_repo_index]['stars_by_day'];
+                      
 
                       // [js_repo_name, stars_per_month_dict] = Object.entries(data)[js_repo_index];
                       // stars_only = Object.values(stars_per_month_dict);
