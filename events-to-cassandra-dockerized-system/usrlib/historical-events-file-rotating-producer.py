@@ -524,8 +524,8 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-05-7'
-    ending_date_formatted =  '2024-12-05-10'
+    starting_date_formatted =  '2024-12-01-15'
+    ending_date_formatted =  '2024-12-01-15'
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -551,7 +551,7 @@ if __name__ == '__main__':
         
         # 1. Download gharchive file
         # region
-        print(f"Gharchive file: {current_date_formatted}")
+        print(f"\nGharchive file: {current_date_formatted}")
         print("1. Download gharchive file")
         
         st = time.time()
@@ -613,10 +613,10 @@ if __name__ == '__main__':
 
 
         if the_whole_file_was_read_beforehand:
-            current_date = current_date + timedelta(hours=1)
+            current_date = current_date + timedelta(days=1)
             current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
             continue
-        current_date = current_date + timedelta(hours=1)
+        current_date = current_date + timedelta(days=1)
         current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
  
 
@@ -733,6 +733,31 @@ if __name__ == '__main__':
             bootstrap_servers = get_kafka_broker_config(topic)        
             number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
             max_number_of_messages = 20000
+            
+            # Wait for jobs to stop completely before deleting topic
+            jobs_busy_ratios = {}
+            # If there are running jobs wait for them to stop
+            if is_a_job_running == True: 
+                print("Wait for jobs to stop completely before deleting the topic")
+                while(is_a_job_running == True):
+                    # Reset the job status. 
+                    is_a_job_running = False
+                    for single_job_name in running_job_names_in_cluster:
+                        #  While there is at least one working job, wait for it to finish
+                        is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+                        job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)
+                        jobs_busy_ratios[single_job_name] = job_busy_ratio
+                        sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+                    sys.stdout.flush()
+                    max_job_busy_ratio = max(jobs_busy_ratios.values())
+                    
+                    # Continue with message production the jobs if none is running or if the most busy one is not at 100%
+                    if is_a_job_running == False:        
+                        print()
+                        print("Pyflink jobs stopped. Can delete topic")
+                        break
+                    time.sleep(5)
+                    sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
             delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
     
         et = time.time()
