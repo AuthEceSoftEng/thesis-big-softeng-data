@@ -161,7 +161,7 @@
                     for (let js_repo_index = 0; js_repo_index < num_of_js_repos_to_appear; js_repo_index++){
                       // console.log(Object.keys(data)[0]);
                       var js_repo_name = Object.keys(data)[js_repo_index];
-                      var stars_per_month = Object.values(data)[js_repo_index]['stars_by_month'];
+                      var stars_per_day = Object.values(data)[js_repo_index]['stars_by_day'];
 
                       // [js_repo_name, stars_per_month_dict] = Object.entries(data)[js_repo_index];
                       // stars_only = Object.values(stars_per_month_dict);
@@ -177,7 +177,7 @@
                         borderWidth: 4,
                         backgroundColor: "transparent",
                         fill: true,
-                        data: stars_per_month,
+                        data: stars_per_day,
                         maxBarThickness: 6
 
                       }
@@ -216,14 +216,14 @@
                     var stars_per_month_dict;
                     var new_js_repo_dataset;
 
-                    // Remove the existing js repos star histrories from the table (if exists)
+                    // Remove the existing js repos star histories from the table (if exists)
                     star_history_chart.data.datasets.splice(0, star_history_chart.data.datasets.length)
-                    console.log("Before datasets insertion: " + star_history_chart.data.datasets.length);
-                      
+                    star_history_chart.data.labels.splice(0, star_history_chart.data.labels.length)
+
 
                     for (let js_repo_index = 0; js_repo_index < num_of_js_repos_to_appear; js_repo_index++){
                       var js_repo_name = Object.keys(data)[js_repo_index];
-                      var stars_per_month = Object.values(data)[js_repo_index]['stars_by_day'];
+                      var stars_per_day= Object.values(data)[js_repo_index]['stars_by_day'];
                       
 
                       // [js_repo_name, stars_per_month_dict] = Object.entries(data)[js_repo_index];
@@ -240,7 +240,7 @@
                         borderWidth: 4,
                         backgroundColor: "transparent",
                         fill: true,
-                        data: stars_per_month,
+                        data: stars_per_day,
                         maxBarThickness: 6
 
                       }
