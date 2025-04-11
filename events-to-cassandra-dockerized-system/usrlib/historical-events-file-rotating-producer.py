@@ -524,7 +524,7 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-10-11'
+    starting_date_formatted =  '2024-12-10-15'
     ending_date_formatted =  '2024-12-10-15' 
     # ending_date_formatted =  '2024-12-15-10'
     current_date_formatted = starting_date_formatted
@@ -628,29 +628,46 @@ if __name__ == '__main__':
         # endregion
 
         
+        # Get new number of messages to determine whether to delete topic or not (max_messages_reached=True or False)
+        topic = topic_to_produce_into
+        bootstrap_servers = get_kafka_broker_config(topic)        
+        number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
+        max_number_of_messages = 1000
+        max_messages_reached = False
+        if number_of_messages > max_number_of_messages:
+            max_messages_reached = True
+        
+        
             
         # 4. Wait for flink jobs to finish
         # region
-        wait_for_flink_jobs_to_finish = True
+
+        # Set True or False to skip region 
+        skip_wait_for_flink_jobs_to_finish = False
         st = time.time()
 
-        if wait_for_flink_jobs_to_finish == True:
-            print("4. Wait for flink jobs to finish")
+        if skip_wait_for_flink_jobs_to_finish == False:
             
+            print("4. Wait for flink jobs to finish")
             running_job_names_in_cluster = get_running_job_names()
-                
+            running_job_names_in_cluster = sorted(running_job_names_in_cluster)
             if running_job_names_in_cluster == []:
                 raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
             
-            hostname = 'jobmanager'
+
             is_a_job_running = None
+            hostname = 'jobmanager'
             for single_job_name in running_job_names_in_cluster:
                 is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
-                if is_a_job_running == True:        
+                if is_a_job_running == True:
                     print()
                     print(f"Pyflink jobs have started working")
-                    print("Waiting for pyflink jobs to stop")        
+                    if max_messages_reached == True:        
+                        print("Waiting for pyflink jobs to stop completely before deleting the topic")        
+                    elif max_messages_reached == False:
+                        print("Waiting for pyflink jobs busy ratios to drop from 100%% before producing new messages")        
                     break
+                
 
             # # Uncomment to wait for the jobs to start working
             # if (is_a_job_running == False):    
@@ -670,11 +687,11 @@ if __name__ == '__main__':
             #             break
             #     time.sleep(5)
             #     sys.stdout.write("\033[F" * len(running_job_names_in_cluster))         
-                        
+                  
            
             jobs_busy_ratios = {}
             
-            # Wait for jobs to stop or 
+            # Wait for jobs to stop 
             while(is_a_job_running == True):
                 # Reset the job status. 
                 is_a_job_running = False
@@ -687,17 +704,24 @@ if __name__ == '__main__':
                 sys.stdout.flush()
                 max_job_busy_ratio = max(jobs_busy_ratios.values())
                 
-                # Continue with message production the jobs if none is running or if the most busy one is not at 100%
-                if is_a_job_running == False or max_job_busy_ratio < 1:        
+                # If the jobs stopped (busy ratio 0%) or are not at busy ratio 100%, continue producing messages
+                if (is_a_job_running == False or max_job_busy_ratio < 1) and max_messages_reached == False:
                     print()
-                    print("Pyflink jobs stopped or are not 100%% busy")
+                    print("Pyflink jobs stopped or are not 100%% busy. Can continue producing messages")
+                    break
+                # Only if the jobs stopped (busy ratio 0%), continue producing messages
+                elif is_a_job_running == False and max_messages_reached == True:
+                    print("Pyflink jobs stopped. Can delete topic")
                     break
                 time.sleep(5)
+                
                 # Get the new running jobs in case one was added to the cluster or cancelled
                 running_job_names_in_cluster = get_running_job_names()
-                sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
-            
+                running_job_names_in_cluster = sorted(running_job_names_in_cluster)
                 
+                sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
+        
+        
         et = time.time()
         dur = et - st
         total_dur += dur
@@ -707,42 +731,14 @@ if __name__ == '__main__':
         
         # 5. Delete and recreate the topic if too large
         # region
-        print("5. Delete and recreate topic")
-        should_delete_and_recreate_topic = True
-        
+        # Set True or False to skip region
+        skip_delete_topic = False
         st = time.time()
-        if should_delete_and_recreate_topic == True:
-            topic = topic_to_produce_into
-            bootstrap_servers = get_kafka_broker_config(topic)        
-            number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-            max_number_of_messages = 1000000
-            
-            if number_of_messages >=  max_number_of_messages:
-                # Wait for jobs to stop completely before deleting topic
-                jobs_busy_ratios = {}
-                # If there are running jobs wait for them to stop
-                if is_a_job_running == True: 
-                    print("Wait for jobs to stop completely before deleting the topic")
-                    while(is_a_job_running == True):
-                        # Reset the job status. 
-                        is_a_job_running = False
-                        for single_job_name in running_job_names_in_cluster:
-                            #  While there is at least one working job, wait for it to finish
-                            is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-                            job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)
-                            jobs_busy_ratios[single_job_name] = job_busy_ratio
-                            sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-                        sys.stdout.flush()
-                        max_job_busy_ratio = max(jobs_busy_ratios.values())
-                        
-                        # Continue with message production the jobs if none is running or if the most busy one is not at 100%
-                        if is_a_job_running == False:        
-                            print()
-                            print("Pyflink jobs stopped. Can delete topic")
-                            break
-                        time.sleep(5)
-                        sys.stdout.write("\033[F" * len(running_job_names_in_cluster)) 
-                delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
+        
+        # Delete topic 
+        if skip_delete_topic == False:
+            print("5. Delete and recreate topic")
+            delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
     
         et = time.time()
         dur = et - st
