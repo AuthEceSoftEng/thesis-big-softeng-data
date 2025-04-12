@@ -857,14 +857,14 @@ if __name__ == '__main__':
         
     sections_performance.append(["Total time elapsed", total_dur])
 
-    skip_topic_deletion = True
+    skip_topic_deletion = False
     
     if skip_topic_deletion == False:
         # Delete and recreate the topic if too large
         topic = topic_to_produce_into
         bootstrap_servers = get_kafka_broker_config(topic)
         number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-        max_number_of_messages = 20003
+        max_number_of_messages = 200000
         delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
         
 
