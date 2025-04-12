@@ -44,8 +44,6 @@ def get_topic_number_of_messages(topic, bootstrap_servers):
         print(f"Cannot get topic {topic}'s number of messages. The topic does not exist")
         return None
 
-
-# TODO: Simplify use cases and delete and recreate pipeline of topics
 def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
     """
     If the number of messages in the ``topic`` exceeds ``max_number_of_messages``, delete and recreate it 
@@ -60,7 +58,7 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
     if topic in all_topics_list:
         message_count = get_topic_number_of_messages(topic, bootstrap_servers)
         if message_count >= max_number_of_messages:
-            print(f"Number of messages in topic {topic} ({message_count}) exceeds max ({max_number_of_messages}). Deleting topic...")
+            print(f"Number of messages in topic {topic} ({message_count}) is equal to or exceeds max ({max_number_of_messages}). Deleting topic...")
             
             # Wait until the topic is deleted
             delete_topic_to_future_dict = client.delete_topics([topic])

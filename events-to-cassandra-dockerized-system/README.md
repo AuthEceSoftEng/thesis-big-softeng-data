@@ -88,7 +88,7 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python
 
 ```
 
-### Terminal 8: Cancel all jobs
+### Terminal 8: Cancel all jobs (you can also do so manually from the UI)
 ```sh
 docker compose up cancel-all-flink-jobs
 ```

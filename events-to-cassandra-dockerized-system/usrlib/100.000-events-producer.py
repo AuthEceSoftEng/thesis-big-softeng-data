@@ -701,7 +701,7 @@ if __name__ == '__main__':
     
     # Designate a date (year, month, day, hour) to download a gharchive file from
     starting_date_formatted = '2024-12-03-1'
-    ending_date_formatted = '2024-12-03-3'
+    ending_date_formatted = '2024-12-03-1'
     current_date_formatted = starting_date_formatted
     
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
@@ -756,7 +756,7 @@ if __name__ == '__main__':
             # Sample the first {number_of_lines_to_keep} lines of the thinned file
             # filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
             input_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned.json.gz'
-            number_of_lines_to_keep = 10001
+            number_of_lines_to_keep = 200000
             limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
             create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
             
@@ -785,7 +785,7 @@ if __name__ == '__main__':
             # endregion
 
             
-        skip_step_4 = True
+        skip_step_4 = False
 
         if skip_step_4 == False:
             # 4. Wait for data transformation (Check if the jobs stopped working)

@@ -689,41 +689,21 @@ def get_number_of_events_for_humans_and_bots_by_day(day):
 def get_number_of_stars_of_js_repo_by_day():
     """
     Example JSON to be exposed:
-    {
-        "Polymer/polymer": {
-            "stars_by_day": {
-            "2024-01": 0,
-            "2024-02": 0,
-            "2024-03": 0,
-            "2024-04": 0,
-            "2024-05": 0,
-            "2024-06": 0,
-            "2024-07": 0,
-            "2024-08": 0,
-            "2024-09": 0,
-            "2024-10": 0,
-            "2024-11": 0
-            },
-            "total_stars_for_all_days": 0
+    "preactjs/preact": {
+        "stars_by_day": {
+            "2024-12-01": 0,
+            ...
+            "2024-12-30": 0
         },
-    
-        ...,
-
-        "alpinejs/alpine": {
-            "stars_by_day":{
-            "2024-01": 0,
-            "2024-02": 0,
-            "2024-03": 0,
-            "2024-04": 2,
-            "2024-05": 1,
-            "2024-06": 1,
-            "2024-07": 0,
-            "2024-08": 0,
-            "2024-09": 1,
-            "2024-10": 0,
-            "2024-11": 0
-            },
-            "total_stars_for_all_days": 5
+        "total_stars_for_all_days": 48
+    },
+    "angular/angular": {
+        "stars_by_day": {
+            "2024-12-01": 0,
+            ...
+            "2024-12-30": 0
+        },
+        "total_stars_for_all_days": 25
     }
     """
     
@@ -754,7 +734,7 @@ def get_number_of_stars_of_js_repo_by_day():
         starting_datetime = datetime(year=2024, month=12, day=1)
         stars_by_day_dict = {}
         
-        for day_delta in range(30):
+        for day_delta in range(31):
             new_day = starting_datetime + relativedelta(days=+day_delta)
             new_day_stringified = datetime.strftime(new_day, "%Y-%m-%d") 
             stars_by_day_dict[new_day_stringified] = 0

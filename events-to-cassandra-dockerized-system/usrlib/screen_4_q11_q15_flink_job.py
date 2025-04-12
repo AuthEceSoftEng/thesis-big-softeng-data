@@ -420,6 +420,7 @@ if __name__ == "__main__":
         "closing_time text, PRIMARY KEY ((repo_name), "\
         "issue_number)) WITH CLUSTERING ORDER BY "\
         "(issue_number ASC);"
+    session.execute(create_issue_closing_times_table_q13_14)
 
     create_issue_closing_times_by_label_table_q15 = \
         "CREATE TABLE IF NOT EXISTS prod_gharchive.issue_closing_times_by_label "\

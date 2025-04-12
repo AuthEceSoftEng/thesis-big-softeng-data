@@ -94,8 +94,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'   # Limit this container to 4 CPUs
-          # memory: 600m
+          cpus: '1.0'   # Limit this container to 4 CPUs
+          memory: 1g
         
         # cpus: '4.0'   # Limit this container to 4 CPUs
         # memory: 8g

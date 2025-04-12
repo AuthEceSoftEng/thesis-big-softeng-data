@@ -196,6 +196,9 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
     
     number_of_lines_produced_per_print = 1000
     
+    # Line tracker
+    i = 0
+    
     # Read lines of file to be added in kafka topic until keyboard interrupt
     # of EOF
     
@@ -219,13 +222,12 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                         sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
                         sys.stdout.flush()
                         
-                    # TODO: Produce in batches (see kafka docs)
                     producer.produce(topic, value=jsonStr, callback=delivery_callback)
                     linesProduced = i+1
                     
-                    # Break production if only 10000 events have been sent
-                    if i > line_we_left_off + 20000:
-                        break
+                    # # Break production if only 10000 events have been sent
+                    # if i >= line_we_left_off + 20000:
+                    #     break
                     
                     # Poll to cleanup the producer queue after every message production
                     # See: https://stackoverflow.com/questions/62408128/buffererror-local-queue-full-in-python
@@ -233,7 +235,7 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     # # Time sleep is used here to capture output
                     time.sleep(0.0001)
                         
-                sys.stdout.write("\rJSON objects produced: {0}/{1}".format(linesInFile, linesInFile))
+                sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i, linesInFile))
                 sys.stdout.flush()
                         
         

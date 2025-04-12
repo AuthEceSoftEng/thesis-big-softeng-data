@@ -84,6 +84,15 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
 
+topic_to_consume_from = "historical-raw-events"
+
+print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
+        f"Cassandra tables\n"
+        "T6_b: top_bot_contributions_by_day, T6_h: top_human_contributors_by_day,\n"
+        "T7_b: number_of_pull_requests_by_bots, T7_h: number_of_pull_requests_by_humans,\n"
+        "T8_b: number_of_events_by_bots, T8_h: number_of_events_by_humans")
+
+
 
 # IV. Consume the original datastream 'historical-raw-events'
 #region 
@@ -92,7 +101,6 @@ kafka_props = {'enable.auto.commit': 'true',
                'auto.offset.reset': 'smallest'}
 
 
-topic_to_consume_from = "historical-raw-events"
 
 
 second_screen_consumer_group_id_1 = 'second_screen_consumer_group_id_1'
@@ -108,17 +116,9 @@ kafka_consumer_second_screen_source_1 = KafkaSource.builder() \
             .set_properties(kafka_props)\
             .build()
 
-print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
-        f"Cassandra tables\n"
-        "T6_b: top_bot_contributions_by_day, T6_h: top_human_contributors_by_day,\n"
-        "T7_b: number_of_pull_requests_by_bots, T7_h: number_of_pull_requests_by_humans,\n"
-        "T8_b: number_of_events_by_bots, T8_h: number_of_events_by_humans")
-
 raw_events_ds = env.from_source( source=kafka_consumer_second_screen_source_1, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="kafka_source")\
-
-
 
 #endregion
 
@@ -738,7 +738,7 @@ if __name__ =='__main__':
         "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
         "username)) WITH CLUSTERING ORDER BY "\
         "(username ASC);"
-    session.execute(create_top_bot_contributors_table_q6_b)
+    session.execute(create_top_human_contributors_table_q6_h)
 
     create_number_of_pull_requests_by_bots_q7_b = \
         "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_bots "\
