@@ -524,8 +524,8 @@ def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_an
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-01-1'
-    ending_date_formatted =  '2024-12-01-1' 
+    starting_date_formatted =  '2024-12-01-2'
+    ending_date_formatted =  '2024-12-01-4' 
     # ending_date_formatted =  '2024-12-15-10'
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
