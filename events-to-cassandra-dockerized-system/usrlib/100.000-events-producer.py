@@ -648,11 +648,10 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
                 jsonDict = json.loads(lines[i])
                 jsonStr = str(jsonDict)
                 
-                # Print only batches of lines produced
+                # # Print only batches of lines produced
                 # if lines_produced % number_of_lines_produced_per_print == 0:
-    
-                sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced, lines_in_file))
-                sys.stdout.flush()
+                #     sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced, lines_in_file))
+                #     sys.stdout.flush()
                 
                 # Old version
                 producer.produce(topic, value= jsonStr, callback=delivery_callback)
@@ -678,12 +677,11 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
         if os.path.exists(decompressed_file_path):
             os.remove(decompressed_file_path)
         
-        producer.poll(0)
-        
+        producer.poll(10000)
         # Wait for all messages in the Producer queue to be delivered
-        producer.flush()
+        producer.flush()                
         print('\nProducer closed properly')
-        
+    
     # Case 1.2: EOF 
     # In this case, the file was read up to the last line and
     # no keyboard interrupt occured
@@ -700,8 +698,8 @@ if __name__ == '__main__':
     # Code sketch
     
     # Designate a date (year, month, day, hour) to download a gharchive file from
-    starting_date_formatted = '2024-12-03-1'
-    ending_date_formatted = '2024-12-03-1'
+    starting_date_formatted = '2024-12-03-14'
+    ending_date_formatted = '2024-12-03-14'
     current_date_formatted = starting_date_formatted
     
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
@@ -756,7 +754,7 @@ if __name__ == '__main__':
             # Sample the first {number_of_lines_to_keep} lines of the thinned file
             # filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
             input_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned.json.gz'
-            number_of_lines_to_keep = 200000
+            number_of_lines_to_keep = 40000
             limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
             create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
             
@@ -774,8 +772,8 @@ if __name__ == '__main__':
 
             topic_to_produce_into = 'historical-raw-events'
             parsed_files_filepath = "/github_data_for_speed_testing/files_parsed.json"
+            
             get_config_and_produce_lines(topic_to_produce_into, limited_number_of_lines_filepath)
-
 
             et = time.time()
             dur = et - st
@@ -785,8 +783,7 @@ if __name__ == '__main__':
             # endregion
 
             
-        skip_step_4 = False
-
+        skip_step_4 = True
         if skip_step_4 == False:
             # 4. Wait for data transformation (Check if the jobs stopped working)
             # region
@@ -855,19 +852,17 @@ if __name__ == '__main__':
         current_date = current_date + timedelta(hours=1)
         current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
         
-    sections_performance.append(["Total time elapsed", total_dur])
 
-    skip_topic_deletion = False
-    
-    if skip_topic_deletion == False:
-        # Delete and recreate the topic if too large
-        topic = topic_to_produce_into
-        bootstrap_servers = get_kafka_broker_config(topic)
-        number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-        max_number_of_messages = 200000
-        delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
+        skip_topic_deletion = True
+        if skip_topic_deletion == False:
+            # Delete and recreate the topic if too large
+            topic = topic_to_produce_into
+            bootstrap_servers = get_kafka_broker_config(topic)
+            number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
+            max_number_of_messages = 200000
+            delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
         
-
+    sections_performance.append(["Total time elapsed", total_dur])
     print("Execution times in seconds:\n")
     for single_section_performance in sections_performance:
-         print(f"{single_section_performance[0]}: {round(single_section_performance[1], 1)} sec")
+            print(f"{single_section_performance[0]}: {round(single_section_performance[1], 1)} sec")
