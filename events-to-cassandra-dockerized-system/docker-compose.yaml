@@ -75,7 +75,6 @@ services:
     depends_on:
       - jobmanager
     command: taskmanager
-    # scale: 3
     environment:
       - | 
         FLINK_PROPERTIES=
@@ -92,6 +91,8 @@ services:
 
     # Increase resources for the taskmanager-1
     deploy:
+      mode: replicated-job
+      replicas: 3
       resources:
         limits:
           cpus: '1.0'   # Limit this container to 4 CPUs
