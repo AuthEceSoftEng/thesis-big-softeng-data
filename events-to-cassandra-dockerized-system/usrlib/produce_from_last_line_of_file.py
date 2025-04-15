@@ -196,6 +196,8 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
     number_of_lines_produced_per_print = 100000
     seconds_between_produced_messages = pow(10, -8)
     
+    raise ValueError(f"Seconds between produced messages: {seconds_between_produced_messages}")
+    
     # Line tracker
     i = 0
     
@@ -230,8 +232,8 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     #     break
                     
                     # Poll to cleanup the producer queue after every message production
-                    # See: https://stackoverflow.com/questions/62408128/buffererror-local-queue-full-in-python
-                    producer.poll(0)
+                    if i % 100: 
+                        producer.poll(0)
                     # # Time sleep is used here to capture output
                     time.sleep(seconds_between_produced_messages)
                         
