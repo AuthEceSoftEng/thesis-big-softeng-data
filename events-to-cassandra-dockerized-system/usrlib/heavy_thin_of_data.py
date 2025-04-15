@@ -91,7 +91,7 @@ def heavy_thin_data_of_file(input_filepath, output_filepath, do_again=False, del
 	'''
 	
 
-	number_of_lines_thinned_per_print = 1000
+	number_of_lines_thinned_per_print = 100000
 
 	if not os.path.exists(output_filepath) or do_again == True:
 		print(f'Thinning events of {os.path.basename(input_filepath)}...')
