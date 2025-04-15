@@ -241,7 +241,10 @@ def get_job_busy_ratio(job_name, hostname):
         for task_endpoint in tasks_endpoints_list:
             task_info_res = requests.get(task_endpoint)    
             # Example 'subtasks' value: [{'subtask': 0, 'backpressureLevel': 'ok', 'ratio': 0.0, 'idleRatio': 1.0, 'busyRatio': 0.0, 'backpressure-level': 'ok'}, {'subtask': 1, 'backpressureLevel': 'ok', 'ratio': 0.0, 'idleRatio': 1.0, 'busyRatio': 0.0, 'backpressure-level': 'ok'}]
-            subtasks_of_task = task_info_res.json()["subtasks"]
+            try:
+                subtasks_of_task = task_info_res.json()["subtasks"]
+            except KeyError as e:
+                raise KeyError(f"KeyError: {e}. Original json fields: {subtasks_of_task}")
             subtasks_busy_ratios = [subtask["busyRatio"] for subtask in subtasks_of_task]
             # The busy ratio of a job is the largest 'busy ratio' value of 
             # all the job's tasks' subtasks
@@ -631,7 +634,15 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
     lines_produced = 0
     
     number_of_lines_produced_per_print = 1000	
- 
+    number_of_messages_before_poll = 100
+    time_between_produced_messages = pow(10, -20)
+    # st = time.time()
+    # time.sleep(time_between_produced_messages)
+    # et = time.time()
+    # time_elapsed = et - st
+    # print(f"Time elapsed: {time_elapsed}")
+    # raise Exception
+
     try:
         # Create Producer instance
         producer = Producer(config)
@@ -660,10 +671,12 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
                 lines_produced = lines_produced+1
                 
                 # Poll to cleanup the producer queue after every message production
-                # See: https://stackoverflow.com/questions/62408128/buffererror-local-queue-full-in-python
                 producer.poll(0)
-                # # Short time to capture output
-                time.sleep(0.0001)
+                
+                if i == 1000: 
+                    break
+                # # # Short time to capture output
+                time.sleep(time_between_produced_messages)
             
             # # Once the total number of lines were produced, print it
             # sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, lines_in_file))
@@ -754,7 +767,7 @@ if __name__ == '__main__':
             # Sample the first {number_of_lines_to_keep} lines of the thinned file
             # filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
             input_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned.json.gz'
-            number_of_lines_to_keep = 40000
+            number_of_lines_to_keep = 200000
             limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
             create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
             
@@ -853,13 +866,13 @@ if __name__ == '__main__':
         current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
         
 
-        skip_topic_deletion = True
+        skip_topic_deletion = False
         if skip_topic_deletion == False:
             # Delete and recreate the topic if too large
             topic = topic_to_produce_into
             bootstrap_servers = get_kafka_broker_config(topic)
             number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-            max_number_of_messages = 200000
+            max_number_of_messages = 2000000
             delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
         
     sections_performance.append(["Total time elapsed", total_dur])
