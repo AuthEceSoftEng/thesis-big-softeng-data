@@ -186,7 +186,6 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
     if filename not in parsed_files_dict.keys():
         parsed_files_dict[filename] = 0    
     line_we_left_off = parsed_files_dict[filename]
-    
 
     # Declare variable linesProduced to be used in the loop 
     linesProduced = 0
@@ -194,7 +193,8 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
     the_whole_file_was_read = False
     the_whole_file_was_read_beforehand = False
     
-    number_of_lines_produced_per_print = 1000
+    number_of_lines_produced_per_print = 100000
+    seconds_between_produced_messages = pow(10, -8)
     
     # Line tracker
     i = 0
@@ -233,7 +233,7 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     # See: https://stackoverflow.com/questions/62408128/buffererror-local-queue-full-in-python
                     producer.poll(0)
                     # # Time sleep is used here to capture output
-                    time.sleep(0.0001)
+                    time.sleep(seconds_between_produced_messages)
                         
                 sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i, linesInFile))
                 sys.stdout.flush()
