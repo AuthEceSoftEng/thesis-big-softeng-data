@@ -282,7 +282,7 @@ if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
     starting_date_formatted =  '2024-12-01-17'
-    ending_date_formatted =  '2024-12-01-17' 
+    ending_date_formatted =  '2024-12-01-19' 
 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
@@ -418,7 +418,7 @@ if __name__ == '__main__':
         # region
 
         # Set True or False to skip region 
-        skip_transformation_region = False
+        skip_transformation_region = True
         st = time.time()
 
         if skip_transformation_region == False:
@@ -548,6 +548,8 @@ if __name__ == '__main__':
         if skip_delete_topic == False:
             print("5. Delete and recreate topic")
             delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
+            # Short delay to update kafka cluster metadata before recreating the topic
+            time.sleep(5)
             create_topic_if_not_exists(topic, bootstrap_servers)
     
         et = time.time()
