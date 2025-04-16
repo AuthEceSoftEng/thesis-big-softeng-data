@@ -10,7 +10,6 @@ Produce messages from last line read of file
 # be deleted.
 
 from get_parsed_gharchive_files import save_files_parsed, restore_parsed_files
-
 # A GHArchive file is read and acts as a Kafka producer into the kafka topic "raw-events"
 # Template: https://developer.confluent.io/get-started/python/#build-producer 
 
@@ -20,6 +19,8 @@ from configparser import ConfigParser
 from confluent_kafka import Producer, Consumer, admin, KafkaException
 import shutil
 from pathlib import Path
+
+from delete_and_recreate_topic import create_topic_if_not_exists
 
 
 def extract_compressed_file_from_path(compressedFilePath, do_again=False):
@@ -68,56 +69,53 @@ def delivery_callback(err, msg):
         # print("\nProduced event to topic {topic}: value = {value:12}".format(
         #     topic=msg.topic(), value=msg.value().decode('utf-8')))
 
-def create_topic(topic=str, config_port=str):
-    '''
-    Checks if a topic exists and if it does not, it creates it
-    `topic`: topic name 
-    `config_port`: the port of the kafka cluster (e.g. localhost:44352)
-    '''
-    client = admin.AdminClient({"bootstrap.servers": config_port})
-    topic_metadata = client.list_topics(timeout=5)
-    all_topics_list = topic_metadata.topics.keys()
-    # # Uncomment to show new topics upon topic creation 
-    # print(all_topics_list)
+# def create_topic(topic=str, config_port=str):
+#     '''
+#     Checks if a topic exists and if it does not, it creates it
+#     `topic`: topic name 
+#     `config_port`: the port of the kafka cluster (e.g. localhost:44352)
+#     '''
+#     client = admin.AdminClient({"bootstrap.servers": config_port})
+#     topic_metadata = client.list_topics(timeout=5)
+#     all_topics_list = topic_metadata.topics.keys()
+#     increased_number_of_partitions = 4
+#     replication_factor = 1
     
-    increased_number_of_partitions = 4
-    replication_factor = 1
-    
-    # If the topic does not exist, create it 
-    if topic not in all_topics_list:
-        print(f'Topic {topic} does not exist')
-        new_topic = admin.NewTopic(topic, num_partitions=increased_number_of_partitions, replication_factor=replication_factor)
-        create_topics_futures = client.create_topics([new_topic], request_timeout=5)
+#     # If the topic does not exist, create it 
+#     if topic not in all_topics_list:
+#         print(f"Topic {topic} does not exist. Creating topic...")
+#         new_topic = admin.NewTopic(topic, num_partitions=increased_number_of_partitions, replication_factor=replication_factor)
+#         create_topics_futures = client.create_topics([new_topic], request_timeout=5)
             
-        try:
-            for create_topic_future in create_topics_futures.values():
-                create_topic_future.result()  # Wait for topic creation
-                print(f"Topic {topic} created successfully")
+#         try:
+#             for create_topic_future in create_topics_futures.values():
+#                 create_topic_future.result()  # Wait for topic creation
+#                 print(f"Topic {topic} created successfully")
         
-        except KafkaException as e:
-            err_dict = e.args[0]
-            err_name = err_dict.name()
-            if err_name == 'TOPIC_ALREADY_EXISTS':
-                pass # Topic already exists. Do nothing
-            else:
-                raise Exception(e) # Catch other errors 
+#         except KafkaException as e:
+#             err_dict = e.args[0]
+#             err_name = err_dict.name()
+#             if err_name == 'TOPIC_ALREADY_EXISTS':
+#                 pass # Topic already exists. Do nothing
+#             else:
+#                 raise Exception(e) # Catch other errors 
             
-    elif topic in all_topics_list: 
-        client = admin.AdminClient({"bootstrap.servers": config_port})
-        topic_metadata = client.list_topics(timeout=5)
-        all_topics_list = topic_metadata.topics.keys()    
-        number_of_partitions = len(topic_metadata.topics[topic].partitions)
+#     elif topic in all_topics_list: 
+#         client = admin.AdminClient({"bootstrap.servers": config_port})
+#         topic_metadata = client.list_topics(timeout=5)
+#         all_topics_list = topic_metadata.topics.keys()    
+#         number_of_partitions = len(topic_metadata.topics[topic].partitions)
         
-        if number_of_partitions == increased_number_of_partitions:
-            print(f"Topic {topic} already exists and has {number_of_partitions} partitions")
-        else:
-            print(f"Increasing partitions of topic {topic} from {number_of_partitions} to {increased_number_of_partitions}...")
-            new_partitions = admin.NewPartitions(topic, new_total_count=increased_number_of_partitions)
-            create_partitions_futures = client.create_partitions([new_partitions])
-            # Wait until the number of the topic partitions is increased
-            for create_partition_future in create_partitions_futures.values():
-                create_partition_future.result()
-            print("Done")
+#         if number_of_partitions == increased_number_of_partitions:
+#             print(f"Topic {topic} already exists and has {number_of_partitions} partitions")
+#         else:
+#             print(f"Increasing partitions of topic {topic} from {number_of_partitions} to {increased_number_of_partitions}...")
+#             new_partitions = admin.NewPartitions(topic, new_total_count=increased_number_of_partitions)
+#             create_partitions_futures = client.create_partitions([new_partitions])
+#             # Wait until the number of the topic partitions is increased
+#             for create_partition_future in create_partitions_futures.values():
+#                 create_partition_future.result()
+#             print("Done")
                 
 
         
@@ -194,9 +192,8 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
     the_whole_file_was_read_beforehand = False
     
     number_of_lines_produced_per_print = 100000
-    seconds_between_produced_messages = pow(10, -8)
+    seconds_between_produced_messages = pow(10, -6)
     
-    raise ValueError(f"Seconds between produced messages: {seconds_between_produced_messages}")
     
     # Line tracker
     i = 0
@@ -227,9 +224,9 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     producer.produce(topic, value=jsonStr, callback=delivery_callback)
                     linesProduced = i+1
                     
-                    # # Break production if only 10000 events have been sent
-                    # if i >= line_we_left_off + 20000:
-                    #     break
+                    # Break production if only 10000 events have been sent
+                    if i >= line_we_left_off + 20000:
+                        break
                     
                     # Poll to cleanup the producer queue after every message production
                     if i % 100: 
@@ -323,7 +320,7 @@ def produce_from_last_line_of_file(topic=str, filepath=str, parsed_files_filepat
     
     config_port = str(config['bootstrap.servers'])
     
-    create_topic(topic, config_port)
+    create_topic_if_not_exists(topic, config_port)
      
     # Produce from file into topic
     the_whole_file_was_read, the_whole_file_was_read_beforehand = produce_from_line_we_left_off(topic, filepath, parsed_files_filepath, config)
