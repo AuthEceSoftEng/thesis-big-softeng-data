@@ -87,8 +87,17 @@ def delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers):
                 err_obj = e.args[0]
                 err_name = err_obj.name()
                 if err_name == 'TOPIC_ALREADY_EXISTS':
-                    # Topic already exists, do nothing
-                    pass
+                    print(f"Topic {topic} already exists and has {number_of_partitions} partitions")
+                    topic_metadata = client.list_topics(timeout=5)
+                    all_topics_list = topic_metadata.topics.keys()
+                    current_number_of_partitions = len(topic_metadata.topics[topic].partitions)
+                    if current_number_of_partitions != number_of_partitions:    
+                        print(f"Increasing partitions of topic {topic} from {current_number_of_partitions} to {number_of_partitions}...")
+                        new_partitions = admin.NewPartitions(topic, new_total_count=number_of_partitions)
+                        # Wait until the number of the topic partitions is increased
+                        create_partitions_futures = client.create_partitions([new_partitions])
+                        for create_partition_future in create_partitions_futures.values():
+                            create_partition_future.result()
                 else:
                     # Catch other errors
                     raise Exception(e)

@@ -278,248 +278,6 @@ def get_running_job_names():
      
 # endregion
 
-# Delete messages from a topic
-# region
-
-
-def create_config_file_to_delete_messages_of_topic(topic_name, folderpath):
-    """
-    Creates a .json configuration file to delete the messages of a topic
-    
-    ``topic_name``: The topic name
-    ``folderpath``: The folder to store the configuration .json file 
-    to delete the topic's messages
-    
-    returns: The filepath of the created configuration file 
-    """
-    
-    # Create filename
-    filename = f"delete_messages_of_topic_{topic_name}.json"
-    
-    # Create filepath
-    delete_messages_configs_filepath = os.path.join(folderpath, filename)
-    
-    
-    with open(delete_messages_configs_filepath, 'w') as config_file:
-        configs_to_delete_messages_of_topic_dict = \
-            {"partitions":[{"topic": f"{topic_name}","partition": 0,"offset": -1}],\
-                "version": 1}
-        json.dump(configs_to_delete_messages_of_topic_dict, config_file)
-        
-    return delete_messages_configs_filepath
-
-
-def purge_topic_via_command(topic=str, config_server_and_port=str, \
-    topic_config_in_kafka_container=str, kafka_container_name=str):
-    """
-    Purges a topic using the command kafka-delete-records.sh
-    The command takes a json as argument containing the topic name
-    
-    ``topic``: Topic whose messages are to be deleted
-    ``config_server_and_port``: Host and port (e.g. localhost:34760) of the kafka 
-    broker hosting the topic
-    ``out_of_docker_config_filepath``: Folderpath to the configuration file that deletes the 
-    messages of the topic
-    
-    returns: nothing
-    """
-
-    # Create the configuration file to delete its 
-    # messages (the config file contains the topic's name) 
-    config_filepath = create_config_file_to_delete_messages_of_topic(topic, \
-        topic_config_in_kafka_container)
-    
-    
-    # Command to mount the 'delete messages configuration file' into the docker container
-    config_filename = os.path.basename(config_filepath)
-    copy_delete_messages_config_command = \
-        f"docker cp {config_filepath} \
-        {kafka_container_name}:/home/{config_filename}"
-
-  
-    # Execute the command
-    subprocess.run(copy_delete_messages_config_command, shell=True)
-    
-    # Move to the directory containing /bin with the kafka commands
-    cd_command = "cd ../.."
-
-    # Purge messages command
-    purge_topic_command = f"kafka-delete-records --bootstrap-server\
-        {config_server_and_port} --offset-json-file \
-            /home/{config_filename}"
-    
-    
-    # Serialize the commands to execute consecutively
-    docker_commands_to_execute = "; ".join([cd_command, purge_topic_command])
-    
-    # Docker command to get into the container and execute 
-    # the aforementioned commands
-    final_docker_command = f"docker exec -i {kafka_container_name} bash -c\
-        '{docker_commands_to_execute}'"
-  
-    # Run commands in terminal
-    subprocess.run(final_docker_command, shell=True)
-    
-    
-def get_size_of_kafka_topic_in_docker_container(topic=str, config_server_and_port=str, kafka_container_name=str):
-    """
-    Returns the topic size of a topic in a kafka session deployed in a docker container
-    """
-    docker_commands_to_execute = f"/bin/kafka-log-dirs --bootstrap-server {config_server_and_port} --describe --topic-list {topic} | grep size"
-    
-    final_docker_command = f"docker exec -i {kafka_container_name} bash -c\
-        '{docker_commands_to_execute}'"
-  
-    # Run commands in terminal
-    dict_with_topic_size_stringified = subprocess.run(final_docker_command, shell=True, capture_output=True)
-    
-    dict_with_topic_size_stringified = dict_with_topic_size_stringified.stdout.decode('utf-8')
-    
-    dict_with_topic_size = json.loads(dict_with_topic_size_stringified)
-    
-    topic_size = dict_with_topic_size["brokers"][0]["logDirs"][0]["partitions"][0]["size"]
-    return topic_size
-
-
-def purge_topic_via_configuration(topic=str, config_server_and_port=str, kafka_container_name=str):
-    '''
-    Configures the topic and the broker
-    in order to delete the messages in the topic
-    
-    ``topic``: the topic whose messages we want to delete
-    ``config_server_and_port``: the server and port of the kafka cluster (e.g. localhost:42880)
-    '''
-    
-    # Move to the directory containing /bin with the kafka commands
-    cd_command = "cd ../.."
-    
-    # Configure the topic
-    topic_configs_list = ["cleanup.policy=delete", "delete.retention.ms=1", \
-        "local.retention.bytes=1", "local.retention.ms=1", "retention.bytes=1", "retention.ms=1", 
-        "segment.bytes=1000", "segment.ms=1"]
-    
-    topic_configs_formatted  = ",".join(topic_configs_list)
-    
-    topic_configs_command = f"bin/kafka-configs  \
-        --bootstrap-server {config_server_and_port} \
-        --entity-type topics  --alter --entity-name {topic}  \
-        --add-config \
-        {topic_configs_formatted}"
-        
-    
-    # Configure the broker
-    broker_configs_list = ["log.roll.ms=1000"]
-    
-    broker_configs_formatted = ",".join(broker_configs_list)
-    
-    broker_configs_command = f"kafka-configs \
-        --bootstrap-server {config_server_and_port} \
-        --entity-type brokers \
-        --entity-name 1 \
-        --alter --add-config \
-        {broker_configs_formatted}"
-    
-    # Serialize the commands to execute consucutively
-    docker_commands_to_execute = "; ".join([cd_command, broker_configs_command, \
-                                            topic_configs_command])
-    
-    # Docker command to get into the container and execute 
-    # the aforementioned commands
-    final_docker_command = f"docker exec -i {kafka_container_name} bash -c \
-        '{docker_commands_to_execute}'"
-    
-    # Run commands in terminal
-    subprocess.run(final_docker_command, shell=True)
-
-
-def restore_default_configs_of_topic(topic=str, config_server_and_port=str, kafka_container_name=str):
-    
-    # Move to the directory containing /bin with the kafka commands
-    cd_command = "cd ../.."
-    
-    topic_configs_list = ["cleanup.policy", "delete.retention.ms", "local.retention.bytes", \
-        "local.retention.ms", "retention.bytes", "retention.ms", "segment.bytes",\
-        "segment.ms"]
-    
-    topic_configs_formatted  = ",".join(topic_configs_list)
-    
-    # Configure the topic
-    topic_configs_command = f"bin/kafka-configs \
-        --bootstrap-server {config_server_and_port} \
-        --entity-type topics --entity-name {topic} \
-        --alter --delete-config \
-        {topic_configs_formatted}"
-    
-    
-    # Configure the broker
-    broker_configs_list = ["log.roll.ms"]
-    
-    broker_configs_formatted  = ",".join(broker_configs_list)
-    
-    broker_configs_command = f"kafka-configs \
-        --bootstrap-server {config_server_and_port} \
-        --entity-type brokers \
-        --entity-name 1 \
-        --alter --delete-config \
-        {broker_configs_formatted}"
-    
-    # Serialize the commands to execute consucutively
-    docker_commands_to_execute = "; ".join([cd_command, broker_configs_command, \
-                                            topic_configs_command])
-    
-    # Docker command to get into the container and execute 
-    # the aforementioned commands
-    final_docker_command = f"docker exec -i {kafka_container_name} bash -c\
-        '{docker_commands_to_execute}'"
-    
-    # Run commands in terminal
-    subprocess.run(final_docker_command, shell=True)
-
-
-def free_up_topic_space(topic_config_in_kafka_container, topic, config_server_and_port, kafka_container_name, wait_for_container_size_to_reduce_to_0=False):
-
-    purge_topic_via_command(topic, config_server_and_port, topic_config_in_kafka_container)
-    
-    
-    # Get size of topic before the deletion of messages
-    size_of_topic = get_size_of_kafka_topic_in_docker_container(topic, config_server_and_port, kafka_container_name)
-    print(f"Size of topic {topic}: {size_of_topic}\n")
-    
-    # Delete messages through configuration
-    print(f"Freeing up space taken by topic...")
-    purge_topic_via_configuration(topic, config_server_and_port)
-    
-    if wait_for_container_size_to_reduce_to_0 == False:
-        return
-        
-    # Wait while size of topic becomes 0
-    while size_of_topic != 0:
-        sys.stdout.write(f"\r Waiting for the kafka broker to free up the topic's space...")
-        sys.stdout.flush()
-        time.sleep(5)
-        size_of_topic = get_size_of_kafka_topic_in_docker_container(topic, config_server_and_port, kafka_container_name)
-
-        
-    restore_default_configs_of_topic(topic, config_server_and_port)
-    print("Freed up space in kafka broker")
-    purge_topic_via_command(topic, config_server_and_port, topic_config_in_kafka_container)
-    
-    # Get size of topic before the deletion of messages
-    size_of_topic = get_size_of_kafka_topic_in_docker_container(topic, config_server_and_port, kafka_container_name)
-    print(f"Size of topic {topic}: {size_of_topic}\n")
-    
-    # Delete messages through configuration
-    print(f"Freeing up space taken by topic...")
-    purge_topic_via_configuration(topic, config_server_and_port)
-    
-    # Wait while size of topic becomes 0
-    while size_of_topic != 0:
-        sys.stdout.write(f"\rWaiting for the kafka broker to free up the topic's space... Current topic size: {size_of_topic}")
-        sys.stdout.flush()
-        time.sleep(5)
-        size_of_topic = get_size_of_kafka_topic_in_docker_container(topic, config_server_and_port, kafka_container_name)
-# endregion    
-        
         
 if __name__ == '__main__':
     
@@ -605,20 +363,19 @@ if __name__ == '__main__':
         # Store the files produced and up to which point
         parsed_files_filepath = "/github_data/files_parsed.json"
         topic_to_produce_into = 'historical-raw-events'
+        the_whole_file_was_read_beforehand = None      
         
-        # the_whole_file_was_produced_already = None
-        the_whole_file_was_read_beforehand = None
-                
-        # If the file was read beforehand, then the producer will not produce more events
-        the_whole_file_was_produced_already, the_whole_file_was_read_beforehand = produce_from_last_line_of_file(topic_to_produce_into, filepath_of_thinned_file, parsed_files_filepath)
+        # If the file was read beforehand, its events have already produced
+        _ , the_whole_file_was_read_beforehand = produce_from_last_line_of_file(topic_to_produce_into, filepath_of_thinned_file, parsed_files_filepath)
 
-
+        # If the file's events have already been produced, continue with the next one
         if the_whole_file_was_read_beforehand:
             current_date = current_date + timedelta(hours=1)
             current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
             continue
-        current_date = current_date + timedelta(hours=1)
-        current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
+        else:
+            current_date = current_date + timedelta(hours=1)
+            current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
  
 
         et = time.time()
@@ -628,72 +385,77 @@ if __name__ == '__main__':
         # endregion
 
         
-        # Get new number of messages to determine whether to delete topic or not (max_messages_reached=True or False)
+        # Variable initialization
         topic = topic_to_produce_into
         bootstrap_servers = get_kafka_broker_config(topic)        
         number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
         max_number_of_messages = 1000
-        max_messages_reached = False
+        explicit_wait_for_busy_jobs = False # Set True to wait for jobs to complete after every file
+        
+        # If the topic size is too large, wait for jobs to complete, then delete it
         if number_of_messages > max_number_of_messages:
-            max_messages_reached = True
-        
-        
-            
+            explicit_wait_for_busy_jobs = True
+        # On the file of the ending date, wait for the jobs to complete
+        elif current_date == ending_date:
+            explicit_wait_for_busy_jobs = True
+        # Explicit statement to wait for the jobs to complete
+        elif explicit_wait_for_busy_jobs == True:
+            pass
+
+
         # 4. Wait for flink jobs to finish
         # region
 
         # Set True or False to skip region 
-        skip_wait_for_flink_jobs_to_finish = False
+        skip_transformation_region = False
         st = time.time()
 
-        if skip_wait_for_flink_jobs_to_finish == False:
-            
+        if skip_transformation_region == False:
             print("4. Wait for flink jobs to finish")
+            
+            # Stop execution if there are no running jobs
             running_job_names_in_cluster = get_running_job_names()
             running_job_names_in_cluster = sorted(running_job_names_in_cluster)
             if running_job_names_in_cluster == []:
                 raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
             
-
-            is_a_job_running = None
+            # Initialize variables
+            is_a_job_running = False # Supposing no job is running initially
             hostname = 'jobmanager'
-            for single_job_name in running_job_names_in_cluster:
-                is_a_job_running = check_if_job_is_busy(single_job_name, hostname)
-                if is_a_job_running == True:
-                    print()
-                    print(f"Pyflink jobs have started working")
-                    if max_messages_reached == True:        
-                        print("Waiting for pyflink jobs to stop completely before deleting the topic")        
-                    elif max_messages_reached == False:
-                        print("Waiting for pyflink jobs busy ratios to drop from 100%% before producing new messages")        
-                    break
-                
-
-            # Uncomment to wait for the jobs to start working
             times_waited_before_start = 0
             jobs_are_under_low_load = False
-            if (is_a_job_running == False):    
+            
+            # Check if jobs are running
+            for single_job_name in running_job_names_in_cluster:
+                is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+            
+            # If yes, wait for them to stop or become less busy
+            if is_a_job_running == True:
+                print()
+                print(f"Pyflink jobs have started working")
+            # If not, wait for them to start
+            elif (is_a_job_running == False):    
                 print(f"Pyflink jobs have not started working")
-                print("Waiting for the jobs to start")        
-            while(is_a_job_running == False):
-                for single_job_name in running_job_names_in_cluster:
+                print("Waiting for the jobs to start")            
+                while(is_a_job_running == False):
                     # If one of the pyflink jobs started working, break the while loop 
-                    is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-                    job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
-                    sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-                sys.stdout.flush()
-                if is_a_job_running == True:        
-                        print()
-                        print(f"Pyflink jobs have started working")
-                        print("Waiting for pyflink jobs to stop")        
+                    for single_job_name in running_job_names_in_cluster:
+                        is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
+                        job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
+                        sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
+                    sys.stdout.flush()
+                    if is_a_job_running == True:        
+                            print()
+                            print(f"Pyflink jobs have started working")
+                            print("Waiting for pyflink jobs to stop")        
+                            break
+                    time.sleep(5)
+                    sys.stdout.write("\033[F" * len(running_job_names_in_cluster))         
+                    # If we wait for long (jobs not starting being busy) continue with the next file
+                    times_waited_before_start += 1
+                    if times_waited_before_start == 3:
+                        jobs_are_under_low_load = True
                         break
-                time.sleep(5)
-                sys.stdout.write("\033[F" * len(running_job_names_in_cluster))         
-                # If we wait for long (jobs not starting being busy) continue with the next file
-                times_waited_before_start += 1
-                if times_waited_before_start == 3:
-                    jobs_are_under_low_load = True
-                    break
             # If jobs are not busy, continue with next file
             if jobs_are_under_low_load == True:
                 continue
@@ -704,6 +466,10 @@ if __name__ == '__main__':
             
             # Wait for jobs to stop 
             while(is_a_job_running == True):
+                if explicit_wait_for_busy_jobs == True:        
+                    print("Waiting for pyflink jobs to stop completely")        
+                elif explicit_wait_for_busy_jobs == False:
+                    print("Waiting for pyflink jobs busy ratios to drop from 100%% before producing new messages") 
                 # Reset the job status. 
                 is_a_job_running = False
                 for single_job_name in running_job_names_in_cluster:
@@ -716,14 +482,17 @@ if __name__ == '__main__':
                 max_job_busy_ratio = max(jobs_busy_ratios.values())
                 
                 # If the jobs stopped (busy ratio 0%) or are not at busy ratio 100%, continue producing messages
-                if (is_a_job_running == False or max_job_busy_ratio < 1) and max_messages_reached == False:
+                if (is_a_job_running == False or max_job_busy_ratio < 1) and explicit_wait_for_busy_jobs == False:
                     print()
                     print("Pyflink jobs stopped or are not 100%% busy. Can continue producing messages")
                     break
                 # Only if the jobs stopped (busy ratio 0%), continue producing messages
-                elif is_a_job_running == False and max_messages_reached == True:
-                    print("Pyflink jobs stopped. Can delete topic")
+                elif is_a_job_running == False and explicit_wait_for_busy_jobs == True:
+                    print("Pyflink jobs stopped.")
                     break
+                else: 
+                    # If no job stopped or busy ratio dropped, keep waiting
+                    pass
                 time.sleep(5)
                 
                 # Get the new running jobs in case one was added to the cluster or cancelled
