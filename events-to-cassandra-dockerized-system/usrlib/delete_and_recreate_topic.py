@@ -79,13 +79,17 @@ def delete_topic_if_exists(topic, bootstrap_servers):
     # If topic exists, delete it or discard its messages
     if topic in all_topics_list:    
         # Wait until the topic is deleted
-        delete_topic_to_future_dict = client.delete_topics([topic])
-        for delete_topic_future in delete_topic_to_future_dict.values():
-            delete_topic_future.result()
+        try:
+            delete_topic_to_future_dict = client.delete_topics([topic], operation_timeout=5)
+            for delete_topic_future in delete_topic_to_future_dict.values():
+                delete_topic_future.result()
+        except Exception as e:
+            raise Exception(f"Error on deleting topic: {e}")
         print("Done")
     # If not exists, print message
     else:
         raise Exception(f"Cannot delete topic '{topic}' as it does not exist")    
+    
     
     
 def create_topic_if_not_exists(topic, bootstrap_servers):
@@ -99,64 +103,66 @@ def create_topic_if_not_exists(topic, bootstrap_servers):
     all_topics_list = topic_metadata.topics.keys()
     desired_number_of_partitions = 4
     replication_factor = 1
-    
+                    
     # If the topic does not exist, create it    
     if topic not in all_topics_list:
         
         # Create topic
         print(f"Topic {topic} does not exist.\nCreating topic...")
         new_topic = admin.NewTopic(topic, num_partitions=desired_number_of_partitions, replication_factor=replication_factor)
-        create_topic_to_future_dict = client.create_topics([new_topic], operation_timeout=5)
-        for create_topic_future in create_topic_to_future_dict.values():
-            
-            # Wait until topic is created
-            try:
+        
+        # Wait until topic is created
+        try:
+            create_topic_to_future_dict = client.create_topics([new_topic], operation_timeout=5)
+            for create_topic_future in create_topic_to_future_dict.values():
                 create_topic_future.result()
             
-            # Handle create-topic exceptions
-            except KafkaException as e:
-                err_obj = e.args[0]
-                err_name = err_obj.name()
-                
-                # If exists, create partitions
-                if err_name == 'TOPIC_ALREADY_EXISTS':
-                    # Get current number of partitions
-                    print(f"Topic {topic} already exists and has {desired_number_of_partitions} partitions")
-                    topic_metadata = client.list_topics(timeout=5)
-                    all_topics_list = topic_metadata.topics.keys()
-                    current_number_of_partitions = len(topic_metadata.topics[topic].partitions)
-                    # If partitions are few, increase them
-                    if current_number_of_partitions != desired_number_of_partitions:    
-                        print(f"Increasing partitions of topic {topic} from {current_number_of_partitions} to {desired_number_of_partitions}...")
-                        new_partitions = admin.NewPartitions(topic, new_total_count=desired_number_of_partitions)
-                        # Wait until the number of the topic partitions is increased
-                        create_partitions_futures = client.create_partitions([new_partitions])
-                        for create_partition_future in create_partitions_futures.values():
-                            create_partition_future.result()
-                    # Else, do nothing
-                    else:
-                        print(f"Topic {topic} already exists and has {current_number_of_partitions} partitions")
-                        pass
-                    
-                # Catch other errors
+        # Handle create-topic exceptions
+        except KafkaException as e:
+            err_obj = e.args[0]
+            err_name = err_obj.name()
+            # If exists, create partitions
+            if err_name == 'TOPIC_ALREADY_EXISTS':
+                # Get current number of partitions
+                print(f"Topic {topic} already exists and has {desired_number_of_partitions} partition(s)")
+                topic_metadata = client.list_topics(timeout=5)
+                # If partitions are few, increase them
+                if current_number_of_partitions < desired_number_of_partitions:    
+                    print(f"Increasing partitions of topic {topic} from {current_number_of_partitions} to {desired_number_of_partitions}...")
+                    new_partitions = admin.NewPartitions(topic, new_total_count=desired_number_of_partitions)
+                    # Wait until the number of the topic partitions is increased
+                    create_partitions_futures = client.create_partitions([new_partitions])
+                    for create_partition_future in create_partitions_futures.values():
+                        create_partition_future.result()
+                # Else, do nothing
                 else:
-                    raise Exception(e)
+                    print(f"Topic {topic} already exists and has {current_number_of_partitions} partitions")
+                    pass
+                    
+            # Catch other errors
+            else:
+                raise Exception(e)
         print("Done")
     
     
     elif topic in all_topics_list:
-        new_partitions = admin.NewPartitions(topic, new_total_count=desired_number_of_partitions)
-        # Wait until the number of the topic partitions is increased
-        create_partitions_futures = client.create_partitions([new_partitions])
-        for create_partition_future in create_partitions_futures.values():
-            create_partition_future.result()
-    elif (topic in all_topics_list) and get_topic_number_of_messages(topic, bootstrap_servers) > 0:
-        # Topic exists and has some messages - do nothing
-        pass
+        current_number_of_partitions = len(topic_metadata.topics[topic].partitions)
+        if current_number_of_partitions != desired_number_of_partitions:
+            new_partitions = admin.NewPartitions(topic, new_total_count=desired_number_of_partitions)
+            # Wait until the number of the topic partitions is increased
+            create_partitions_futures = client.create_partitions([new_partitions])
+            for create_partition_future in create_partitions_futures.values():
+                try:
+                    create_partition_future.result()
+                except KafkaException as e:
+                    err_obj = e.args[0]
+                    err_name = err_obj.name()
+                    # If partitions are as many as they should be, do nothing
+                    if err_name == 'INVALID_PARTITIONS':
+                        print(f"Topic {topic} already exists and has {current_number_of_partitions} partitions")
     
-    # Error: Topic does not exist or its messages are not 0
     else:
-        raise Exception(f"Topic {topic} does not exist in kafka cluster or it exists but its messages are not 0 despite having deleted it")
+        raise Exception(f"Topic {topic} neither exists or is absent from the kafka cluster")
          
     
 

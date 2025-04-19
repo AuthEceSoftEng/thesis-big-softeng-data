@@ -635,7 +635,7 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
     
     number_of_lines_produced_per_print = 1000	
     number_of_messages_before_poll = 100
-    time_between_produced_messages = pow(10, -20)
+    time_between_produced_messages = pow(10, -8)
     # st = time.time()
     # time.sleep(time_between_produced_messages)
     # et = time.time()

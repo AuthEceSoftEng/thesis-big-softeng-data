@@ -224,9 +224,9 @@ def produce_from_line_we_left_off(topic=str, filepath=str, \
                     producer.produce(topic, value=jsonStr, callback=delivery_callback)
                     linesProduced = i+1
                     
-                    # Break production if only 10000 events have been sent
-                    if i >= line_we_left_off + 20000:
-                        break
+                    # # Break production if only 10000 events have been sent
+                    # if i >= line_we_left_off + 20000:
+                    #     break
                     
                     # Poll to cleanup the producer queue after every message production
                     if i % 100: 

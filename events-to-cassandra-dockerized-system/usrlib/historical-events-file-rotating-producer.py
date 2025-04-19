@@ -281,8 +281,8 @@ def get_running_job_names():
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-01-17'
-    ending_date_formatted =  '2024-12-01-19' 
+    starting_date_formatted =  '2024-12-01-19'
+    ending_date_formatted =  '2024-12-01-21' 
 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
@@ -301,7 +301,10 @@ if __name__ == '__main__':
     # ATTENTION: Set explicit_wait_for_busy_jobs = True for the performance of jobs to be calculated
     running_job_names_in_cluster = get_running_job_names()
     running_job_names_in_cluster = sorted(running_job_names_in_cluster)
-    jobs_completion_times = {job_name: {"time_to_complete": 0, "completed_for_the_current_file" : False } for job_name in running_job_names_in_cluster}
+    # start_time: The time when the job started
+    # stop_time: The time when the job stopped
+    # total_busy_time: The total working time of the job
+    jobs_completion_times = {job_name: {"starting_time": None, "ending_time" : None, "time_elapsed" : 0 } for job_name in running_job_names_in_cluster}
     
     total_dur = 0
 
@@ -314,9 +317,7 @@ if __name__ == '__main__':
     # Pipeline (download, thin, produce, transform) for all dates from start to end
     while current_date <= ending_date:
         
-        # Initialize the running jobs
-        for job_name in running_job_names_in_cluster:
-            jobs_completion_times[job_name]["completed_for_the_current_file"] = False
+        
 
 
         # 1. Download gharchive file
@@ -350,8 +351,6 @@ if __name__ == '__main__':
         sections_performance["1. Download gharchive file"] += dur        
         # endregion
 
-        # raise Exception("Check if the raw file is downloaded even though the thinned one exists") 
-
         # 2. Thin file
         # region
         print("2. Thin file:")
@@ -366,7 +365,6 @@ if __name__ == '__main__':
         total_dur += dur
         sections_performance["2. Thin file"] += dur
         # endregion
-
 
         # 3. Produce thinned events
         # region
@@ -400,25 +398,15 @@ if __name__ == '__main__':
         topic = topic_to_produce_into
         bootstrap_servers = get_kafka_broker_config(topic)        
         number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-        max_number_of_messages = 1000
-        explicit_wait_for_busy_jobs = True # Set True to wait for jobs to complete after every file
+        max_number_of_messages = 1000000
         
-        # If the topic size is too large, wait for jobs to complete, then delete it
-        if number_of_messages > max_number_of_messages:
-            wait_for_busy_jobs = True
-        # On the file of the ending date, wait for the jobs to complete
-        elif current_date == ending_date:
-            wait_for_busy_jobs = True
-        # Explicit statement to wait for the jobs to complete
-        elif explicit_wait_for_busy_jobs == True:
-            wait_for_busy_jobs = True
 
 
         # 4. Wait for flink jobs to finish
         # region
 
         # Set True or False to skip region 
-        skip_transformation_region = True
+        skip_transformation_region = False
         st = time.time()
 
         if skip_transformation_region == False:
@@ -466,9 +454,20 @@ if __name__ == '__main__':
                     if times_waited_before_start == 3:
                         jobs_are_under_low_load = True
                         break
+            
+            
+            # Starting time for jobs 
+            for single_job_name in running_job_names_in_cluster:
+                # Update starting time only if the job was not running from the previous loop iteration
+                # Else keep the start time of the job of the previous iteration
+                if jobs_completion_times[single_job_name]["starting_time"] == None:
+                    jobs_completion_times[single_job_name]["starting_time"] = jobs_started_time
+            
+            
             # If jobs are not busy, continue with next file
             if jobs_are_under_low_load == True:
                 continue
+            
             
             # Uncomment to wait for all jobs to start running
             # This is used to measure the jobs performances
@@ -484,8 +483,18 @@ if __name__ == '__main__':
             
             
                   
-            jobs_busy_ratios = {}
             
+            # Set True to wait for jobs to complete after every file
+            explicit_wait_for_busy_jobs = True 
+            # If the topic size is too large, wait for jobs to complete, then delete it
+            if number_of_messages > max_number_of_messages:
+                wait_for_busy_jobs = True
+            # On the file of the ending date, wait for the jobs to complete
+            elif current_date == ending_date:
+                wait_for_busy_jobs = True
+            # Explicit statement to wait for the jobs to complete
+            elif explicit_wait_for_busy_jobs == True:
+                wait_for_busy_jobs = True
             
             
             # Wait for jobs to stop             
@@ -494,17 +503,23 @@ if __name__ == '__main__':
             elif wait_for_busy_jobs == False:
                 print("Waiting for pyflink jobs busy ratios to drop from 100%% before producing new messages") 
 
+                
+            #  While there is at least one working job, wait for it to finish
+            jobs_busy_ratios = {}
             while(is_a_job_running == True):
-                # Reset the job status. 
-                is_a_job_running = False
-                for single_job_name in running_job_names_in_cluster:
-                    #  While there is at least one working job, wait for it to finish
+                is_a_job_running = False # Reset the job status.
+                for single_job_name in running_job_names_in_cluster:        
                     is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
                     job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)
                     
-                    if job_busy_ratio == 0 and jobs_completion_times[single_job_name]["completed_for_the_current_file"] == False:
-                        jobs_completion_times[single_job_name]["time_to_complete"] += time.time() - jobs_started_time
-                        jobs_completion_times[single_job_name]["completed_for_the_current_file"] = True
+                    # Stop the timer (ending_time and time_elapsed) of stopped jobs
+                    # After that, ending time cannot be updated again until the next time all jobs start again
+                    if job_busy_ratio == 0 and jobs_completion_times[single_job_name]["ending_time"] == None:
+                        jobs_completion_times[single_job_name]["ending_time"] = time.time()
+                        jobs_completion_times[single_job_name]["time_elapsed"] += \
+                            jobs_completion_times[single_job_name]["ending_time"] - \
+                                jobs_completion_times[single_job_name]["starting_time"]
+                                
                          
                     jobs_busy_ratios[single_job_name] = job_busy_ratio
                     sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
@@ -530,6 +545,13 @@ if __name__ == '__main__':
                 
                 sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
         
+            
+            # Reset the timer for stopped jobs
+            for single_job_name in running_job_names_in_cluster:        
+                if jobs_completion_times[single_job_name]["ending_time"] != None: # Stopped job
+                    jobs_completion_times[single_job_name]["starting_time"] = None
+                    jobs_completion_times[single_job_name]["ending_time"] = None
+
         
         et = time.time()
         dur = et - st
@@ -565,7 +587,7 @@ if __name__ == '__main__':
 
     print("\nTotal busy times of jobs:")
     for k, v in jobs_completion_times.items():
-        temp_time_to_complete = round(v["time_to_complete"], 1)
+        temp_time_to_complete = round(v["time_elapsed"], 1)
         print(f"{k}: {temp_time_to_complete}")
 
 
