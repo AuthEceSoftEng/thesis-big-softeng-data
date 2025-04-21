@@ -1,7 +1,7 @@
 import json, gzip, os, sys
 import warnings
 
-from produce_from_last_line_of_file import extract_compressed_file_from_path
+# from produce_from_last_line_of_file import extract_compressed_file_from_path
 # import get_parsed_gharchive_files import save_files_parsed, restore_parsed_files
 
 
