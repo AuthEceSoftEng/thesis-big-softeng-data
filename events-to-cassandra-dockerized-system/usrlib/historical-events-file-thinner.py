@@ -1,10 +1,10 @@
-from produce_from_last_line_of_file import produce_from_last_line_of_file
+# from produce_from_last_line_of_file import produce_from_last_line_of_file
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer, Consumer, admin
 
 
-from create_topic_from_inside_the_container import create_topic_from_within_container
+# from create_topic_from_inside_the_container import create_topic_from_within_container
 
 from thin_data import thin_data_of_file
 from heavy_thin_of_data import heavy_thin_data_of_file
@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 import requests
 import os
 
-from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, create_topic_if_not_exists, delete_topic_if_full
+# from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, create_topic_if_not_exists, delete_topic_if_full
 
 
 def download_compressed_GHA_file(gha_file_url, folderpath):
@@ -281,8 +281,8 @@ def get_running_job_names():
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-01-1'
-    ending_date_formatted =  '2024-12-01-1' 
+    starting_date_formatted =  '2024-12-01-23'
+    ending_date_formatted =  '2024-12-02-1' 
 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
@@ -352,6 +352,9 @@ if __name__ == '__main__':
         sections_performance["2. Thin file"] += dur
         # endregion
 
+        current_date = current_date + timedelta(hours=1)
+        current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
+            
     sections_performance["Total time elapsed"] = total_dur
     print("Execution times of pipeline parts in seconds:")
     for k, v in sections_performance.items():
