@@ -325,7 +325,7 @@ services:
     container_name: python-historical-events-thinner
     volumes: 
       # /usrlib
-      - ./usrlib/historical-events-file-rotating-producer.py:/usrlib/historical-events-file-thinner.py
+      - ./usrlib/historical-events-file-thinner.py:/usrlib/historical-events-file-thinner.py
       # - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
       # - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
       - ./usrlib/thin_data.py:/usrlib/thin_data.py      
