@@ -281,8 +281,8 @@ def get_running_job_names():
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-01-19'
-    ending_date_formatted =  '2024-12-01-21' 
+    starting_date_formatted =  '2024-12-01-1'
+    ending_date_formatted =  '2024-12-01-1' 
 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
@@ -292,19 +292,8 @@ if __name__ == '__main__':
     # Performance of pipeline sections: Download, Thin events, produce and transform data
     sections_performance = {"1. Download gharchive file": 0,
                             "2. Thin file": 0,
-                            "3. Produce thinned events": 0,
-                            "4. Wait for flink jobs to finish": 0,
-                            "5. Delete and recreate topic": 0,
                             "Total time elapsed": 0}
     
-    
-    # ATTENTION: Set explicit_wait_for_busy_jobs = True for the performance of jobs to be calculated
-    running_job_names_in_cluster = get_running_job_names()
-    running_job_names_in_cluster = sorted(running_job_names_in_cluster)
-    # start_time: The time when the job started
-    # stop_time: The time when the job stopped
-    # total_busy_time: The total working time of the job
-    jobs_completion_times = {job_name: {"starting_time": None, "ending_time" : None, "time_elapsed" : 0 } for job_name in running_job_names_in_cluster}
     
     total_dur = 0
 
@@ -317,9 +306,6 @@ if __name__ == '__main__':
     # Pipeline (download, thin, produce, transform) for all dates from start to end
     while current_date <= ending_date:
         
-        
-
-
         # 1. Download gharchive file
         # region
         print(f"\nGharchive file: {current_date_formatted}")
@@ -366,257 +352,7 @@ if __name__ == '__main__':
         sections_performance["2. Thin file"] += dur
         # endregion
 
-        # 3. Produce thinned events
-        # region
-        print("\n3. Produce thinned events:")
-        # Store the files produced and up to which point
-        parsed_files_filepath = "/github_data/files_parsed.json"
-        topic_to_produce_into = 'historical-raw-events'
-        the_whole_file_was_read_beforehand = None      
-        
-        # If the file was read beforehand, its events have already produced
-        _ , the_whole_file_was_read_beforehand = produce_from_last_line_of_file(topic_to_produce_into, filepath_of_thinned_file, parsed_files_filepath)
-
-        # If the file's events have already been produced, continue with the next one
-        if the_whole_file_was_read_beforehand:
-            current_date = current_date + timedelta(hours=1)
-            current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
-            continue
-        else:
-            current_date = current_date + timedelta(hours=1)
-            current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
- 
-
-        et = time.time()
-        dur = et - st
-        total_dur += dur
-        sections_performance["3. Produce thinned events"] += dur
-        # endregion
-
-        
-        # Variable initialization
-        topic = topic_to_produce_into
-        bootstrap_servers = get_kafka_broker_config(topic)        
-        number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-        max_number_of_messages = 1000000
-        
-
-
-        # 4. Wait for flink jobs to finish
-        # region
-
-        # Set True or False to skip region 
-        skip_transformation_region = False
-        st = time.time()
-
-        if skip_transformation_region == False:
-            print("\n4. Wait for flink jobs to finish")
-            
-            # Stop execution if there are no running jobs
-            running_job_names_in_cluster = get_running_job_names()
-            running_job_names_in_cluster = sorted(running_job_names_in_cluster)
-            if running_job_names_in_cluster == []:
-                raise Exception("No jobs are running on the Flink cluster. Execute a job and rerun the producer")
-            
-            # Initialize variables
-            is_a_job_running = False # Supposing no job is running initially
-            hostname = 'jobmanager'
-            times_waited_before_start = 0
-            jobs_are_under_low_load = False
-            
-            # Check if jobs are running
-            for single_job_name in running_job_names_in_cluster:
-                is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-            
-            # If yes, wait for them to stop or become less busy
-            if is_a_job_running == True:
-                print(f"Pyflink jobs have started working")
-                jobs_started_time = time.time()       
-            # If not, wait for them to start
-            elif (is_a_job_running == False):    
-                print(f"Pyflink jobs have not started working")
-                print("Waiting for the jobs to start")            
-                while(is_a_job_running == False):
-                    # If one of the pyflink jobs started working, break the while loop 
-                    for single_job_name in running_job_names_in_cluster:
-                        is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-                        job_busy_ratio = get_job_busy_ratio(single_job_name,  hostname)
-                        sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-                    sys.stdout.flush()
-                    if is_a_job_running == True:        
-                            print(f"Pyflink jobs have started working")
-                            jobs_started_time = time.time()       
-                            break
-                    time.sleep(5)
-                    sys.stdout.write("\033[F" * len(running_job_names_in_cluster))         
-                    # If we wait for long (jobs not starting being busy) continue with the next file
-                    times_waited_before_start += 1
-                    if times_waited_before_start == 3:
-                        jobs_are_under_low_load = True
-                        break
-            
-            
-            # Starting time for jobs 
-            for single_job_name in running_job_names_in_cluster:
-                # Update starting time only if the job was not running from the previous loop iteration
-                # Else keep the start time of the job of the previous iteration
-                if jobs_completion_times[single_job_name]["starting_time"] == None:
-                    jobs_completion_times[single_job_name]["starting_time"] = jobs_started_time
-            
-            
-            # If jobs are not busy, continue with next file
-            if jobs_are_under_low_load == True:
-                continue
-            
-            
-            # Uncomment to wait for all jobs to start running
-            # This is used to measure the jobs performances
-            are_all_jobs_running = False
-            print("Waiting for all jobs to start running")
-            while(are_all_jobs_running == False):
-                are_all_jobs_running = True
-                # If one job is not running, are_all_jobs_running will become false
-                for single_job_name in running_job_names_in_cluster:
-                    are_all_jobs_running = are_all_jobs_running and check_if_job_is_busy(single_job_name, hostname)
-                time.sleep(3)
-            
-            
-            
-                  
-            
-            # Set True to wait for jobs to complete after every file
-            explicit_wait_for_busy_jobs = True 
-            # If the topic size is too large, wait for jobs to complete, then delete it
-            if number_of_messages > max_number_of_messages:
-                wait_for_busy_jobs = True
-            # On the file of the ending date, wait for the jobs to complete
-            elif current_date == ending_date:
-                wait_for_busy_jobs = True
-            # Explicit statement to wait for the jobs to complete
-            elif explicit_wait_for_busy_jobs == True:
-                wait_for_busy_jobs = True
-            
-            
-            # Wait for jobs to stop             
-            if wait_for_busy_jobs == True:        
-                print("Waiting for pyflink jobs to stop completely")        
-            elif wait_for_busy_jobs == False:
-                print("Waiting for pyflink jobs busy ratios to drop from 100%% before producing new messages") 
-
-                
-            #  While there is at least one working job, wait for it to finish
-            jobs_busy_ratios = {}
-            while(is_a_job_running == True):
-                is_a_job_running = False # Reset the job status.
-                for single_job_name in running_job_names_in_cluster:        
-                    is_a_job_running = is_a_job_running or check_if_job_is_busy(single_job_name, hostname)
-                    job_busy_ratio = get_job_busy_ratio(single_job_name, hostname)
-                    
-                    # Stop the timer (ending_time and time_elapsed) of stopped jobs
-                    # After that, ending time cannot be updated again until the next time all jobs start again
-                    if job_busy_ratio == 0 and jobs_completion_times[single_job_name]["ending_time"] == None:
-                        jobs_completion_times[single_job_name]["ending_time"] = time.time()
-                        jobs_completion_times[single_job_name]["time_elapsed"] += \
-                            jobs_completion_times[single_job_name]["ending_time"] - \
-                                jobs_completion_times[single_job_name]["starting_time"]
-                                
-                         
-                    jobs_busy_ratios[single_job_name] = job_busy_ratio
-                    sys.stdout.write(f"\rJob: '{single_job_name}', busy ratio {round(job_busy_ratio*100, 1)}%\n")
-                sys.stdout.flush()
-                max_job_busy_ratio = max(jobs_busy_ratios.values())
-                
-                # If the jobs stopped (busy ratio 0%) or are not at busy ratio 100%, continue producing messages
-                if (is_a_job_running == False or max_job_busy_ratio < 1) and wait_for_busy_jobs == False:
-                    print("\nPyflink jobs stopped or are not 100%% busy. Can continue producing messages")
-                    break
-                # Only if the jobs stopped (busy ratio 0%), continue producing messages
-                elif is_a_job_running == False and wait_for_busy_jobs == True:
-                    print("Pyflink jobs stopped.")
-                    break
-                else: 
-                    # If no job stopped or busy ratio dropped, keep waiting
-                    pass
-                time.sleep(5)
-                
-                # Get the new running jobs in case one was added to the cluster or cancelled
-                running_job_names_in_cluster = get_running_job_names()
-                running_job_names_in_cluster = sorted(running_job_names_in_cluster)
-                
-                sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
-        
-            
-            # Reset the timer for stopped jobs
-            for single_job_name in running_job_names_in_cluster:        
-                if jobs_completion_times[single_job_name]["ending_time"] != None: # Stopped job
-                    jobs_completion_times[single_job_name]["starting_time"] = None
-                    jobs_completion_times[single_job_name]["ending_time"] = None
-
-        
-        et = time.time()
-        dur = et - st
-        total_dur += dur
-        sections_performance["4. Wait for flink jobs to finish"] += dur
-        # endregion
-        
-        
-        # 5. Delete and recreate the topic if too large
-        # region
-        # Set True or False to skip region
-        skip_delete_topic = False
-        st = time.time()
-        
-        # Delete topic and recreate it
-        if skip_delete_topic == False:
-            print("5. Delete and recreate topic")
-            delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
-            # Short delay to update kafka cluster metadata before recreating the topic
-            time.sleep(5)
-            create_topic_if_not_exists(topic, bootstrap_servers)
-    
-        et = time.time()
-        dur = et - st
-        total_dur += dur
-        sections_performance["5. Delete and recreate topic"] += dur
-        # endregion
-        
     sections_performance["Total time elapsed"] = total_dur
     print("Execution times of pipeline parts in seconds:")
     for k, v in sections_performance.items():
         print(f"{k}: {round(v, 1)}")
-
-    print("\nTotal busy times of jobs:")
-    for k, v in jobs_completion_times.items():
-        temp_time_to_complete = round(v["time_elapsed"], 1)
-        print(f"{k}: {temp_time_to_complete}")
-
-
-
-
-
-
-
-
-
-# Test to increase the topic partitions
-    # topic = 'historical-raw-events'
-    # bootstrap_servers = get_kafka_broker_config(topic)
-    # client = admin.AdminClient({"bootstrap.servers": bootstrap_servers})
-
-    # # # Create topic
-    # # create_topic_future = client.create_topics([topic])
-    # # print(create_topic_future)
-    # # print(create_topic_future[topic])
-    # # print(create_topic_future[topic].result())
-    
-    # # # Delete topic
-    # # delete_topic_future = client.delete_topics([topic])
-    # # print(delete_topic_future[topic].result())
-    
-    
-    # # Increase topic partition
-    # number_of_partitions = 4
-    # new_partitions = admin.NewPartitions(topic, new_total_count=number_of_partitions)
-    # create_topic_partitions_future = client.create_partitions([new_partitions])
-    
-    # print(create_topic_partitions_future[topic].result())
