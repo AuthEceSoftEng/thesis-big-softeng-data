@@ -330,14 +330,10 @@ services:
 
       # github_data
       - ./usrlib/github_data:/github_data      
-    command: ['python', 'historical-events-file-thinner.py']
-    
+    command: ['python', 'historical-events-file-thinner.py']    
     environment:
       - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
+
 
 # # Historical events files thinner 2
   python-historical-events-thinner-2:
@@ -351,15 +347,26 @@ services:
 
       # github_data
       - ./usrlib/github_data:/github_data      
-    command: ['python', 'historical-events-file-thinner-2.py']
-    
+    command: ['python', 'historical-events-file-thinner-2.py']    
     environment:
       - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
 
+
+# # Historical events files thinner 3
+  python-historical-events-thinner-3:
+    image: python:3.10-script-executing-image
+    container_name: python-historical-events-thinner-3
+    volumes: 
+      # /usrlib
+      - ./usrlib/historical-events-file-thinner-3.py:/usrlib/historical-events-file-thinner-3.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
+      # github_data
+      - ./usrlib/github_data:/github_data      
+    command: ['python', 'historical-events-file-thinner-3.py']    
+    environment:
+      - PYTHONUNBUFFERED=1
 
 
 
