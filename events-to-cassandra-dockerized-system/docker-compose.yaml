@@ -368,6 +368,21 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
 
+# # Historical events files thinner 4
+  python-historical-events-thinner-4:
+    image: python:3.10-script-executing-image
+    container_name: python-historical-events-thinner-4
+    volumes: 
+      # /usrlib
+      - ./usrlib/historical-events-file-thinner-4.py:/usrlib/historical-events-file-thinner-4.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
+      # github_data
+      - ./usrlib/github_data:/github_data      
+    command: ['python', 'historical-events-file-thinner-4.py']    
+    environment:
+      - PYTHONUNBUFFERED=1
 
 
 # Producer of a small sample of the events of a file (Used for ingestion speed testing)
