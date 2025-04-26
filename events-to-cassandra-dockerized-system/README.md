@@ -65,6 +65,12 @@ In terminals 5-7, change the pyclientexec option to the host python environment 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+
+
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+
+
 # Alternatives to accelerate data ingestion performance
 # Use of functions process() and session.execute_async()
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
