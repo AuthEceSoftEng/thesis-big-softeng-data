@@ -66,8 +66,8 @@ services:
       - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
 
       # # Multiple Screen 2 jobs instead of 1
-      # - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
-      # - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
 
 
       # Config file
@@ -140,8 +140,8 @@ services:
       - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
 
     # # Multiple Screen 2 jobs instead of 1
-    #   - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
-    #   - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
 
 
 
