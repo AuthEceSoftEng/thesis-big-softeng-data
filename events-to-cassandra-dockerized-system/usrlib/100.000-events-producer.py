@@ -87,10 +87,10 @@ def get_subtasks_endpoints_of_job_in_flink(job_name, hostname):
     # If the job has the name of that job in the execute, we keep its id and return its subtasks normally.
 
     # The jobs response of the endpoint in JSON format
-    jobs_json_dict = res.json()["jobs"]
+    event_dict = res.json()["jobs"]
 
     # Get the jobs' IDs with status "RUNNING"
-    jobs_id_list = [job_element["id"] for job_element in jobs_json_dict if job_element["status"]=="RUNNING"]
+    jobs_id_list = [job_element["id"] for job_element in event_dict if job_element["status"]=="RUNNING"]
 
     # If no jobs are running return None
     if jobs_id_list == []:
@@ -128,8 +128,8 @@ def get_subtasks_endpoints_of_job_in_flink(job_name, hostname):
         raise ValueError(f"Endpoint {vertices_url} could not be accessed\n"
                         f"HTTP status code: {res.status_code}")
 
-    vertices_json_dict = res.json()["vertices"]
-    vertices_ids_list = [vertex["id"] for vertex in vertices_json_dict]
+    event_dict = res.json()["vertices"]
+    vertices_ids_list = [vertex["id"] for vertex in event_dict]
 
 
     # Get subtasks endpoints for the task (vertex)
@@ -334,7 +334,7 @@ def delivery_callback(err, msg):
         # print("\nProduced event to topic {topic}: value = {value:12}".format(
         #     topic=msg.topic(), value=msg.value().decode('utf-8')))
 
-def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
+def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pull_request_events_topic = str, issue_events_topic = str, filepath=str, config=dict):
     '''
     Produces messages from a .json file into a topic
     topic: the name of the topic to produce messages into
@@ -355,52 +355,81 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
     filename = os.path.basename(filepath)
     decompressed_file_path = extract_compressed_file_from_path(\
         filepath)
-    with open(decompressed_file_path, 'r') as file_object:
-        lines_in_file = len(file_object.readlines())
+    # with open(decompressed_file_path, 'r') as file_object:
+    #     lines_in_file = len(file_object.readlines())
     line_we_left_off = 0    
     lines_produced = 0
     number_of_lines_produced_per_print = 1000	
     time_between_produced_messages = pow(10, -8)
+    # time_between_produced_messages = 0
     number_of_messages_before_poll = 100
     
     
     try:
-        producer = Producer(config)
+        historical_events_producer = Producer(config)
+        push_events_producer = Producer(config)
+        pull_request_events_producer = Producer(config)
+        issue_events_producer = Producer(config)
+        
         with open(decompressed_file_path, 'r') as file_object:
             
+            
             lines = file_object.readlines()
+            lines_in_file = len(lines)
+            
+            # All events in file are of the same day
+            event_dict = json.loads(lines[0])
+            first_event_dict = event_dict["created_at"]
+            event_full_datetime = datetime.strptime(first_event_dict, "%Y-%m-%dT%H:%M:%SZ") 
+            event_day = datetime.strftime(event_full_datetime, "%Y-%m-%d")
+
+
             print(f"Reading lines of {filename} until EOF or keyboard interrupt...")
             print(f'Producing events from line No.{line_we_left_off+1} of {filename}')                
             for i in range(line_we_left_off, lines_in_file):    
-                jsonDict = json.loads(lines[i])
-                jsonStr = str(jsonDict)
-
-                if lines_produced % number_of_lines_produced_per_print == 0:
-                    sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced, lines_in_file))
-                    sys.stdout.flush()
+                event_dict = json.loads(lines[i])
                 
-                producer.produce(topic, value= jsonStr, callback=delivery_callback)
+                
+                event_str = str({"day": event_day, "type": event_dict["type"]})
+                historical_events_producer.produce(all_events_topic, value=event_str, callback=delivery_callback)
                 # producer.produce(topic, value=lines[i], callback=delivery_callback)
+                                
+
+                # if event_dict["type"] == 'PushEvent':
+                #     # event_str = event_dict[k]:json   
+                #     push_events_producer.produce(topic, value= event_str, callback=delivery_callback)
+                    
+
+                
                 
                 lines_produced = lines_produced+1
                 
                 # Poll to cleanup the producer queue after every message production
-                producer.poll(0)
+                historical_events_producer.poll(0)
                 
-                # Optional: Uncomment to stop producing messages 
-                # after a number of them
-                if lines_produced == 1000: 
-                    break
+
+                if lines_produced % number_of_lines_produced_per_print == 0:
+                    sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced,lines_in_file))
+                    sys.stdout.flush()
+                
+                
+                
+                # # Optional: Uncomment to stop producing messages 
+                # # after a number of them
+                # if lines_produced == 1000: 
+                #     break
                 
                 # Short time to capture output
                 time.sleep(time_between_produced_messages)
             
             # Once the total number of lines were produced, print it
-            sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, lines_in_file))
+            sys.stdout.write(f"\rJSON objects produced: {i+1}/{lines_in_file}")
             sys.stdout.flush()
     
     except KeyboardInterrupt:
         print('\nKeyboard interrupt\n')
+    # except Exception as e:
+    #     print(f"Caught exception: {e}")
     finally:
         if lines_produced == lines_in_file:
             print('\nEOF\n')
@@ -409,8 +438,8 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
             os.remove(decompressed_file_path)
         
         # Wait for messages' delivery
-        producer.poll(10000)
-        producer.flush()                
+        historical_events_producer.poll(0)
+        historical_events_producer.flush()                
         print('\nProducer closed properly')
     
     
@@ -487,7 +516,6 @@ if __name__ == '__main__':
             # region
             st = time.time()
 
-            topic_to_produce_into = 'historical-raw-events'
             parsed_files_filepath = "/github_data_for_speed_testing/files_parsed.json"
             
             # Get kafka_host:kafka_port
@@ -499,13 +527,17 @@ if __name__ == '__main__':
             config = dict(config_parser['default_producer'])
             config_port = str(config['bootstrap.servers'])
                 
-            create_topic_if_not_exists(topic_to_produce_into, config_port)
+            all_events_topic = "all_events"
+            push_events_topic = "push_events"
+            pull_request_events_topic = "pull_request_events"
+            issue_events_topic = "issue_events"
+            create_topic_if_not_exists(pull_request_events_topic, config_port)
+            create_topic_if_not_exists(issue_events_topic, config_port)
+            create_topic_if_not_exists(all_events_topic, config_port)
+            create_topic_if_not_exists(push_events_topic, config_port)
             
             
-            
-            produce_all_lines_of_file(topic_to_produce_into, limited_number_of_lines_filepath, config)
-        
-
+            produce_all_lines_of_file(all_events_topic, push_events_topic, pull_request_events_topic, issue_events_topic, limited_number_of_lines_filepath, config)
 
             et = time.time()
             dur = et - st
@@ -588,14 +620,14 @@ if __name__ == '__main__':
         skip_topic_deletion = True
         if skip_topic_deletion == False:
             # Delete and recreate the topic if too large
-            topic = topic_to_produce_into
-            bootstrap_servers = get_kafka_broker_config(topic)
-            number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-            max_number_of_messages = 2000000
-            delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
-            # Short delay to update kafka cluster metadata before recreating the topic
-            time.sleep(5)
-            create_topic_if_not_exists(topic, bootstrap_servers)
+            for topic in [all_events_topic, push_events_topic, pull_request_events_topic, issue_events_topic]:
+                bootstrap_servers = get_kafka_broker_config(topic)
+                number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
+                max_number_of_messages = 2000000    
+                delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
+                # Short delay to update kafka cluster metadata before recreating the topic
+                time.sleep(5)
+                create_topic_if_not_exists(topic, bootstrap_servers)
     
     sections_performance.append(["Total time elapsed", total_dur])
     print("Execution times in seconds:\n")
