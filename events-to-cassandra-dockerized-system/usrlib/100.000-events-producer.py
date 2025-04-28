@@ -4,14 +4,9 @@ from configparser import ConfigParser
 from confluent_kafka import Producer, Consumer, admin
 
 
-from create_topic_from_inside_the_container import create_topic_from_within_container
-
 from thin_data import thin_data_of_file
 from heavy_thin_of_data import heavy_thin_data_of_file
 import time, sys
-# from check_job_status_multiple_jobs import check_if_job_is_busy 
-
-# from check_job_status_multiple_jobs  import get_subtasks_endpoints_of_job_in_flink
 
 import json
 import subprocess
@@ -20,7 +15,7 @@ import requests
 import os
 
 import gzip
-from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, delete_and_recreate_topic
+from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, create_topic_if_not_exists, delete_topic_if_full
 
 
 def download_compressed_GHA_file(gha_file_url, folderpath):
@@ -324,25 +319,6 @@ def create_file_with_k_first_lines(input_filepath, output_filepath, number_of_li
     elif os.path.exists(output_filepath) and do_again == False:
         print(f"{os.path.basename(output_filepath)} with the first {number_of_lines_to_keep} events already exists.")
     print('...Done')
-        
-def get_config_and_produce_lines(topic=str, filepath=str):   
-    # Parse the command line.
-    parser = ArgumentParser()
-    parser.add_argument('config_file', type=FileType('r'))
-    args = parser.parse_args()
-
-    # Parse the configuration.
-    # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
-    config_parser = ConfigParser()
-    config_parser.read_file(args.config_file)
-    config = dict(config_parser['default_producer'])
-    
-    config_port = str(config['bootstrap.servers'])
-        
-    create_topic(topic, config_port)
-            
-    # Produce from file into topic
-    produce_all_lines_of_file(topic, filepath, config)
 
 
 def delivery_callback(err, msg):
@@ -378,31 +354,19 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
     
     filename = os.path.basename(filepath)
     
-    # Decompress gharchive file    
     decompressed_file_path = extract_compressed_file_from_path(\
         filepath)
     
-    # Calculate size of file (number of lines of file)    
     with open(decompressed_file_path, 'r') as file_object:
         lines_in_file = len(file_object.readlines())
     
-    # Read lines of file to be added in kafka topic until keyboard interrupt
-    # or EOF
-    line_we_left_off = 0
-    
-    # Declare variable linesProduced to be used in the loop 
+    line_we_left_off = 0    
     lines_produced = 0
     
     number_of_lines_produced_per_print = 1000	
     number_of_messages_before_poll = 100
     time_between_produced_messages = pow(10, -8)
-    # st = time.time()
-    # time.sleep(time_between_produced_messages)
-    # et = time.time()
-    # time_elapsed = et - st
-    # print(f"Time elapsed: {time_elapsed}")
-    # raise Exception
-
+    
     try:
         # Create Producer instance
         producer = Producer(config)
@@ -470,11 +434,9 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
 if __name__ == '__main__':
     # Code sketch
     
-    # Designate a date (year, month, day, hour) to download a gharchive file from
     starting_date_formatted = '2024-12-03-14'
     ending_date_formatted = '2024-12-03-14'
     current_date_formatted = starting_date_formatted
-    
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
     current_date = datetime.strptime(current_date_formatted, '%Y-%m-%d-%H')
@@ -520,12 +482,8 @@ if __name__ == '__main__':
             st = time.time()
 
             
-            # thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
-            
             heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
 
-            # Sample the first {number_of_lines_to_keep} lines of the thinned file
-            # filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
             input_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned.json.gz'
             number_of_lines_to_keep = 200000
             limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
@@ -546,7 +504,34 @@ if __name__ == '__main__':
             topic_to_produce_into = 'historical-raw-events'
             parsed_files_filepath = "/github_data_for_speed_testing/files_parsed.json"
             
-            get_config_and_produce_lines(topic_to_produce_into, limited_number_of_lines_filepath)
+            # Get kafka_host:kafka_port
+            parser = ArgumentParser()
+            parser.add_argument('config_file', type=FileType('r'))
+            args = parser.parse_args()
+            config_parser = ConfigParser()
+            config_parser.read_file(args.config_file)
+            config = dict(config_parser['default_producer'])
+            config_port = str(config['bootstrap.servers'])
+                
+            create_topic_if_not_exists(topic_to_produce_into, config_port)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            produce_all_lines_of_file(topic, limited_number_of_lines_filepath, config)
+        
+
 
             et = time.time()
             dur = et - st
@@ -626,15 +611,18 @@ if __name__ == '__main__':
         current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
         
 
-        skip_topic_deletion = False
+        skip_topic_deletion = True
         if skip_topic_deletion == False:
             # Delete and recreate the topic if too large
             topic = topic_to_produce_into
             bootstrap_servers = get_kafka_broker_config(topic)
             number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
             max_number_of_messages = 2000000
-            delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
-        
+            delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
+            # Short delay to update kafka cluster metadata before recreating the topic
+            time.sleep(5)
+            create_topic_if_not_exists(topic, bootstrap_servers)
+    
     sections_performance.append(["Total time elapsed", total_dur])
     print("Execution times in seconds:\n")
     for single_section_performance in sections_performance:
