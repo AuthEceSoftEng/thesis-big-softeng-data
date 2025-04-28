@@ -360,7 +360,7 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
     line_we_left_off = 0    
     lines_produced = 0
     number_of_lines_produced_per_print = 1000	
-    time_between_produced_messages = pow(10, -8)
+    time_between_produced_messages = pow(10, -6)
     # time_between_produced_messages = 0
     number_of_messages_before_poll = 100
     
@@ -390,15 +390,51 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
                 event_dict = json.loads(lines[i])
                 
                 
-                event_str = str({"day": event_day, "type": event_dict["type"]})
+                event_str = str({"day": event_day, 
+                                 "type": event_dict["type"]})
                 historical_events_producer.produce(all_events_topic, value=event_str, callback=delivery_callback)
                 # producer.produce(topic, value=lines[i], callback=delivery_callback)
                                 
 
-                # if event_dict["type"] == 'PushEvent':
-                #     # event_str = event_dict[k]:json   
-                #     push_events_producer.produce(topic, value= event_str, callback=delivery_callback)
-                    
+                if event_dict["type"] == "PushEvent":
+                    number_of_contributions = event_dict["payload"]["distinct_size"]
+                    event_str = str({"day": event_day, 
+                                     "repo": event_dict["repo"]["full_name"],
+                                     "username": event_dict["actor"], 
+                                     "number_of_contributions": number_of_contributions})
+                    # Produce only regular push events
+                    if (number_of_contributions <= 100) or (number_of_contributions <= 200
+                    and event_dict["payload"]["size"] == event_dict["payload"]["distinct_size"]):
+                        push_events_producer.produce(push_events_topic, value= event_str, callback=delivery_callback)
+                
+                elif event_dict["type"] == "PullRequestEvent":
+                    number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
+                    if event_dict["payload"]["pull_request"]["merged_at"] != None:
+                        were_accepted = True
+                    else:
+                        were_accepted = False   
+                    event_str = str({"day": event_day, 
+                                    "repo": event_dict["repo"]["full_name"], 
+                                    "username": event_dict["payload"]["pull_request"]["user"],
+                                    "number_of_contributions": number_of_contributions,
+                                    "pull_request_number": event_dict["payload"]["pull_request"]["number"],
+                                    "opening_time": event_dict["payload"]["pull_request"]["created_at"], 
+                                    "closing_time": event_dict["payload"]["pull_request"]["closed_at"], 
+                                    "were_accepted": were_accepted})
+                    # Produce only regular pull request events that have been merged
+                    if number_of_contributions <= 200 and \
+                    event_dict["payload"]["action"] == "closed" and \
+                    event_dict["payload"]["pull_request"]["merged_at"] != None:
+                        pull_request_events_producer.produce(pull_request_events_topic, value=event_str, callback=delivery_callback)
+                
+                
+                elif event_dict["type"] == "IssuesEvent":
+                    event_dict = str({"repo": event_dict["repo"]["full_name"], 
+                                "issue_number": event_dict["payload"]["issue"]["number"],
+                                "opening_time": event_dict["payload"]["issue"]["created_at"],
+                                "closing_time": event_dict["payload"]["issue"]["closed_at"],
+                                "labels": event_dict["payload"]["issue"]["labels"]})
+                    issue_events_producer.produce(issue_events_topic, value=event_str, callback=delivery_callback)
 
                 
                 
@@ -406,6 +442,9 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
                 
                 # Poll to cleanup the producer queue after every message production
                 historical_events_producer.poll(0)
+                push_events_producer.poll(0)
+                pull_request_events_producer.poll(0)
+                issue_events_producer.poll(0)
                 
 
                 if lines_produced % number_of_lines_produced_per_print == 0:
@@ -439,7 +478,14 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
         
         # Wait for messages' delivery
         historical_events_producer.poll(0)
-        historical_events_producer.flush()                
+        historical_events_producer.flush()  
+        push_events_producer.poll(0)
+        push_events_producer.flush()
+        pull_request_events_producer.poll(0)
+        pull_request_events_producer.flush()
+        issue_events_producer.poll(0)
+        issue_events_producer.flush()
+                              
         print('\nProducer closed properly')
     
     
