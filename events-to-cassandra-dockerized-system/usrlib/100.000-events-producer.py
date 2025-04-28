@@ -1,4 +1,4 @@
-from produce_from_last_line_of_file import create_topic, extract_compressed_file_from_path
+from produce_from_last_line_of_file import extract_compressed_file_from_path
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer, Consumer, admin
@@ -353,81 +353,67 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
     '''
     
     filename = os.path.basename(filepath)
-    
     decompressed_file_path = extract_compressed_file_from_path(\
         filepath)
-    
     with open(decompressed_file_path, 'r') as file_object:
         lines_in_file = len(file_object.readlines())
-    
     line_we_left_off = 0    
     lines_produced = 0
-    
     number_of_lines_produced_per_print = 1000	
-    number_of_messages_before_poll = 100
     time_between_produced_messages = pow(10, -8)
+    number_of_messages_before_poll = 100
+    
     
     try:
-        # Create Producer instance
         producer = Producer(config)
         with open(decompressed_file_path, 'r') as file_object:
             
             lines = file_object.readlines()
             print(f"Reading lines of {filename} until EOF or keyboard interrupt...")
-            print(f'Producing events from line No.{line_we_left_off+1} of {filename}')
-                        
+            print(f'Producing events from line No.{line_we_left_off+1} of {filename}')                
             for i in range(line_we_left_off, lines_in_file):    
-            # for line in file_object:
-                   # # JSON object to be inserted in the Cassandra database
-                # # Old version
                 jsonDict = json.loads(lines[i])
                 jsonStr = str(jsonDict)
+
+                if lines_produced % number_of_lines_produced_per_print == 0:
+                    sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced, lines_in_file))
+                    sys.stdout.flush()
                 
-                # # Print only batches of lines produced
-                # if lines_produced % number_of_lines_produced_per_print == 0:
-                #     sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced, lines_in_file))
-                #     sys.stdout.flush()
-                
-                # Old version
                 producer.produce(topic, value= jsonStr, callback=delivery_callback)
-                
                 # producer.produce(topic, value=lines[i], callback=delivery_callback)
+                
                 lines_produced = lines_produced+1
                 
                 # Poll to cleanup the producer queue after every message production
                 producer.poll(0)
                 
-                if i == 1000: 
+                # Optional: Uncomment to stop producing messages 
+                # after a number of them
+                if lines_produced == 1000: 
                     break
-                # # # Short time to capture output
+                
+                # Short time to capture output
                 time.sleep(time_between_produced_messages)
             
-            # # Once the total number of lines were produced, print it
-            # sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, lines_in_file))
-            # sys.stdout.flush()
+            # Once the total number of lines were produced, print it
+            sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, lines_in_file))
+            sys.stdout.flush()
     
     except KeyboardInterrupt:
         print('\nKeyboard interrupt\n')
     finally:
-        # Once done reading the decompressed file, 
-        # delete it to save space and save the state
+        if lines_produced == lines_in_file:
+            print('\nEOF\n')
+        # Delete decompressed .json file after messages were produced
         if os.path.exists(decompressed_file_path):
             os.remove(decompressed_file_path)
         
+        # Wait for messages' delivery
         producer.poll(10000)
-        # Wait for all messages in the Producer queue to be delivered
         producer.flush()                
         print('\nProducer closed properly')
     
-    # Case 1.2: EOF 
-    # In this case, the file was read up to the last line and
-    # no keyboard interrupt occured
-    if lines_produced == lines_in_file:
-        print('\nEOF\n')
-        if os.path.exists(decompressed_file_path):
-            # Remove the decompressed file
-            os.remove(decompressed_file_path)
-
+    
 
 
 
@@ -517,19 +503,7 @@ if __name__ == '__main__':
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            produce_all_lines_of_file(topic, limited_number_of_lines_filepath, config)
+            produce_all_lines_of_file(topic_to_produce_into, limited_number_of_lines_filepath, config)
         
 
 
