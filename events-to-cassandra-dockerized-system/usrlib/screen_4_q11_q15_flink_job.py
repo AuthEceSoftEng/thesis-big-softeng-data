@@ -37,7 +37,7 @@ import os
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
 
-# env.disable_operator_chaining()
+env.disable_operator_chaining()
 
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 # env.set_parallelism(2)
@@ -179,6 +179,7 @@ pull_request_closing_times_type_info_q11_12 = \
     
 # Datastream with extracted fields
 pull_request_closing_times_info_ds_q11_12 = raw_events_ds.filter(filter_out_non_pull_request_events_q11_12)\
+                    .disable_chaining()\
                     .map(extract_opening_and_closing_times_of_pull_requests_and_create_row_q11_12, \
                            output_type=pull_request_closing_times_type_info_q11_12) 
 
@@ -254,6 +255,7 @@ issue_closing_times_type_info_q13_14 = \
         
 # Datastream with extracted fields
 issue_closing_times_ds_q13_14 = raw_events_ds.filter(filter_out_non_issue_events_q13_14)\
+                    .disable_chaining()\
                     .map(extract_opening_and_closing_times_of_issues_and_create_row_q13_14, \
                            output_type=issue_closing_times_type_info_q13_14)
 # Uncomment to print the datastream elements
@@ -364,6 +366,7 @@ issue_closing_times_type_info_with_single_label = \
 
 # Datastream with extracted fields
 issue_closing_times_by_label_ds_q15 = raw_events_ds.filter(filter_out_non_issue_events_q15)\
+                    .disable_chaining()\
                     .map(extract_opening_and_closing_times_of_issues_and_create_row_q15, \
                            output_type=issue_closing_times_type_info_with_list_of_labels_q15)\
                     .flat_map(split_issue_labels, output_type=issue_closing_times_type_info_with_single_label)

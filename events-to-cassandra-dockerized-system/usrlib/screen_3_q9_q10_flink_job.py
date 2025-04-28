@@ -38,7 +38,7 @@ import socket
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
 
-# env.disable_operator_chaining()
+env.disable_operator_chaining()
 
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 # env.set_parallelism(2)
@@ -195,6 +195,7 @@ number_of_stars_on_js_repo_by_day_type_info_q9 = \
     
 # Datastream with extracted fields
 number_of_stars_of_js_repo_by_day_info_ds_q9 = raw_events_ds.filter(filter_out_non_star_events_and_non_js_repos_q9)\
+                    .disable_chaining()\
                     .map(extract_stars_on_js_repo_and_create_row_q9, \
                            output_type=number_of_stars_on_js_repo_by_day_type_info_q9) \
 
@@ -303,6 +304,7 @@ human_contributions_by_month_type_info_q10 = \
     
 # Datastream with extracted fields
 top_contributors_of_js_repo_ds_q10 = raw_events_ds.filter(filter_out_non_contributing_events_and_non_js_repos_q10)\
+                    .disable_chaining()\
                     .map(extract_top_contributors_on_js_repo_and_create_row_q10, \
                            output_type=human_contributions_by_month_type_info_q10)
 

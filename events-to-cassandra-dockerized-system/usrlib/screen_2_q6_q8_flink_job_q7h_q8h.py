@@ -36,7 +36,7 @@ import os
 # I. Set up the flink execution environment
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
-# env.disable_operator_chaining()
+env.disable_operator_chaining()
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 # env.set_parallelism(2)
 
@@ -195,6 +195,7 @@ number_of_pull_requests_by_humans_by_day_type_info_q7_h = \
     
 # Datastream with extracted fields
 number_of_pull_requests_info_ds_q7_h = raw_events_ds.filter(filter_out_non_pull_request_events_q7_h)\
+                    .disable_chaining()\
                     .map(extract_number_of_pull_requests_and_create_row_q7_h, \
                            output_type=number_of_pull_requests_by_humans_by_day_type_info_q7_h) 
 
@@ -273,6 +274,7 @@ number_of_bot_events_per_type_by_day_type_info_q8_b = \
     
 # Datastream with extracted fields
 number_of_events_info_ds_q8_b = raw_events_ds.filter(filter_out_human_events_q8_b) \
+                    .disable_chaining()\
                     .map(extract_number_of_bot_events_per_type_and_create_row_q8_b, \
                            output_type=number_of_bot_events_per_type_by_day_type_info_q8_b)
 
@@ -353,6 +355,7 @@ number_of_human_events_per_type_by_day_type_info_q8_h = \
     
 # Datastream with extracted fields
 number_of_events_info_ds_q8_h = raw_events_ds.filter(filter_out_bot_events_q8_h) \
+                    .disable_chaining()\
                     .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
                            output_type=number_of_human_events_per_type_by_day_type_info_q8_h)\
                     
