@@ -68,155 +68,51 @@ parser = ArgumentParser(prog=f"python {os.path.basename(__file__)}",
 
 parser.add_argument('--config_file_path', required = True)
 args = parser.parse_args()
-
 config_parser = ConfigParser()
 with open(args.config_file_path, 'r') as config_file:
     config_parser.read_file(config_file)
-
 config = dict(config_parser['default_consumer'])
-
 kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 
 # endregion
 
-# III. Create a Cassandra cluster, connect to it and use a keyspace
+# III. Consume datastreams
 # region
-cassandra_host = 'cassandra_stelios'
-cassandra_port = 9142
-
-topic_to_consume_from = "historical-raw-events"
-
-print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
-        f"Cassandra tables\n"
-        "T6_b: top_bot_contributions_by_day, T6_h: top_human_contributors_by_day,\n"
-        "T7_b: number_of_pull_requests_by_bots, T7_h: number_of_pull_requests_by_humans,\n"
-        "T8_b: number_of_events_by_bots, T8_h: number_of_events_by_humans")
-
-
-
-# IV. Consume the original datastream 'historical-raw-events'
-#region 
 kafka_props = {'enable.auto.commit': 'true',
                'auto.commit.interval.ms': '1000',
                'auto.offset.reset': 'smallest'}
+def map_event_string_to_event_dict(event_string):
+    return eval(event_string)
 
-
-
-
-second_screen_consumer_group_id_1 = 'second_screen_consumer_group_id_1_q7h_q8h'
-
-
-kafka_consumer_second_screen_source_1 = KafkaSource.builder() \
+# Consume pull request events
+screen_2_pull_request_events_consumer_group_id_2 = "screen_2_pull_request_consumer_group_id_2"
+pull_request_events_topic = "pull_request_events_topic"    
+pull_request_events_source = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer\
                 .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(second_screen_consumer_group_id_1)\
-            .set_topics(topic_to_consume_from) \
+            .set_group_id(screen_2_pull_request_events_consumer_group_id_2)\
+            .set_topics(pull_request_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
-
-raw_events_ds = env.from_source( source=kafka_consumer_second_screen_source_1, \
+pull_request_events_ds = env.from_source(source=pull_request_events_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
-            source_name="kafka_source")\
+            source_name="pull_request_events_source")\
+            .map(map_event_string_to_event_dict)
+            
+            
 
-#endregion
 
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
-
 max_concurrent_requests = 1000
+cassandra_host = 'cassandra_stelios'
+cassandra_port = 9142
+print(f"Start reading data from kafka topics to create "
+        f"Cassandra tables:\n"
+        "T8_b: number_of_events_by_bots, T8_h: number_of_events_by_humans")
 
-# Q7_h: Number of pull requests by humans
-# region
-
-# Filter out events of type that contain no info we need
-def filter_out_non_pull_request_events_q7_h(eventString):
-    '''
-    Keep only closing PullRequestEvents and also exclude bot events
-    '''
-
-    # Turn the json event object into event into a dict
-    event_types_with_info_q7_h = ["PullRequestEvent"]
-    
-    # event_dict = json.loads(eventString)
-    event_dict = eval(eventString)
-
-    # Keep only PullRequest events
-    is_pull_request_event = False
-    event_type = event_dict["type"]
-    if (event_type == "PullRequestEvent" and \
-    event_dict["payload"]["action"] == "closed"):
-        is_pull_request_event = True
-    else:
-        is_pull_request_event = False
-    
-    # Keep only human events
-    is_human = False
-    username = None
-    if (event_type == "PullRequestEvent"):
-        username = event_dict['payload']['pull_request']['user']
-        # Exclude bot events
-        if not username.endswith('[bot]'):
-            is_human = True
-        
-    # Keep push and merged pull-request events only if not created by bots
-    if is_pull_request_event and is_human:
-        return True
-    
-    
-# Extract the number of events
-def extract_number_of_pull_requests_and_create_row_q7_h(eventString):
-    
-    event_dict = eval(eventString)
-    # event_dict = json.loads(eventString)
-    
-    # Extract [day, username, number_of_contributions]
-    # day
-    created_at = event_dict["created_at"]
-    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
-    day = created_at_year_month_day_only
-    
-    # Number of pull requests
-    number_of_pull_requests = 1
-    if event_dict["payload"]["pull_request"]["merged_at"] != None:
-        were_accepted = True
-    else:
-        were_accepted = False    
-    pull_requests_by_humans_info_row = Row(number_of_pull_requests, were_accepted, day)
-    return pull_requests_by_humans_info_row
-
-# Type info for number of pull requests by bots by day
-number_of_pull_requests_by_humans_by_day_type_info_q7_h = \
-    Types.ROW_NAMED(['number_of_pull_requests', 'were_accepted', 'day'], \
-    [Types.LONG(),\
-        Types.BOOLEAN(), Types.STRING()])
-    
-# Datastream with extracted fields
-number_of_pull_requests_info_ds_q7_h = raw_events_ds.filter(filter_out_non_pull_request_events_q7_h)\
-                    .disable_chaining()\
-                    .map(extract_number_of_pull_requests_and_create_row_q7_h, \
-                           output_type=number_of_pull_requests_by_humans_by_day_type_info_q7_h) 
-
-
-# Q7_h_2. Sink data into the Cassandra table
-
-# Upsert query to be executed for every element
-upsert_element_into_T7_h_number_of_pull_requests_by_humans = \
-            "UPDATE prod_gharchive.number_of_pull_requests_by_humans "\
-            "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
-            "were_accepted = ? AND day = ?;"
-
-# Sink events into the Cassandra table 
-cassandra_sink_q7_h = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_h)\
-    .set_query(upsert_element_into_T7_h_number_of_pull_requests_by_humans)\
-    .set_host(host=cassandra_host, port=cassandra_port)\
-    .set_max_concurrent_requests(max_concurrent_requests)\
-    .enable_ignore_null_fields()\
-    .build()
-
-# endregion
 
 # Q8_b: Number of events by bots
 # region
