@@ -144,6 +144,7 @@ pull_request_events_ds = env.from_source(source=pull_request_events_source, \
 
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
+cassandra_keyspace = "prod_gharchive"
 max_concurrent_requests = 1000
 print(f"Start reading data from kafka topics to create "
         f"Cassandra tables:\n"
@@ -189,9 +190,9 @@ number_of_stars_of_js_repo_by_day_info_ds_q9 = all_events_ds.filter(keep_js_repo
                     .map(create_row_q9, \
                     output_type=number_of_stars_on_js_repo_by_day_type_info_q9)
 upsert_element_into_number_of_stars_of_js_repo_per_day_q9 = \
-            "UPDATE prod_gharchive.stars_per_day_on_js_repo "\
+            "UPDATE {0}.stars_per_day_on_js_repo "\
             "SET number_of_stars = number_of_stars + ? WHERE "\
-            "repo_name = ? AND day = ?;"
+            "repo_name = ? AND day = ?;".format(cassandra_keyspace)
 cassandra_sink_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_day_info_ds_q9)\
     .set_query(upsert_element_into_number_of_stars_of_js_repo_per_day_q9)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -238,9 +239,9 @@ all_contributors_of_js_repos_ds = pull_request_contributors_of_js_repos_ds_q10\
         output_type=human_contributions_by_month_type_info_q10)
 
 upsert_element_into_top_contributors_of_js_repo_q10 = \
-            "UPDATE prod_gharchive.top_contributors_of_js_repo "\
+            "UPDATE {0}.top_contributors_of_js_repo "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
-            "repo_name = ? AND month = ? AND username = ?;"
+            "repo_name = ? AND month = ? AND username = ?;".format(cassandra_keyspace)
 cassandra_sink_q10 = CassandraSink.add_sink(all_contributors_of_js_repos_ds)\
     .set_query(upsert_element_into_top_contributors_of_js_repo_q10)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -256,35 +257,32 @@ cassandra_sink_q10 = CassandraSink.add_sink(all_contributors_of_js_repos_ds)\
 
 if __name__ == '__main__':
     # Create cassandra keyspace if not exist
-    cassandra_host = 'cassandra_stelios'
-    cassandra_port = 9142
     cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
 
     # Connect without creating keyspace. Once connected create the keyspace
     session = cluster.connect()
     create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
-        "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
-        "'replication_factor': '1'} AND durable_writes = true;"
+        "{0} WITH replication = {'class': 'SimpleStrategy', "\
+        "'replication_factor': '1'} AND durable_writes = true;".format(cassandra_keyspace)
     session.execute(create_keyspace)
 
-    cassandra_keyspace = 'prod_gharchive'
     session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
     session.execute(f'USE {cassandra_keyspace}')
 
         
     # Screen 3
     create_stars_per_day_on_js_repo_table_q9 = \
-    "CREATE TABLE IF NOT EXISTS prod_gharchive.stars_per_day_on_js_repo "\
+    "CREATE TABLE IF NOT EXISTS {0}.stars_per_day_on_js_repo "\
     "(day text, repo_name text, number_of_stars counter, PRIMARY KEY ((day, "\
-    "repo_name)));"
+    "repo_name)));".format(cassandra_keyspace)
     session.execute(create_stars_per_day_on_js_repo_table_q9)
 
     # Create the table if not exists
     create_top_contributors_of_js_repo_table_q10 = \
-        "CREATE TABLE IF NOT EXISTS prod_gharchive.top_contributors_of_js_repo "\
+        "CREATE TABLE IF NOT EXISTS {0}.top_contributors_of_js_repo "\
         "(month text, username text, repo_name text, number_of_contributions counter, PRIMARY KEY ((repo_name, month), "\
         "username)) WITH CLUSTERING ORDER BY "\
-        "(username ASC);"
+        "(username ASC);".format(cassandra_keyspace)
     session.execute(create_top_contributors_of_js_repo_table_q10)
             
     cluster.shutdown()
