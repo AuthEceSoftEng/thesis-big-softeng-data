@@ -36,16 +36,13 @@ import os
 # I. Set up the flink execution environment
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
-
-env.disable_operator_chaining()
-
+# env.disable_operator_chaining()
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 # env.set_parallelism(2)
 
 env.add_jars("file:///opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar")
 env.add_jars("file:///opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar")
 # env.add_jars("file:///opt/flink/opt/flink-streaming-scala_2.12-1.18.1.jar")
-
 env.set_restart_strategy(RestartStrategies.\
     fixed_delay_restart(restart_attempts=3, delay_between_attempts=1000))
 
@@ -64,218 +61,151 @@ parser = ArgumentParser(prog=f"python {os.path.basename(__file__)}",
                                 "meaning it must be unique among the jobs deployed "
                                 "in the cluster",
                             formatter_class=RawDescriptionHelpFormatter)
-
 parser.add_argument('--config_file_path', required = True)
 args = parser.parse_args()
-
 config_parser = ConfigParser()
 with open(args.config_file_path, 'r') as config_file:
     config_parser.read_file(config_file)
-
 config = dict(config_parser['default_consumer'])
-
 kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 
 # endregion
 
-# III. Create a Cassandra cluster, connect to it and use a keyspace
-# region
 
-cassandra_host = 'cassandra_stelios'
-cassandra_port = 9142
-cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
-cassandra_keyspace = 'prod_gharchive'
-
-# endregion
-
-
-# IV. Consume the original datastream 'historical-raw-events'
+# III. Consume datastreams
 #region 
-
 kafka_props = {'enable.auto.commit': 'true',
                'auto.commit.interval.ms': '1000',
                'auto.offset.reset': 'smallest'}
+def map_event_string_to_event_dict(event_string):
+    return eval(event_string)
 
-fourth_screen_consumer_group_id = 'fourth_screen_consumer_group_id'
 
-topic_to_consume_from = "historical-raw-events"
-kafka_consumer_fourth_source = KafkaSource.builder() \
+# Consume pull request events
+screen_4_pull_request_events_consumer_group_id = "screen_4_pull_request_consumer_group_id"
+pull_request_events_topic = "pull_request_events_topic"    
+pull_request_events_source = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer\
                 .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(fourth_screen_consumer_group_id)\
-            .set_topics(topic_to_consume_from) \
+            .set_group_id(screen_4_pull_request_events_consumer_group_id)\
+            .set_topics(pull_request_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
-
-print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
-        f"Cassandra tables\n"
-        "T11_12: pull_request_closing_times, T13_14: issue_closing_times\n"
-        "T15: issue_closing_times_by_label\n")
-        
-raw_events_ds = env.from_source( source=kafka_consumer_fourth_source, \
+pull_request_events_ds = env.from_source(source=pull_request_events_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
-            source_name="kafka_source")\
-
+            source_name="pull_request_events_source")\
+            .map(map_event_string_to_event_dict)
+     
+# Consume issue events   
+screen_4_issue_events_consumer_group_id = "screen_4_issue_consumer_group_id"
+issue_events_topic = "issue_events_topic"    
+issue_events_source = KafkaSource.builder() \
+            .set_bootstrap_servers(kafka_bootstrap_servers) \
+            .set_starting_offsets(KafkaOffsetsInitializer\
+                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
+            .set_group_id(screen_4_issue_events_consumer_group_id)\
+            .set_topics(pull_request_events_topic) \
+            .set_value_only_deserializer(SimpleStringSchema()) \
+            .set_properties(kafka_props)\
+            .build()
+issue_events_ds = env.from_source(source=issue_events_source, \
+            watermark_strategy=WatermarkStrategy.no_watermarks(),
+            source_name="issue_events_source")\
+            .map(map_event_string_to_event_dict)
+            
+        
 # endregion
 
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
 
 max_concurrent_requests = 1000
+cassandra_host = 'cassandra_stelios'
+cassandra_port = 9142
+print(f"Start reading data from kafka topics to create "
+        f"Cassandra tables:\n"
+        "T11_12: pull_request_closing_times, T13_14: issue_closing_times\n"
+        "T15: issue_closing_times_by_label\n")
+
+
+
 # Q11_12: Closing times of pull requests
 # region
 
-# Q11_12_1. Transform the original stream 
-# Filter out events of type that contain no info we need
-def filter_out_non_pull_request_events_q11_12(eventString):
-    '''
-    Keep only closed PullRequestEvents (meaning merged) 
-    '''
-    
-    # eventDict = json.loads(eventString)
-    eventDict = eval(eventString)
-
-    # Keep closed PullRequest events
-    is_closed_pull_request_event = False
-    event_type = eventDict["type"]
-    if (event_type == "PullRequestEvent" and \
-    eventDict["payload"]["action"] == "closed"):
-        is_closed_pull_request_event = True
-    else:
-        is_closed_pull_request_event = False
-        
-    # Keep closed pull-request events
-    if is_closed_pull_request_event:
+def keep_closed_pull_requests(event_dict):
+    if event_dict["action"] == "closed":
         return True
-    
-# Extract the number of stars in the events
-def extract_opening_and_closing_times_of_pull_requests_and_create_row_q11_12(eventString):
-    
-    eventDict = eval(eventString)
-    # eventDict = json.loads(eventString)
-    
-    # Extract [repo_name, pull_request_number, opening_time, closing_time]
-    # repo_name
-    repo_name = eventDict["repo"]["full_name"]
-    
-    # pull_request_number
-    pull_request_number = eventDict["payload"]["pull_request"]["number"]
-    
-    # opening and closing times
-    opening_time = eventDict["payload"]["pull_request"]["created_at"]
-    closing_time = eventDict["payload"]["pull_request"]["closed_at"]
-    
-    opening_and_closing_times_of_pull_requests_info_row = \
-        Row(opening_time, closing_time, repo_name, pull_request_number)
-    return opening_and_closing_times_of_pull_requests_info_row
+    else:
+        return False
 
-# Type info for pull-request closing times
+def create_row_q11_12(event_dict):
+    return Row(event_dict["opening_time"], 
+               event_dict["closing_time"], 
+               event_dict["repo"],
+               event_dict["pull_request_number"])
+
+
 pull_request_closing_times_type_info_q11_12 = \
     Types.ROW_NAMED(['opening_time', 'closing_time', 'repo_name', 'pull_request_number'], \
     [Types.STRING(), Types.STRING(), \
         Types.STRING(),  Types.INT()])
-    
-# Datastream with extracted fields
-pull_request_closing_times_info_ds_q11_12 = raw_events_ds.filter(filter_out_non_pull_request_events_q11_12)\
-                    .disable_chaining()\
-                    .map(extract_opening_and_closing_times_of_pull_requests_and_create_row_q11_12, \
-                           output_type=pull_request_closing_times_type_info_q11_12) 
+pull_request_closing_times_ds_q11_12 = pull_request_events_ds\
+    .filter(keep_closed_pull_requests)\
+    .map(create_row_q11_12, output_type=pull_request_closing_times_type_info_q11_12) 
 
-# Q11_12_2. Sink data into the Cassandra table
+
 upsert_element_into_pull_request_closing_times_q11_12 = \
             "UPDATE prod_gharchive.pull_request_closing_times "\
             "SET opening_time = ?, closing_time = ? WHERE "\
             "repo_name = ? and pull_request_number = ?;"
-
-# Sink events into the Cassandra table 
-cassandra_sink_q11_12 = CassandraSink.add_sink(pull_request_closing_times_info_ds_q11_12)\
+cassandra_sink_q11_12 = CassandraSink.add_sink(pull_request_closing_times_ds_q11_12)\
     .set_query(upsert_element_into_pull_request_closing_times_q11_12)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-
-
 # endregion
+
+
 
 # Q13_14: Issue closing times
 # region
-
-# Q13_14_1. Transform the original stream 
-# Filter out events of type that contain no info we need
-def filter_out_non_issue_events_q13_14(eventString):
-    '''
-    Keep only IssueEvents that close issues
-    '''
-    
-    eventDict = eval(eventString)
-
-    # Keep "closed" Issue events
-    is_closed_issue_event = False
-    event_type = eventDict["type"]
-    if (event_type == "IssuesEvent" and \
-    eventDict["payload"]["action"] == "closed"):
-        is_closed_issue_event = True
-    else:
-        is_closed_issue_event = False
-        
-    # Keep closed issue events
-    if is_closed_issue_event:
+def keep_closed_issues(event_dict):
+    if event_dict["payload"]["action"] == "closed":
         return True
-    
-# Extract the number of stars in the events
-def extract_opening_and_closing_times_of_issues_and_create_row_q13_14(eventString):
-    
-    eventDict = eval(eventString)
-    # eventDict = json.loads(eventString)
-    
-    # Extract [repo_name, issue_number, opening_time, closing_time]
-    # repo_name
-    repo_name = eventDict["repo"]["full_name"]
-    
-    # issue_number
-    issue_number = eventDict["payload"]["issue"]["number"]
-    
-    # opening and closing times
-    opening_time = eventDict["payload"]["issue"]["created_at"]
-    closing_time = eventDict["payload"]["issue"]["closed_at"]
-        
-    opening_and_closing_times_of_issues_info_row = \
-        Row(opening_time, closing_time, repo_name, issue_number)
-    return opening_and_closing_times_of_issues_info_row
+    else:
+        return False
 
-# Type info for closing times of issues
+def create_row_q13_14(event_dict):
+    return Row(event_dict["opening_time"],
+               event_dict["closing_time"],
+               event_dict["repo"],
+               event_dict["issue_number"])
+
 issue_closing_times_type_info_q13_14 = \
     Types.ROW_NAMED(['opening_time', 'closing_time', 'repo_name', \
         'issue_number'], \
     [Types.STRING(), Types.STRING(), \
         Types.STRING(),  Types.INT()])
-        
-# Datastream with extracted fields
-issue_closing_times_ds_q13_14 = raw_events_ds.filter(filter_out_non_issue_events_q13_14)\
-                    .disable_chaining()\
-                    .map(extract_opening_and_closing_times_of_issues_and_create_row_q13_14, \
-                           output_type=issue_closing_times_type_info_q13_14)
-# Uncomment to print the datastream elements
-# issue_closing_times_ds_q13_14.print()
+issue_closing_times_ds_q13_14 = issue_events_ds\
+    .filter(keep_closed_issues)\
+    .map(create_row_q13_14, output_type=issue_closing_times_type_info_q13_14)
 
-# Q13_14_2. Sink data into the Cassandra table
 upsert_element_into_issue_closing_times_q13_14 = \
             "UPDATE prod_gharchive.issue_closing_times "\
             "SET opening_time = ?, closing_time = ? WHERE "\
             "repo_name = ? and issue_number = ?;"
-
-# Sink events into the Cassandra table 
 cassandra_sink_q13_14 = CassandraSink.add_sink(issue_closing_times_ds_q13_14)\
     .set_query(upsert_element_into_issue_closing_times_q13_14)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-
 # endregion
+
+
 
 # Q15: Issue closing times by label
 # region
