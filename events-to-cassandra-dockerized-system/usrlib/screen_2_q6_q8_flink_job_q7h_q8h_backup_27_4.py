@@ -83,7 +83,7 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 # region
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-cassandra_keyspace = 'prod_gharchive'
+cassandra_keyspace = 'prod_gharchive_legacy'
 topic_to_consume_from = "historical-raw-events"
 
 print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
@@ -203,9 +203,9 @@ number_of_pull_requests_info_ds_q7_h = raw_events_ds.filter(filter_out_non_pull_
 
 # Upsert query to be executed for every element
 upsert_element_into_T7_h_number_of_pull_requests_by_humans = \
-            "UPDATE {0}.number_of_pull_requests_by_humans "\
-            "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
-            "were_accepted = ? AND day = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.number_of_pull_requests_by_humans \
+            SET number_of_pull_requests = number_of_pull_requests + ? WHERE \
+            were_accepted = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
 cassandra_sink_q7_h = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_h)\
@@ -283,9 +283,9 @@ number_of_events_info_ds_q8_b = raw_events_ds.filter(filter_out_human_events_q8_
 
 # Upsert query to be executed for every element
 upsert_element_into_number_of_bot_events_per_type_by_day_q8_b = \
-            "UPDATE {0}.number_of_bot_events_per_type_by_day "\
-            "SET number_of_events = number_of_events + ? WHERE "\
-            "event_type = ? AND day = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.number_of_bot_events_per_type_by_day \
+            SET number_of_events = number_of_events + ? WHERE \
+            event_type = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
 cassandra_sink_q8_b = CassandraSink.add_sink(number_of_events_info_ds_q8_b)\
@@ -361,9 +361,9 @@ number_of_events_info_ds_q8_h = raw_events_ds.filter(filter_out_bot_events_q8_h)
 
 # Upsert query to be executed for every element
 upsert_element_into_number_of_human_events_per_type_by_day_q8_h = \
-            "UPDATE {0}.number_of_human_events_per_type_by_day "\
-            "SET number_of_events = number_of_events + ? WHERE "\
-            "event_type = ? AND day = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.number_of_human_events_per_type_by_day \
+            SET number_of_events = number_of_events + ? WHERE \
+            event_type = ? AND day = ?;"
 
 # Sink events into the Cassandra table 
 cassandra_sink_q8_h = CassandraSink.add_sink(number_of_events_info_ds_q8_h)\
@@ -385,9 +385,9 @@ if __name__ =='__main__':
 
     # Connect without creating keyspace. Once connected create the keyspace
     session = cluster.connect()
-    create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
-        "{0} WITH replication = {'class': 'SimpleStrategy', "\
-        "'replication_factor': '1'} AND durable_writes = true;".format(cassandra_keyspace)
+    create_keyspace = f"CREATE KEYSPACE IF NOT EXISTS \
+        {cassandra_keyspace} WITH replication = {{'class': 'SimpleStrategy', \
+        'replication_factor': '1'}} AND durable_writes = true;"
     session.execute(create_keyspace)
 
     session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
@@ -396,26 +396,26 @@ if __name__ =='__main__':
 
     # Screen 2
     create_number_of_pull_requests_by_humans_q7_h = \
-        "CREATE TABLE IF NOT EXISTS {0}.number_of_pull_requests_by_humans "\
-        "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
-        "were_accepted)));".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.number_of_pull_requests_by_humans \
+        (day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, \
+        were_accepted)));"
     session.execute(create_number_of_pull_requests_by_humans_q7_h)
 
 
     # Create the table if not exists
     create_number_of_pull_requests_by_bots_q8_b = \
-        "CREATE TABLE IF NOT EXISTS {0}.number_of_bot_events_per_type_by_day "\
-        "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
-        "event_type)) WITH CLUSTERING ORDER BY "\
-        "(event_type ASC);".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.number_of_bot_events_per_type_by_day \
+        (day text, event_type text, number_of_events counter, PRIMARY KEY ((day), \
+        event_type)) WITH CLUSTERING ORDER BY \
+        (event_type ASC);"
     session.execute(create_number_of_pull_requests_by_bots_q8_b)
 
 
     create_number_of_pull_requests_by_humans_q8_h = \
-        "CREATE TABLE IF NOT EXISTS {0}.number_of_human_events_per_type_by_day "\
-        "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
-        "event_type)) WITH CLUSTERING ORDER BY "\
-        "(event_type ASC);".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.number_of_human_events_per_type_by_day \
+        (day text, event_type text, number_of_events counter, PRIMARY KEY ((day), \
+        event_type)) WITH CLUSTERING ORDER BY \
+        (event_type ASC);".format(cassandra_keyspace)
     session.execute(create_number_of_pull_requests_by_humans_q8_h)
         
     cluster.shutdown()
