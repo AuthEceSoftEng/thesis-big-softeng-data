@@ -1,4 +1,4 @@
-from produce_from_last_line_of_file import create_topic, extract_compressed_file_from_path
+from produce_from_last_line_of_file import  extract_compressed_file_from_path
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer, Consumer, admin
@@ -20,7 +20,7 @@ import requests
 import os
 
 import gzip
-from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, delete_and_recreate_topic
+from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, create_topic_if_not_exists, delete_topic_if_full
 
 
 def download_compressed_GHA_file(gha_file_url, folderpath):
@@ -579,7 +579,7 @@ def get_config_and_produce_lines(topic=str, filepath=str):
     
     config_port = str(config['bootstrap.servers'])
         
-    create_topic(topic, config_port)
+    create_topic_if_not_exists(topic, config_port)
             
     # Produce from file into topic
     produce_all_lines_of_file(topic, filepath, config)
@@ -767,7 +767,7 @@ if __name__ == '__main__':
             # Sample the first {number_of_lines_to_keep} lines of the thinned file
             # filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
             input_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned.json.gz'
-            number_of_lines_to_keep = 200000
+            number_of_lines_to_keep = 20000
             limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
             create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
             
@@ -873,8 +873,11 @@ if __name__ == '__main__':
             bootstrap_servers = get_kafka_broker_config(topic)
             number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
             max_number_of_messages = 2000000
-            delete_and_recreate_topic(topic, max_number_of_messages, bootstrap_servers)
-        
+            delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
+            # Short delay to update kafka cluster metadata before recreating the topic
+            time.sleep(5)
+            create_topic_if_not_exists(topic, bootstrap_servers)
+
     sections_performance.append(["Total time elapsed", total_dur])
     print("Execution times in seconds:\n")
     for single_section_performance in sections_performance:
