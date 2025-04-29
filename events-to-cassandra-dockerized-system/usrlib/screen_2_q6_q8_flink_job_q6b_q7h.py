@@ -136,7 +136,7 @@ pull_request_events_ds = env.from_source(source=pull_request_events_source, \
 max_concurrent_requests = 1000
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-cassandra_keyspace = "prod_gharchive"
+cassandra_keyspace = "prod_gharchive_testing"
 print(f"Insert data from kafka topics into Cassandra tables:\n"
         "T6_b: top_bot_contributions_by_day, T6_h: top_human_contributors_by_day,\n"
         "T7_b: number_of_pull_requests_by_bots")
@@ -209,9 +209,9 @@ top_bot_contributors_info_ds_q6_b = contributing_events_ds\
                 .map(create_row_q6, output_type=contributions_by_day_type_info_q6b)
 
 upsert_element_into_top_bot_contributors_q6_b = \
-            "UPDATE {0}.top_bot_contributors_by_day "\
-            "SET number_of_contributions = number_of_contributions + ? WHERE "\
-            "username = ? AND day = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.top_bot_contributors_by_day \
+            SET number_of_contributions = number_of_contributions + ? WHERE \
+            username = ? AND day = ?;"
 cassandra_sink_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
     .set_query(upsert_element_into_top_bot_contributors_q6_b)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -229,9 +229,9 @@ top_human_contributors_info_ds_q6_h = contributing_events_ds\
                 .map(create_row_q6, output_type=contributions_by_day_type_info_q6_h)
                 
 upsert_element_into_top_human_contributors_q6_h = \
-            "UPDATE {0}.top_human_contributors_by_day "\
-            "SET number_of_contributions = number_of_contributions + ? WHERE "\
-            "username = ? AND day = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.top_human_contributors_by_day \
+            SET number_of_contributions = number_of_contributions + ? WHERE \
+            username = ? AND day = ?;"
 cassandra_sink_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h)\
     .set_query(upsert_element_into_top_human_contributors_q6_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -274,9 +274,9 @@ number_of_closed_pull_requests_ds_q7_b = number_of_closed_pull_requests_ds\
         output_type=number_of_pull_requests_by_bots_by_day_type_info_q7_b) \
 
 upsert_element_into_T7_b_number_of_pull_requests_by_bots = \
-            "UPDATE {0}.number_of_pull_requests_by_bots "\
-            "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
-            "was_accepted = ? AND day = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.number_of_pull_requests_by_bots \
+            SET number_of_pull_requests = number_of_pull_requests + ? WHERE \
+            was_accepted = ? AND day = ?;"
 cassandra_sink_q7_b = CassandraSink.add_sink(number_of_closed_pull_requests_ds_q7_b)\
     .set_query(upsert_element_into_T7_b_number_of_pull_requests_by_bots)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -290,61 +290,6 @@ cassandra_sink_q7_b = CassandraSink.add_sink(number_of_closed_pull_requests_ds_q
 # Q7_h: Number of pull requests by humans
 # region
 
-def filter_out_non_pull_request_events_q7_h(eventString):
-    '''
-    Keep only closing PullRequestEvents and also exclude bot events
-    '''
-
-    # Turn the json event object into event into a dict
-    event_types_with_info_q7_h = ["PullRequestEvent"]
-    
-    # event_dict = json.loads(eventString)
-    event_dict = eval(eventString)
-
-    # Keep only PullRequest events
-    is_pull_request_event = False
-    event_type = event_dict["type"]
-    if (event_type == "PullRequestEvent" and \
-    event_dict["payload"]["action"] == "closed"):
-        is_pull_request_event = True
-    else:
-        is_pull_request_event = False
-    
-    # Keep only human events
-    is_human = False
-    username = None
-    if (event_type == "PullRequestEvent"):
-        username = event_dict['payload']['pull_request']['user']
-        # Exclude bot events
-        if not username.endswith('[bot]'):
-            is_human = True
-        
-    # Keep push and merged pull-request events only if not created by bots
-    if is_pull_request_event and is_human:
-        return True
-    
-    
-def extract_number_of_pull_requests_and_create_row_q7_h(eventString):
-    
-    event_dict = eval(eventString)
-    # event_dict = json.loads(eventString)
-    
-    # Extract [day, username, number_of_contributions]
-    # day
-    created_at = event_dict["created_at"]
-    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
-    day = created_at_year_month_day_only
-    
-    # Number of pull requests
-    number_of_pull_requests = 1
-    if event_dict["payload"]["pull_request"]["merged_at"] != None:
-        were_accepted = True
-    else:
-        were_accepted = False    
-    pull_requests_by_humans_info_row = Row(number_of_pull_requests, were_accepted, day)
-    return pull_requests_by_humans_info_row
-
 number_of_pull_requests_by_humans_by_day_type_info_q7_h = number_of_pull_requests_by_bots_by_day_type_info_q7_b
     
 number_of_closed_pull_requests_info_ds_q7_h = number_of_closed_pull_requests_ds\
@@ -353,9 +298,9 @@ number_of_closed_pull_requests_info_ds_q7_h = number_of_closed_pull_requests_ds\
                 output_type=number_of_pull_requests_by_humans_by_day_type_info_q7_h) 
 
 upsert_element_into_T7_h_number_of_pull_requests_by_humans = \
-            "UPDATE {0}.number_of_pull_requests_by_humans "\
-            "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
-            "were_accepted = ? AND day = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.number_of_pull_requests_by_humans \
+            SET number_of_pull_requests = number_of_pull_requests + ? WHERE \
+            were_accepted = ? AND day = ?;"
 
 cassandra_sink_q7_h = CassandraSink.add_sink(number_of_closed_pull_requests_info_ds_q7_h)\
     .set_query(upsert_element_into_T7_h_number_of_pull_requests_by_humans)\
@@ -377,10 +322,10 @@ if __name__ =='__main__':
     # Create cassandra keyspace if not exist
     cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
     session = cluster.connect()
-    create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
-        "{0} WITH replication = "\
-        "{'class': 'SimpleStrategy', 'replication_factor': '1'}"\
-        "AND durable_writes = true;".format(cassandra_keyspace)
+    create_keyspace = f"CREATE KEYSPACE IF NOT EXISTS \
+        {cassandra_keyspace} WITH replication = \
+        {{'class': 'SimpleStrategy', 'replication_factor': '1'}}\
+        AND durable_writes = true;"
     session.execute(create_keyspace)
 
     session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
@@ -389,30 +334,30 @@ if __name__ =='__main__':
 
     # Screen 2
     create_top_bot_contributors_table_q6_b = \
-        "CREATE TABLE IF NOT EXISTS {0}.top_bot_contributors_by_day "\
-        "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
-        "username)) WITH CLUSTERING ORDER BY "\
-        "(username ASC);".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.top_bot_contributors_by_day \
+        (day text, username text, number_of_contributions counter, PRIMARY KEY ((day), \
+        username)) WITH CLUSTERING ORDER BY \
+        (username ASC);"
     session.execute(create_top_bot_contributors_table_q6_b)
 
 
     create_top_human_contributors_table_q6_h = \
-        "CREATE TABLE IF NOT EXISTS {0}.top_human_contributors_by_day "\
-        "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
-        "username)) WITH CLUSTERING ORDER BY "\
-        "(username ASC);".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.top_human_contributors_by_day \
+        (day text, username text, number_of_contributions counter, PRIMARY KEY ((day), \
+        username)) WITH CLUSTERING ORDER BY \
+        (username ASC);"
     session.execute(create_top_human_contributors_table_q6_h)
 
     create_number_of_pull_requests_by_bots_q7_b = \
-        "CREATE TABLE IF NOT EXISTS {0}.number_of_pull_requests_by_bots "\
-        "(day text, was_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
-        "was_accepted)));".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.number_of_pull_requests_by_bots \
+        (day text, was_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, \
+        was_accepted)));"
     session.execute(create_number_of_pull_requests_by_bots_q7_b)
 
     create_number_of_pull_requests_by_humans_q7_h = \
-        "CREATE TABLE IF NOT EXISTS {0}.number_of_pull_requests_by_humans "\
-        "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
-        "were_accepted)));".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.number_of_pull_requests_by_humans \
+        (day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day,\
+        were_accepted)));".format(cassandra_keyspace)
     session.execute(create_number_of_pull_requests_by_humans_q7_h)
 
 

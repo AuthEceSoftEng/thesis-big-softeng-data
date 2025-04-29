@@ -135,7 +135,7 @@ issue_events_ds = env.from_source(source=issue_events_source, \
 max_concurrent_requests = 1000
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-cassandra_keyspace = "prod_gharchive"
+cassandra_keyspace = "prod_gharchive_testing"
 print(f"Start reading data from kafka topics to create "
         f"Cassandra tables:\n"
         "T11_12: pull_request_closing_times, T13_14: issue_closing_times\n"
@@ -169,9 +169,9 @@ pull_request_closing_times_ds_q11_12 = pull_request_events_ds\
 
 
 upsert_element_into_pull_request_closing_times_q11_12 = \
-            "UPDATE {0}.pull_request_closing_times "\
-            "SET opening_time = ?, closing_time = ? WHERE "\
-            "repo_name = ? and pull_request_number = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.pull_request_closing_times \
+            SET opening_time = ?, closing_time = ? WHERE \
+            repo_name = ? and pull_request_number = ?;"
 cassandra_sink_q11_12 = CassandraSink.add_sink(pull_request_closing_times_ds_q11_12)\
     .set_query(upsert_element_into_pull_request_closing_times_q11_12)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -206,9 +206,9 @@ issue_closing_times_ds_q13_14 = issue_events_ds\
     .map(create_row_q13_14, output_type=issue_closing_times_type_info_q13_14)
 
 upsert_element_into_issue_closing_times_q13_14 = \
-            "UPDATE {0}.issue_closing_times "\
-            "SET opening_time = ?, closing_time = ? WHERE "\
-            "repo_name = ? and issue_number = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.issue_closing_times \
+            SET opening_time = ?, closing_time = ? WHERE \
+            repo_name = ? and issue_number = ?;"
 cassandra_sink_q13_14 = CassandraSink.add_sink(issue_closing_times_ds_q13_14)\
     .set_query(upsert_element_into_issue_closing_times_q13_14)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -270,9 +270,9 @@ issue_closing_times_by_label_ds_q15 = issue_events_ds\
 
 
 insert_element_into_issue_closing_times_by_label_q15 = \
-    "INSERT INTO {0}.issue_closing_times_by_label "\
-    "(opening_time, closing_time, repo_name, label, issue_number) "\
-    "VALUES (?, ?, ?, ?, ?);".format(cassandra_keyspace)
+    f"INSERT INTO {cassandra_keyspace}.issue_closing_times_by_label \
+    (opening_time, closing_time, repo_name, label, issue_number) \
+    VALUES (?, ?, ?, ?, ?);"
 cassandra_sink_q15 = CassandraSink.add_sink(issue_closing_times_by_label_ds_q15)\
     .set_query(insert_element_into_issue_closing_times_by_label_q15)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -290,9 +290,9 @@ if __name__ == "__main__":
     cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
     # Connect without creating keyspace. Once connected create the keyspace
     session = cluster.connect()
-    create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
-        "{0} WITH replication = {'class': 'SimpleStrategy', "\
-        "'replication_factor': '1'} AND durable_writes = true;".format(cassandra_keyspace)
+    create_keyspace = f"CREATE KEYSPACE IF NOT EXISTS \
+        {cassandra_keyspace} WITH replication = {{'class': 'SimpleStrategy', \
+        'replication_factor': '1'}} AND durable_writes = true;"
     session.execute(create_keyspace)
 
     session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)

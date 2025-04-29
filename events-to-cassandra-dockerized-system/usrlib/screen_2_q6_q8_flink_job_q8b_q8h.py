@@ -121,7 +121,7 @@ all_events_ds = env.from_source(source=all_events_source, \
 max_concurrent_requests = 1000
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-cassandra_keyspace = "prod_gharchive"
+cassandra_keyspace = "prod_gharchive_testing"
 print(f"Start reading data from kafka topics to create "
         f"Cassandra tables:\n"
         "T8_b: number_of_events_by_bots, T8_h: number_of_events_by_humans")
@@ -157,9 +157,9 @@ number_of_events_info_ds_q8_b = all_events_ds\
                 output_type=number_of_bot_events_per_type_by_day_type_info_q8_b)
 
 upsert_element_into_number_of_bot_events_per_type_by_day_q8_b = \
-            "UPDATE {0}.number_of_bot_events_per_type_by_day "\
-            "SET number_of_events = number_of_events + ? WHERE "\
-            "event_type = ? AND day = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.number_of_bot_events_per_type_by_day \
+            SET number_of_events = number_of_events + ? WHERE \
+            event_type = ? AND day = ?;"
 cassandra_sink_q8_b = CassandraSink.add_sink(number_of_events_info_ds_q8_b)\
     .set_query(upsert_element_into_number_of_bot_events_per_type_by_day_q8_b)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -181,9 +181,9 @@ number_of_events_info_ds_q8_h = all_events_ds\
                     output_type=number_of_human_events_per_type_by_day_type_info_q8_h)\
                     
 upsert_element_into_number_of_human_events_per_type_by_day_q8_h = \
-            "UPDATE {0}.number_of_human_events_per_type_by_day "\
-            "SET number_of_events = number_of_events + ? WHERE "\
-            "event_type = ? AND day = ?;".format(cassandra_keyspace)
+            f"UPDATE {cassandra_keyspace}.number_of_human_events_per_type_by_day \
+            SET number_of_events = number_of_events + ? WHERE \
+            event_type = ? AND day = ?;"
 cassandra_sink_q8_h = CassandraSink.add_sink(number_of_events_info_ds_q8_h)\
     .set_query(upsert_element_into_number_of_human_events_per_type_by_day_q8_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -202,9 +202,9 @@ if __name__ =='__main__':
     cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
     # Connect without creating keyspace. Once connected create the keyspace
     session = cluster.connect()
-    create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
-        "{0} WITH replication = {'class': 'SimpleStrategy', "\
-        "'replication_factor': '1'} AND durable_writes = true;".format(cassandra_keyspace)
+    create_keyspace = f"CREATE KEYSPACE IF NOT EXISTS \
+        {cassandra_keyspace} WITH replication = {'class': 'SimpleStrategy', \
+        'replication_factor': '1'} AND durable_writes = true;"
     session.execute(create_keyspace)
 
     session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
@@ -213,18 +213,18 @@ if __name__ =='__main__':
 
     # Screen 2
     create_number_of_events_by_bots_q8_b = \
-        "CREATE TABLE IF NOT EXISTS {0}.number_of_bot_events_per_type_by_day "\
-        "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
-        "event_type)) WITH CLUSTERING ORDER BY "\
-        "(event_type ASC);".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.number_of_bot_events_per_type_by_day \
+        (day text, event_type text, number_of_events counter, PRIMARY KEY ((day), \
+        event_type)) WITH CLUSTERING ORDER BY \
+        (event_type ASC);"
     session.execute(create_number_of_events_by_bots_q8_b)
 
 
     create_number_of_all_events_by_humans_q8_h = \
-        "CREATE TABLE IF NOT EXISTS {0}.number_of_human_events_per_type_by_day "\
-        "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
-        "event_type)) WITH CLUSTERING ORDER BY "\
-        "(event_type ASC);".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.number_of_human_events_per_type_by_day \
+        (day text, event_type text, number_of_events counter, PRIMARY KEY ((day), \
+        event_type)) WITH CLUSTERING ORDER BY \
+        (event_type ASC);"
     session.execute(create_number_of_all_events_by_humans_q8_h)
         
     cluster.shutdown()
