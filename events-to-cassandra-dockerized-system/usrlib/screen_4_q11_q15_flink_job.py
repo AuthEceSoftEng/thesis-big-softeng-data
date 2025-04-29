@@ -210,59 +210,12 @@ cassandra_sink_q13_14 = CassandraSink.add_sink(issue_closing_times_ds_q13_14)\
 # Q15: Issue closing times by label
 # region
 
-# Q15_1. Transform the original stream 
-# Filter out events of type that contain no info we need
-def filter_out_non_issue_events_q15(eventString):
-    '''
-    Keep only IssueEvents that close issues
-    '''
-    
-    eventDict = eval(eventString)
-
-    # Keep "closed" Issue events
-    is_closed_issue_event = False
-    event_type = eventDict["type"]
-    if (event_type == "IssuesEvent" and \
-    eventDict["payload"]["action"] == "closed"):
-        is_closed_issue_event = True
-    else:
-        is_closed_issue_event = False
-        
-    # Keep closed issue events
-    if is_closed_issue_event:
-        return True
-        
-# Extract the number of stars in the events
-def extract_opening_and_closing_times_of_issues_and_create_row_q15(eventString):
-    
-    eventDict = eval(eventString)
-    # eventDict = json.loads(eventString)
-    
-    # Extract [repo_name, label, issue_number, opening_time, closing_time]
-    # repo_name
-    repo_name = eventDict["repo"]["full_name"]
-    
-    # issue_number
-    issue_number = eventDict["payload"]["issue"]["number"]
-    
-    # opening and closing times
-    opening_time = eventDict["payload"]["issue"]["created_at"]
-    closing_time = eventDict["payload"]["issue"]["closed_at"]
-    
-    # labels
-    labels = eventDict["payload"]["issue"]["labels"]
-    
-    opening_and_closing_times_of_issues_info_row = \
-        Row(opening_time, closing_time, repo_name, labels, issue_number)
-    return opening_and_closing_times_of_issues_info_row
-
-
-# Type info for closing times of issues
-issue_closing_times_type_info_with_list_of_labels_q15 = \
-    Types.ROW_NAMED(['opening_time', 'closing_time', 'repo_name', \
-        'labels', 'issue_number'], \
-    [Types.STRING(), Types.STRING(), \
-        Types.STRING(), Types.LIST(Types.STRING()),  Types.INT()])  
+def create_row_q15(event_dict):
+    return Row(event_dict["opening_time"],
+               event_dict["closing_time"],
+               event_dict["repo"],
+               event_dict["labels"],
+               event_dict["issue_number"])
     
 def split_issue_labels(closed_issue_row_with_list_of_labels):
     
@@ -272,8 +225,6 @@ def split_issue_labels(closed_issue_row_with_list_of_labels):
     labels_list = closed_issue_row_with_list_of_labels[3]
     issue_number = closed_issue_row_with_list_of_labels[4]
     
-    issue_row_list = []
-    
     # If there are no labels, emit a single issue event element with label 
     if len(labels_list) == 0:
         label = ""
@@ -281,35 +232,35 @@ def split_issue_labels(closed_issue_row_with_list_of_labels):
     # else, create a list of rows with the separated labels 
     # (one label per issue row) and emit a single label element one at a time
     else:
+        issue_row_list = []
         for single_label in labels_list:
             single_label_issue_row = \
                 Row(opening_time, closing_time, repo_name, single_label, issue_number)
             issue_row_list.append(single_label_issue_row)
         yield from issue_row_list
 
+
+issue_closing_times_type_info_with_list_of_labels_q15 = \
+    Types.ROW_NAMED(['opening_time', 'closing_time', 'repo_name', \
+        'labels', 'issue_number'], \
+    [Types.STRING(), Types.STRING(), \
+        Types.STRING(), Types.LIST(Types.STRING()),  Types.INT()])  
 issue_closing_times_type_info_with_single_label = \
     Types.ROW_NAMED(['opening_time', 'closing_time', 'repo_name', \
         'label', 'issue_number'], \
     [Types.STRING(), Types.STRING(), \
         Types.STRING(), Types.STRING(),  Types.INT()])
+issue_closing_times_by_label_ds_q15 = issue_events_ds\
+    .filter(keep_closed_issues)\
+    .map(create_row_q15, \
+            output_type=issue_closing_times_type_info_with_list_of_labels_q15)\
+    .flat_map(split_issue_labels, output_type=issue_closing_times_type_info_with_single_label)
 
 
-# Datastream with extracted fields
-issue_closing_times_by_label_ds_q15 = raw_events_ds.filter(filter_out_non_issue_events_q15)\
-                    .disable_chaining()\
-                    .map(extract_opening_and_closing_times_of_issues_and_create_row_q15, \
-                           output_type=issue_closing_times_type_info_with_list_of_labels_q15)\
-                    .flat_map(split_issue_labels, output_type=issue_closing_times_type_info_with_single_label)
-
-# Q15_2. Sink data into the Cassandra table
-
-# Insert query to be executed for every element
 insert_element_into_issue_closing_times_by_label_q15 = \
     "INSERT INTO prod_gharchive.issue_closing_times_by_label "\
     "(opening_time, closing_time, repo_name, label, issue_number) "\
     "VALUES (?, ?, ?, ?, ?);"
-
-# Sink events into the Cassandra table 
 cassandra_sink_q15 = CassandraSink.add_sink(issue_closing_times_by_label_ds_q15)\
     .set_query(insert_element_into_issue_closing_times_by_label_q15)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -320,6 +271,7 @@ cassandra_sink_q15 = CassandraSink.add_sink(issue_closing_times_by_label_ds_q15)
 # endregion
 
 # endregion
+
 
 if __name__ == "__main__":
     # Create cassandra keyspace if not exist
