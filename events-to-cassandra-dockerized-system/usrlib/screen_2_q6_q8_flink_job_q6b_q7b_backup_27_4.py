@@ -83,7 +83,7 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 # region
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-
+cassandra_keyspace = "prod_gharchive"
 topic_to_consume_from = "historical-raw-events"
 
 print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
@@ -226,9 +226,9 @@ top_bot_contributors_info_ds_q6_b = raw_events_ds.filter(filter_out_non_contribu
 
 # Upsert query to be executed for every element
 upsert_element_into_top_bot_contributors_q6_b = \
-            "UPDATE prod_gharchive.top_bot_contributors_by_day "\
+            "UPDATE {0}.top_bot_contributors_by_day "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
-            "username = ? AND day = ?;"
+            "username = ? AND day = ?;".format(cassandra_keyspace)
 
 # Sink events into the Cassandra table 
 cassandra_sink_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
@@ -346,9 +346,9 @@ top_human_contributors_info_ds_q6_h = raw_events_ds.filter(filter_out_non_contri
 
 # Upsert query to be executed for every element
 upsert_element_into_top_human_contributors_q6_h = \
-            "UPDATE prod_gharchive.top_human_contributors_by_day "\
+            "UPDATE {0}.top_human_contributors_by_day "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
-            "username = ? AND day = ?;"
+            "username = ? AND day = ?;".format(cassandra_keyspace)
 
 # Sink events into the Cassandra table 
 cassandra_sink_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h)\
@@ -437,9 +437,9 @@ number_of_pull_requests_info_ds_q7_b = raw_events_ds.filter(filter_out_non_pull_
 
 # Upsert query to be executed for every element
 upsert_element_into_T7_b_number_of_pull_requests_by_bots = \
-            "UPDATE prod_gharchive.number_of_pull_requests_by_bots "\
+            "UPDATE {0}.number_of_pull_requests_by_bots "\
             "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
-            "were_accepted = ? AND day = ?;"
+            "were_accepted = ? AND day = ?;".format(cassandra_keyspace)
 
 # Sink events into the Cassandra table 
 cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_b)\
@@ -458,25 +458,22 @@ cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_
 if __name__ =='__main__':
     
     # Create cassandra keyspace if not exist
-    cassandra_host = 'cassandra_stelios'
-    cassandra_port = 9142
     cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
 
     # Connect without creating keyspace. Once connected create the keyspace
     session = cluster.connect()
     create_keyspace = "CREATE KEYSPACE IF NOT EXISTS "\
-        "prod_gharchive WITH replication = {'class': 'SimpleStrategy', "\
-        "'replication_factor': '1'} AND durable_writes = true;"
+        "{0} WITH replication = {'class': 'SimpleStrategy', "\
+        "'replication_factor': '1'} AND durable_writes = true;".format(cassandra_keyspace)
     session.execute(create_keyspace)
 
-    cassandra_keyspace = 'prod_gharchive'
     session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
     session.execute(f'USE {cassandra_keyspace}')
 
 
     # Screen 2
     create_top_bot_contributors_table_q6_b = \
-        "CREATE TABLE IF NOT EXISTS prod_gharchive.top_bot_contributors_by_day "\
+        "CREATE TABLE IF NOT EXISTS {0]}.top_bot_contributors_by_day "\
         "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
         "username)) WITH CLUSTERING ORDER BY "\
         "(username ASC);"
@@ -484,16 +481,16 @@ if __name__ =='__main__':
 
 
     create_top_human_contributors_table_q6_h = \
-        "CREATE TABLE IF NOT EXISTS prod_gharchive.top_human_contributors_by_day "\
+        "CREATE TABLE IF NOT EXISTS {0}.top_human_contributors_by_day "\
         "(day text, username text, number_of_contributions counter, PRIMARY KEY ((day), "\
         "username)) WITH CLUSTERING ORDER BY "\
-        "(username ASC);"
+        "(username ASC);".format(cassandra_keyspace)
     session.execute(create_top_human_contributors_table_q6_h)
 
     create_number_of_pull_requests_by_bots_q7_b = \
-        "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_bots "\
+        "CREATE TABLE IF NOT EXISTS {0}.number_of_pull_requests_by_bots "\
         "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
-        "were_accepted)));"
+        "were_accepted)));".format(cassandra_keyspace)
     session.execute(create_number_of_pull_requests_by_bots_q7_b)
 
     cluster.shutdown()
