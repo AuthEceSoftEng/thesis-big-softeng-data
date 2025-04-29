@@ -52,7 +52,8 @@ env.set_restart_strategy(RestartStrategies.\
 
 #endregion 
 
-# II. Configure connection of flink to kafka 
+
+# II. Get Kafka host and port to connect Flink to
 # region
 parser = ArgumentParser(prog=f"python {os.path.basename(__file__)}",    
                             description="Warning on function usage: \n\n"
@@ -68,298 +69,167 @@ parser = ArgumentParser(prog=f"python {os.path.basename(__file__)}",
 
 parser.add_argument('--config_file_path', required = True)
 args = parser.parse_args()
-
 config_parser = ConfigParser()
 with open(args.config_file_path, 'r') as config_file:
     config_parser.read_file(config_file)
-
 config = dict(config_parser['default_consumer'])
-
 kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 
 # endregion
 
-# III. Create a Cassandra cluster, connect to it and use a keyspace
+
+# III. Consume datastreams
 # region
-cassandra_host = 'cassandra_stelios'
-cassandra_port = 9142
-
-topic_to_consume_from = "historical-raw-events"
-
-print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
-        f"Cassandra tables\n"
-        "T6_b: top_bot_contributions_by_day, T6_h: top_human_contributors_by_day,\n"
-        "T7_b: number_of_pull_requests_by_bots")
-
-
-
-# IV. Consume the original datastream 'historical-raw-events'
-#region 
 kafka_props = {'enable.auto.commit': 'true',
                'auto.commit.interval.ms': '1000',
                'auto.offset.reset': 'smallest'}
+def map_event_string_to_event_dict(event_string):
+    return eval(event_string)
 
-
-
-
-second_screen_consumer_group_id_1 = 'second_screen_consumer_group_id_1_q6b_q7b'
-
-
-kafka_consumer_second_screen_source_1 = KafkaSource.builder() \
+# Consume push events
+screen_2_push_events_consumer_group_id = "screen_2_push_consumer_group_id"
+push_events_topic = "push_events_topic"    
+push_events_source = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer\
                 .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(second_screen_consumer_group_id_1)\
-            .set_topics(topic_to_consume_from) \
+            .set_group_id(screen_2_push_events_consumer_group_id)\
+            .set_topics(push_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
-
-raw_events_ds = env.from_source( source=kafka_consumer_second_screen_source_1, \
+push_events_ds = env.from_source(source=push_events_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
-            source_name="kafka_source")\
+            source_name="push_events_source")\
+            .map(map_event_string_to_event_dict)
 
-#endregion
+# Consume pull request events
+screen_2_pull_request_events_consumer_group_id = "screen_2_pull_request_consumer_group_id"
+pull_request_events_topic = "pull_request_events_topic"    
+pull_request_events_source = KafkaSource.builder() \
+            .set_bootstrap_servers(kafka_bootstrap_servers) \
+            .set_starting_offsets(KafkaOffsetsInitializer\
+                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
+            .set_group_id(screen_2_pull_request_events_consumer_group_id)\
+            .set_topics(pull_request_events_topic) \
+            .set_value_only_deserializer(SimpleStringSchema()) \
+            .set_properties(kafka_props)\
+            .build()
+pull_request_events_ds = env.from_source(source=pull_request_events_source, \
+            watermark_strategy=WatermarkStrategy.no_watermarks(),
+            source_name="pull_reequest_events_source")\
+            .map(map_event_string_to_event_dict)
+# endregion
+
+
 
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
 
 max_concurrent_requests = 1000
+cassandra_host = 'cassandra_stelios'
+cassandra_port = 9142
+print(f"Insert data from kafka topics into Cassandra tables:\n"
+        "T6_b: top_bot_contributions_by_day, T6_h: top_human_contributors_by_day,\n"
+        "T7_b: number_of_pull_requests_by_bots")
 
+
+
+    
 # Q6_b: Top bot contributors by day
 # region
-
-# Q6_b_1. Transform the original stream 
-# Filter out events of type that contain no info we need
-def filter_out_non_contributing_events_and_humans_q6_b(eventString):
-    '''
-    Keep only PushEvents and closed PullRequestEvents (meaning merged) 
-    and also exclude human events
-    '''
-
-    # Turn the json event object into event into a dict
-    event_types_with_info_q6_b = ["PushEvent", "PullRequestEvent"]
-    # event_dict = json.loads(eventString)
-    event_dict = eval(eventString)
-
-    # Keep only Push and merged PullRequest events
-    event_type = event_dict["type"]
-    if (event_type == "PushEvent"):
-        is_push_or_merged_pull_request_event = True
-    elif (event_type == "PullRequestEvent" and \
-    event_dict["payload"]["action"] == "closed" and \
-    event_dict["payload"]["pull_request"]["merged_at"] != None):
-        is_push_or_merged_pull_request_event = True
-    else:
-        return False
-    
-    # Keep PullRequestEvents if number_of_contributions <= 200
-    # Keep PushEvents if number_of_contributions <= 200 or if size == distinct_size
-    is_num_of_contributions_regular = False
-    if event_type == "PushEvent":
-        number_of_contributions = event_dict["payload"]["distinct_size"]
-        if (number_of_contributions <= 100) or (number_of_contributions <= 200
-        and event_dict["payload"]["size"] == event_dict["payload"]["distinct_size"]):
-                is_num_of_contributions_regular = True
-    elif event_type == "PullRequestEvent":
-        number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
-        if number_of_contributions <= 200:
-            is_num_of_contributions_regular = True
-    else:
-        return False
-
-    # Keep only bot events
-    if event_type == "PushEvent":
-        username = event_dict["actor"]
-    elif event_type == "PullRequestEvent":
-        username = event_dict["payload"]["pull_request"]["user"]
-    
-    if username.endswith('[bot]'):
-        is_bot = True
-    else:
-        return False
-
-
-    if is_push_or_merged_pull_request_event and is_num_of_contributions_regular and is_bot:
+def filter_out_human_events(event_dict):
+    if not event_dict["username"].endswith('[bot]'):
         return True
+    else:
+        return False
     
-# Extract the number of events
-def extract_number_of_contributions_and_create_row_q6_b(eventString):
+def filter_out_bot_events(event_dict):
+    if event_dict["username"].endswith('[bot]'):
+        return True
+    else:
+        return False
     
-    event_dict = eval(eventString)
+def filter_out_irregular_push_events(event_dict):
+    # Number of push contributions should be regular
+    number_of_contributions = event_dict["number_of_contributions"]
+    if (number_of_contributions <= 100) or \
+    (number_of_contributions <= 200 and 
+    event_dict["size"] == event_dict["distinct_size"]):
+        return True
+    else:
+        return False
     
-    # Extract [day, username, number_of_contributions]
-    # day
-    created_at = event_dict["created_at"]
-    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
-    day = created_at_year_month_day_only
-        
-    
-    # 'username' and 'number of contributions' 
-    # (The number of contributions equals the number of commits of a push  
-    # or the number of commits of a merged pull-request)
-    event_type = event_dict["type"]
-    number_of_contributions = 0
-    if event_type == "PushEvent":
-        username = event_dict["actor"]
-        number_of_contributions = event_dict["payload"]["distinct_size"]
-    elif event_type == "PullRequestEvent":
-        username = event_dict["payload"]["pull_request"]["user"]
-        number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
-    
-    bots_contributions_info_row = Row(number_of_contributions, username, day)
-    return bots_contributions_info_row
+def filter_out_non_contributing_pull_request_events(event_dict):
+    # Number of pull request contributions should be regular
+    number_of_contributions = event_dict["number_of_contributions"]
+    if number_of_contributions <= 200:
+        is_num_of_contributions_regular = True    
+    else:
+        is_num_of_contributions_regular = False
 
-# Type info for bot contributions by day
-bot_contributions_by_day_type_info = \
+    # Pull requests should be merged
+    if event_dict["action"] == "closed" and \
+    event_dict["merged_at"] != None:
+        was_pull_request_merged = True
+    else:
+        was_pull_request_merged = False
+    
+    if is_num_of_contributions_regular == True and was_pull_request_merged == True:
+        return True
+    else:
+        return False
+
+def create_row_q6(event_dict):
+    return Row(event_dict["number_of_contributions"], 
+               event_dict["username"], 
+               event_dict["day"])
+    
+contributing_push_events_ds = push_events_ds\
+                .filter(filter_out_irregular_push_events)
+contributing_pull_request_events_ds = pull_request_events_ds\
+                .filter(filter_out_non_contributing_pull_request_events)
+contributing_events_ds = contributing_push_events_ds.union(contributing_pull_request_events_ds)
+
+
+contributions_by_day_type_info_q6b = \
     Types.ROW_NAMED(['number_of_contributions', 'username', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
-    
-# Datastream with extracted fields
-top_bot_contributors_info_ds_q6_b = raw_events_ds.filter(filter_out_non_contributing_events_and_humans_q6_b)\
-                    .disable_chaining()\
-                    .map(extract_number_of_contributions_and_create_row_q6_b, \
-                           output_type=bot_contributions_by_day_type_info) \
+top_bot_contributors_info_ds_q6_b = contributing_events_ds\
+                .filter(filter_out_human_events)\
+                .map(create_row_q6, output_type=contributions_by_day_type_info_q6b)
 
-# Q6_b_2. Create Cassandra table sink data into it
-
-# Upsert query to be executed for every element
 upsert_element_into_top_bot_contributors_q6_b = \
             "UPDATE prod_gharchive.top_bot_contributors_by_day "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
             "username = ? AND day = ?;"
-
-# Sink events into the Cassandra table 
 cassandra_sink_q6_b = CassandraSink.add_sink(top_bot_contributors_info_ds_q6_b)\
     .set_query(upsert_element_into_top_bot_contributors_q6_b)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-    
-
 #endregion
 
 
 # Q6_h: Top human contributors by day
 # region
-
-# Q6_h_1. Transform the original stream 
-# Filter out events of type that contain no info we need
-def filter_out_non_contributing_events_and_bots_q6_h(eventString):
-    '''
-    Keep only PushEvents and closed PullRequestEvents (meaning merged) 
-    and also exclude bot events
-    '''
-
-    # Event types where the needed fields reside:
-    event_types_with_info_q6_h = ["PushEvent", "PullRequestEvent"]
-
-    # event_dict = json.loads(eventString)
-    event_dict = eval(eventString)
-
-    # Keep only Push and merged PullRequest events
-    event_type = event_dict["type"]
-    if (event_type == "PushEvent"):
-        is_push_or_merged_pull_request_event = True
-    elif (event_type == "PullRequestEvent" and \
-    event_dict["payload"]["action"] == "closed" and \
-    event_dict["payload"]["pull_request"]["merged_at"] != None):
-        is_push_or_merged_pull_request_event = True
-    else:
-        return False
-    
-    
-    is_num_of_contributions_regular = False
-    # Keep PullRequestEvents if number_of_contributions <= 200
-    # Keep PushEvents if number_of_contributions <= 200 or if size == distinct_size
-    if event_type == "PushEvent":
-        number_of_contributions = event_dict["payload"]["distinct_size"]
-        if (number_of_contributions <= 100) or (number_of_contributions <= 200
-        and event_dict["payload"]["size"] == event_dict["payload"]["distinct_size"]):
-            is_num_of_contributions_regular = True
-    elif event_type == "PullRequestEvent":
-        number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
-        if number_of_contributions <= 200:
-            is_num_of_contributions_regular = True
-    else:
-        return False
-
-    # Keep only human events
-    if event_type == "PushEvent":
-        username = event_dict["actor"]
-    elif event_type == "PullRequestEvent":
-        username = event_dict["payload"]["pull_request"]["user"]
-    
-    if not username.endswith('[bot]'):
-        is_human = True
-    else: 
-        return False
-        
-    # Keep push and merged pull-request events only if not created by bots
-    if is_push_or_merged_pull_request_event and is_human and is_num_of_contributions_regular:
-        return True
-    
-# Extract the number of events
-def extract_number_of_contributions_and_create_row_q6_h(eventString):
-    
-    event_dict = eval(eventString)
-    
-    # Extract [day, username, number_of_contributions]
-    # day
-    created_at = event_dict["created_at"]
-    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
-    day = created_at_year_month_day_only
-        
-    # username and number of contributions 
-    # (It equals the number of commits of a push  
-    # or the number of commits of a merged pull-request)
-    event_type = event_dict["type"]
-    number_of_contributions = 0
-    if event_type == "PushEvent":
-        username = event_dict["actor"]
-        number_of_contributions = event_dict["payload"]["distinct_size"]
-    elif event_type == "PullRequestEvent":
-        username = event_dict["payload"]["pull_request"]["user"]
-        number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
-    humans_contributions_info_row = Row(number_of_contributions, username, day)
-    return humans_contributions_info_row
-
-output_type_of_process = [Types.LONG(), Types.STRING(), Types.STRING()]
-
-# Type info for human contributions by day
-human_contributions_by_day_type_info_q6_h = \
-    Types.ROW_NAMED(['number_of_contributions', 'username', 'day'], \
-    [Types.LONG(), Types.STRING(), \
-        Types.STRING()])
-    
-# Datastream with extracted fields
-top_human_contributors_info_ds_q6_h = raw_events_ds.filter(filter_out_non_contributing_events_and_bots_q6_h)\
-                    .disable_chaining()\
-                    .map(extract_number_of_contributions_and_create_row_q6_h, \
-                           output_type=human_contributions_by_day_type_info_q6_h) \
-# Uncomment to print datastream
-# top_human_contributors_info_ds_q6_h.print()
-
-# Q6_h_2. Create Cassandra table and sink data into it
-
-# Upsert query to be executed for every element
+contributions_by_day_type_info_q6_h = contributions_by_day_type_info_q6b
+top_human_contributors_info_ds_q6_h = contributing_events_ds\
+                .filter(filter_out_bot_events)\
+                .map(create_row_q6, output_type=contributions_by_day_type_info_q6_h)
+                
 upsert_element_into_top_human_contributors_q6_h = \
             "UPDATE prod_gharchive.top_human_contributors_by_day "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
             "username = ? AND day = ?;"
-
-# Sink events into the Cassandra table 
 cassandra_sink_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h)\
     .set_query(upsert_element_into_top_human_contributors_q6_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
     .build()
-    
 # endregion
 
 # Q7_b: Number of pull requests by bots
@@ -415,37 +285,47 @@ def extract_number_of_pull_requests_and_create_row_q7_b(eventString):
     # Number of pull requests
     number_of_pull_requests = 1
     if event_dict["payload"]["pull_request"]["merged_at"] != None:
-        were_accepted = True
+        was_accepted = True
     else:
-        were_accepted = False
-    pull_requests_by_bots_info_row = Row(number_of_pull_requests, were_accepted, day)
+        was_accepted = False
+    pull_requests_by_bots_info_row = Row(number_of_pull_requests, was_accepted, day)
     return pull_requests_by_bots_info_row
 
 # Type info for number of pull requests by bots by day
 number_of_pull_requests_by_bots_by_day_type_info_q7_b = \
-    Types.ROW_NAMED(['number_of_pull_requests', 'were_accepted', 'day'], \
+    Types.ROW_NAMED(['number_of_pull_requests', 'was_accepted', 'day'], \
     [Types.LONG(),\
         Types.BOOLEAN(), Types.STRING()])
-    
-# Datastream with extracted fields
-number_of_pull_requests_info_ds_q7_b = raw_events_ds.filter(filter_out_non_pull_request_events_q7_b)\
-                    .disable_chaining()\
-                    .map(extract_number_of_pull_requests_and_create_row_q7_b, \
-                           output_type=number_of_pull_requests_by_bots_by_day_type_info_q7_b) \
-# Uncomment to print datastream
-# number_of_pull_requests_info_ds_q7_b.print()
 
 
-# Q7_b_2. Create Cassandra table and sink data into it
+def filter_out_non_closed_pull_requests(event_dict):
+    if event_dict["payload"]["action"] == "closed":
+        return True
+    else:
+        return False
 
-# Upsert query to be executed for every element
+def create_row_q7(event_dict):
+    number_of_pull_requests = 1
+    if event_dict["payload"]["pull_request"]["merged_at"] != None:
+        was_accepted = True
+    else:
+        was_accepted = False
+    return Row(number_of_pull_requests, 
+               was_accepted, 
+               event_dict["day"])
+
+
+number_of_pull_requests_ds_q7_b = pull_request_events_ds\
+            .filter(filter_out_human_events)\
+            .filter(filter_out_non_closed_pull_requests)\
+            .map(create_row_q7, \
+                    output_type=number_of_pull_requests_by_bots_by_day_type_info_q7_b) \
+
 upsert_element_into_T7_b_number_of_pull_requests_by_bots = \
             "UPDATE prod_gharchive.number_of_pull_requests_by_bots "\
             "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
-            "were_accepted = ? AND day = ?;"
-
-# Sink events into the Cassandra table 
-cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_info_ds_q7_b)\
+            "was_accepted = ? AND day = ?;"
+cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_ds_q7_b)\
     .set_query(upsert_element_into_T7_b_number_of_pull_requests_by_bots)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
@@ -495,8 +375,8 @@ if __name__ =='__main__':
 
     create_number_of_pull_requests_by_bots_q7_b = \
         "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_bots "\
-        "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
-        "were_accepted)));"
+        "(day text, was_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
+        "was_accepted)));"
     session.execute(create_number_of_pull_requests_by_bots_q7_b)
 
     cluster.shutdown()
