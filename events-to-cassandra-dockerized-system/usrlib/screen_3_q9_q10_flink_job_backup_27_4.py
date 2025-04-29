@@ -189,7 +189,7 @@ def extract_stars_on_js_repo_and_create_row_q9(eventString):
 
 # Type info for number of stars of js repo by day
 number_of_stars_on_js_repo_by_day_type_info_q9 = \
-    Types.ROW_NAMED(['number_of_stars', 'username', 'day'], \
+    Types.ROW_NAMED(['number_of_stars', 'repo_name', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
     
