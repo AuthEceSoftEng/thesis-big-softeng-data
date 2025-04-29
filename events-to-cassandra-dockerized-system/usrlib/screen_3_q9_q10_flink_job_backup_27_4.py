@@ -297,7 +297,7 @@ def extract_top_contributors_on_js_repo_and_create_row_q10(eventString):
 
 # Type info for top contributors by month
 human_contributions_by_month_type_info_q10 = \
-    Types.ROW_NAMED(['number_of_contributions', 'repo_name', 'username', 'month'], \
+    Types.ROW_NAMED(['number_of_contributions', 'repo_name', 'month', 'username'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING(), Types.STRING()])
     

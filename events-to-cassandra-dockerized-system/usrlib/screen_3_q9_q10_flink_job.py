@@ -96,6 +96,40 @@ all_events_ds = env.from_source( source=all_events_source, \
             source_name="all_events_source")\
             .map(map_event_string_to_event_dict)
 
+# Consume push events
+screen_3_push_events_consumer_group_id_1 = "screen_3_push_consumer_group_id_1"
+push_events_topic = "push_events_topic"    
+push_events_source = KafkaSource.builder() \
+            .set_bootstrap_servers(kafka_bootstrap_servers) \
+            .set_starting_offsets(KafkaOffsetsInitializer\
+                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
+            .set_group_id(screen_3_push_events_consumer_group_id_1)\
+            .set_topics(push_events_topic) \
+            .set_value_only_deserializer(SimpleStringSchema()) \
+            .set_properties(kafka_props)\
+            .build()
+push_events_ds = env.from_source(source=push_events_source, \
+            watermark_strategy=WatermarkStrategy.no_watermarks(),
+            source_name="push_events_source")\
+            .map(map_event_string_to_event_dict)
+            
+# Consume pull request events
+screen_3_pull_request_events_consumer_group_id = "screen_3_pull_request_consumer_group_id"
+pull_request_events_topic = "pull_request_events_topic"    
+pull_request_events_source = KafkaSource.builder() \
+            .set_bootstrap_servers(kafka_bootstrap_servers) \
+            .set_starting_offsets(KafkaOffsetsInitializer\
+                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
+            .set_group_id(screen_3_pull_request_events_consumer_group_id)\
+            .set_topics(pull_request_events_topic) \
+            .set_value_only_deserializer(SimpleStringSchema()) \
+            .set_properties(kafka_props)\
+            .build()
+pull_request_events_ds = env.from_source(source=pull_request_events_source, \
+            watermark_strategy=WatermarkStrategy.no_watermarks(),
+            source_name="pull_request_events_source")\
+            .map(map_event_string_to_event_dict)
+            
 #endregion
 
 # V. Transform the original datastream, extract fields and store into Cassandra tables
@@ -138,89 +172,19 @@ def create_row_q9(event_dict):
                           "repo": event_dict["repo"],
                           "day": event_dict["day"]])    
 
-# Q9_1. Transform the original stream 
 
-# Filter out events of type that contain no info we need
-def filter_out_non_star_events_and_non_js_repos_q9(eventString):
-    '''
-    Keep only WatchEvents (meaning stars) 
-    and also exclude non js repo events
-    '''
-
-    # Turn the json event object into event into a dict    
-    eventDict = eval(eventString)
-    # eventDict = json.loads(eventString)
-
-    # Keep only WatchEvents
-    event_type = eventDict["type"]
-    if (event_type != "WatchEvent"):
-        is_watch_event = False
-    else:
-        is_watch_event = True
-    
-    # Keep only events on the list of js_repos
-    is_js_repo = False
-    repo_name = eventDict["repo"]["full_name"]
-    # Event types for stars:
-    js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
-        'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
-        'spine/spine', 'vuejs/vue', 'vuejs/core', 'Polymer/polymer', 'facebook/react', 
-        'finom/seemple', 'aurelia/framework', 'optimizely/nuclear-js', 'jashkenas/backbone', 
-        'dojo/dojo', 'jorgebucaran/hyperapp', 'riot/riot', 'daemonite/material', 
-        'polymer/lit-element', 'aurelia/aurelia', 'sveltejs/svelte', 'neomjs/neo', 
-        'preactjs/preact', 'hotwired/stimulus', 'alpinejs/alpine', 'solidjs/solid', 
-        'ionic-team/stencil', 'jquery/jquery']
-    
-    if repo_name in js_repos_list:
-        is_js_repo = True
-        
-    # Keep watch events only made on js repos
-    if is_watch_event and is_js_repo:
-        return True
-       
-# Extract the number of stars in the events
-def extract_stars_on_js_repo_and_create_row_q9(eventString):
-    
-    eventDict = eval(eventString)
-    # eventDict = json.loads(eventString)
-    
-    # Extract [day, username, number_of_contributions]
-    # day
-    created_at = eventDict["created_at"]
-    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
-    day = created_at_year_month_day_only
-    
-    # repo_name
-    repo_name = eventDict["repo"]["full_name"]
-    
-    # number_of_stars 
-    number_of_stars = 1
-    
-    stars_per_day_on_js_repo_info_row = Row(number_of_stars, repo_name, day)
-    return stars_per_day_on_js_repo_info_row
-
-# Type info for number of stars of js repo by day
 number_of_stars_on_js_repo_by_day_type_info_q9 = \
-    Types.ROW_NAMED(['number_of_stars', 'username', 'day'], \
+    Types.ROW_NAMED(['number_of_stars', 'repo', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
-    
-# Datastream with extracted fields
-number_of_stars_of_js_repo_by_day_info_ds_q9 = raw_events_ds.filter(filter_out_non_star_events_and_non_js_repos_q9)\
-                    .disable_chaining()\
-                    .map(extract_stars_on_js_repo_and_create_row_q9, \
-                           output_type=number_of_stars_on_js_repo_by_day_type_info_q9) \
-
-# Q9_2. Sink data into the Cassandra table
-
-# Upsert query to be executed for every element
+number_of_stars_of_js_repo_by_day_info_ds_q9 = all_events_ds.filter(keep_js_repos_events)\
+                    .filter(keep_star_events)\
+                    .map(create_row_q9, \
+                    output_type=number_of_stars_on_js_repo_by_day_type_info_q9)
 upsert_element_into_number_of_stars_of_js_repo_per_day_q9 = \
             "UPDATE prod_gharchive.stars_per_day_on_js_repo "\
             "SET number_of_stars = number_of_stars + ? WHERE "\
             "repo_name = ? AND day = ?;"
-
-# Sink events into the Cassandra table 
 cassandra_sink_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_day_info_ds_q9)\
     .set_query(upsert_element_into_number_of_stars_of_js_repo_per_day_q9)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -230,106 +194,47 @@ cassandra_sink_q9 = CassandraSink.add_sink(number_of_stars_of_js_repo_by_day_inf
 
 #endregion
 
+
 # Q10: Top contributors of js repo by month
 # region
 
-# Q10_1. Transform the original stream 
-
-# Filter out events of type that contain no info we need
-def filter_out_non_contributing_events_and_non_js_repos_q10(eventString):
-    '''
-    Keep only PushEvents and closed PullRequestEvents (meaning merged)
-    and also exclude non js repo events
-    '''
-
-    # Turn the json event object into event into a dict
-    # eventDict = json.loads(eventString)
-    eventDict = eval(eventString)
-
-    # Keep only Push and merged PullRequest events
-    is_push_or_merged_pull_request_event = False
-    event_type = eventDict["type"]
-    if (event_type == "PushEvent") or \
-    (event_type == "PullRequestEvent" and \
-    eventDict["payload"]["action"] == "closed" and \
-    eventDict["payload"]["pull_request"]["merged_at"] != None):
-        is_push_or_merged_pull_request_event = True
-    else:
-        is_push_or_merged_pull_request_event = False
-    
-    # Keep only events on the list of js_repos
-    is_js_repo = False
-    repo_name = eventDict["repo"]["full_name"]
-    # Event types for stars:
-    js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
-            'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
-            'spine/spine', 'vuejs/vue', 'vuejs/core', 'Polymer/polymer', 'facebook/react', 
-            'finom/seemple', 'aurelia/framework', 'optimizely/nuclear-js', 'jashkenas/backbone', 
-            'dojo/dojo', 'jorgebucaran/hyperapp', 'riot/riot', 'daemonite/material', 
-            'polymer/lit-element', 'aurelia/aurelia', 'sveltejs/svelte', 'neomjs/neo', 
-            'preactjs/preact', 'hotwired/stimulus', 'alpinejs/alpine', 'solidjs/solid', 
-            'ionic-team/stencil', 'jquery/jquery']    
-    
-    if repo_name in js_repos_list:
-        is_js_repo = True
-    
-    # Keep push and pull_request events only made on js repos
-    if is_push_or_merged_pull_request_event and is_js_repo:
+def filter_out_non_contributing_pull_request_events(event_dict):
+    # Pull requests should be merged
+    if event_dict["action"] == "closed" and \
+    event_dict["merged_at"] != None:
         return True
-            
-# Extract the number of stars in the events
-def extract_top_contributors_on_js_repo_and_create_row_q10(eventString):
-    
-    eventDict = eval(eventString)
-    # eventDict = json.loads(eventString)
-    
-    # Extract [number_of_contributions, repo_name, month, username]
-    # month
-    created_at = eventDict["created_at"]
-    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m")
-    month = created_at_year_month_day_only
-    
-    # repo_name
-    repo_name = eventDict["repo"]["full_name"]
-    
-    # number of contributions 
-    # (It equals the number of commits of a push  
-    # or the number of commits of a merged pull-request)
-    event_type = eventDict["type"]
-    number_of_contributions = 0
-    if event_type == "PushEvent":
-        username = eventDict["actor"]
-        number_of_contributions = eventDict["payload"]["distinct_size"]
-    elif event_type == "PullRequestEvent":
-        username = eventDict["payload"]["pull_request"]["user"]
-        number_of_contributions = eventDict["payload"]["pull_request"]["commits"]
-    
-    top_contributors_of_js_repo_info_row = \
-        Row(number_of_contributions, repo_name, month, username)
-    return top_contributors_of_js_repo_info_row
+    else:
+        return False
 
-# Type info for top contributors by month
+def create_row_q10(event_dict):
+    full_day = event_dict["day"]
+    full_day_to_datetime_object = datetime.strptime(full_day, "%Y-%m-%d")
+    month_of_day = datetime.strftime(full_day_to_datetime_object, "%Y-%m")
+    return Row(event_dict["number_of_contributions"],
+               event_dict["repo"],
+               month_of_day,
+               event_dict["username"])
+
 human_contributions_by_month_type_info_q10 = \
-    Types.ROW_NAMED(['number_of_contributions', 'repo_name', 'username', 'month'], \
+    Types.ROW_NAMED(['number_of_contributions', 'repo_name', 'month', 'username'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING(), Types.STRING()])
-    
-# Datastream with extracted fields
-top_contributors_of_js_repo_ds_q10 = raw_events_ds.filter(filter_out_non_contributing_events_and_non_js_repos_q10)\
-                    .disable_chaining()\
-                    .map(extract_top_contributors_on_js_repo_and_create_row_q10, \
-                           output_type=human_contributions_by_month_type_info_q10)
 
+pull_request_contributors_of_js_repos_ds_q10 = pull_request_events_ds\
+    .filter(keep_js_repos_events)\
+    .filter(filter_out_non_contributing_pull_request_events)
+push_contributors_of_js_repos_ds_q10 = push_events_ds\
+    .filter(keep_js_repos_events)
+all_contributors_of_js_repos_ds = pull_request_contributors_of_js_repos_ds_q10\
+    .union(push_contributors_of_js_repos_ds_q10)\
+    .map(create_row_q10,\
+        output_type=human_contributions_by_month_type_info_q10)
 
-# Q10_2. Sink data into the Cassandra table
 upsert_element_into_top_contributors_of_js_repo_q10 = \
             "UPDATE prod_gharchive.top_contributors_of_js_repo "\
             "SET number_of_contributions = number_of_contributions + ? WHERE "\
             "repo_name = ? AND month = ? AND username = ?;"
-
-# Sink events into the Cassandra table 
-cassandra_sink_q10 = CassandraSink.add_sink(top_contributors_of_js_repo_ds_q10)\
+cassandra_sink_q10 = CassandraSink.add_sink(all_contributors_of_js_repos_ds)\
     .set_query(upsert_element_into_top_contributors_of_js_repo_q10)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
