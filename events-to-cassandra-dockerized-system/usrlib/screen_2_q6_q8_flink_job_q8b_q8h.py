@@ -80,13 +80,13 @@ def map_event_string_to_event_dict(event_string):
     return eval(event_string)
 
 # Consume all events
-screen_2_all_events_consumer_group_id_2 = "screen_2_all_events_consumer_group_id_2"
+screen_2_all_events_consumer_group_id = "screen_2_all_events_consumer_group_id"
 all_events_topic = "all_events"    
 all_events_source = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer\
                 .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(screen_2_all_events_consumer_group_id_2)\
+            .set_group_id(screen_2_all_events_consumer_group_id)\
             .set_topics(all_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\

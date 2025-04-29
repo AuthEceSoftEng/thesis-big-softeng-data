@@ -37,16 +37,12 @@ import socket
 # I. Set up the flink execution environment
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
-
 env.disable_operator_chaining()
-
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 # env.set_parallelism(2)
-
 env.add_jars("file:///opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar")
 env.add_jars("file:///opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar")
 # env.add_jars("file:///opt/flink/opt/flink-streaming-scala_2.12-1.18.1.jar")
-
 env.set_restart_strategy(RestartStrategies.\
     fixed_delay_restart(restart_attempts=3, delay_between_attempts=1000))
 
@@ -65,65 +61,82 @@ parser = ArgumentParser(prog=f"python {os.path.basename(__file__)}",
                                 "meaning it must be unique among the jobs deployed "
                                 "in the cluster",
                             formatter_class=RawDescriptionHelpFormatter)
-
 parser.add_argument('--config_file_path', required = True)
 args = parser.parse_args()
-
 config_parser = ConfigParser()
 with open(args.config_file_path, 'r') as config_file:
     config_parser.read_file(config_file)
-
 config = dict(config_parser['default_consumer'])
-
 kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
-
 # endregion
 
-# III. Create a Cassandra cluster, connect to it and use a keyspace
-# region
-
-cassandra_host = 'cassandra_stelios'
-cassandra_port = 9142
-cluster = Cluster([cassandra_host],port=cassandra_port, connect_timeout=10)
-cassandra_keyspace = 'prod_gharchive'
-# endregion
 
 # IV. Consume the original datastream 'near-real-time-raw-events'
 #region 
-
 kafka_props = {'enable.auto.commit': 'true',
                'auto.commit.interval.ms': '1000',
                'auto.offset.reset': 'smallest'}
+def map_event_string_to_event_dict(event_string):
+    return eval(event_string)
 
-third_screen_consumer_group_id = 'third_screen_consumer_group_id'
-
-topic_to_consume_from = "historical-raw-events"
-kafka_consumer_third_source = KafkaSource.builder() \
+# Consume all events
+screen_3_all_events_consumer_group_id = 'screen_3_all_events_consumer_group_id'
+all_events_topic = "all_events"
+all_events_source = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer\
                 .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(third_screen_consumer_group_id)\
-            .set_topics(topic_to_consume_from) \
+            .set_group_id(screen_3_all_events_consumer_group_id)\
+            .set_topics(all_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
-
-print(f"Start reading data from kafka topic '{topic_to_consume_from}' to create "
-        f"Cassandra tables\n"
-        "T9: stars_per_day_on_js_repo, T10: top_contributors_of_js_repo\n")
-        
-raw_events_ds = env.from_source( source=kafka_consumer_third_source, \
+all_events_ds = env.from_source( source=all_events_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
-            source_name="kafka_source")\
+            source_name="all_events_source")\
+            .map(map_event_string_to_event_dict)
 
 #endregion
 
 # V. Transform the original datastream, extract fields and store into Cassandra tables
 #region 
 
+cassandra_host = 'cassandra_stelios'
+cassandra_port = 9142
 max_concurrent_requests = 1000
+print(f"Start reading data from kafka topics to create "
+        f"Cassandra tables:\n"
+        "T9: stars_per_day_on_js_repo, T10: top_contributors_of_js_repo\n")
+        
+        
 # Q9: Total stars by day on Javascript repo
 # region
+
+def keep_js_repos_events(event_dict):
+    js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
+        'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
+        'spine/spine', 'vuejs/vue', 'vuejs/core', 'Polymer/polymer', 'facebook/react', 
+        'finom/seemple', 'aurelia/framework', 'optimizely/nuclear-js', 'jashkenas/backbone', 
+        'dojo/dojo', 'jorgebucaran/hyperapp', 'riot/riot', 'daemonite/material', 
+        'polymer/lit-element', 'aurelia/aurelia', 'sveltejs/svelte', 'neomjs/neo', 
+        'preactjs/preact', 'hotwired/stimulus', 'alpinejs/alpine', 'solidjs/solid', 
+        'ionic-team/stencil', 'jquery/jquery']
+    if event_dict["repo"] in js_repos_list:
+        return True
+    else:
+        return False
+    
+def keep_star_events(event_dict):
+    if event_dict["type"] == "WatchEvent":
+        return True
+    else:
+        return False
+
+def create_row_q9(event_dict):
+    number_of_stars = 1
+    return Row(event_dict["number_of_stars": number_of_stars,
+                          "repo": event_dict["repo"],
+                          "day": event_dict["day"]])    
 
 # Q9_1. Transform the original stream 
 
