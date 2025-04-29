@@ -37,7 +37,7 @@ import socket
 # I. Set up the flink execution environment
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
-env.disable_operator_chaining()
+# env.disable_operator_chaining()
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 # env.set_parallelism(2)
 env.add_jars("file:///opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar")
@@ -79,52 +79,59 @@ kafka_props = {'enable.auto.commit': 'true',
 def map_event_string_to_event_dict(event_string):
     return eval(event_string)
 
-# Consume all events
-screen_3_all_events_consumer_group_id = 'screen_3_all_events_consumer_group_id'
-all_events_topic = "all_events"
-all_events_source = KafkaSource.builder() \
+def create_kafka_source(kafka_bootstrap_servers=str, consumer_group_id=str, topic=str, kafka_properties=dict()):
+    '''
+    Returns a kafka source of offset reset strategy "EARLIEST" of given configs
+    
+    :param kafka_bootstrap_servers: Example value: 'kafka:9142'
+    :param consumer_group_id: Example value: 'screen_2_push_consumer_group_id_1'
+    :param topic: Example value: 'push_events'
+    :param kafka_properties: {'enable.auto.commit': 'true',
+               'auto.commit.interval.ms': '1000',
+               'auto.offset.reset': 'smallest'}
+    '''
+    return KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer\
                 .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(screen_3_all_events_consumer_group_id)\
-            .set_topics(all_events_topic) \
+            .set_group_id(consumer_group_id)\
+            .set_topics(topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
-            .set_properties(kafka_props)\
+            .set_properties(kafka_properties)\
             .build()
+
+# Consume all events
+screen_3_all_events_consumer_group_id = 'screen_3_all_events_consumer_group_id'
+all_events_topic = "all_events"
+all_events_source = create_kafka_source(kafka_bootstrap_servers=kafka_bootstrap_servers,
+                                         consumer_group_id=screen_3_all_events_consumer_group_id,
+                                         topic=all_events_topic,
+                                         kafka_properties=kafka_props)
 all_events_ds = env.from_source( source=all_events_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="all_events_source")\
             .map(map_event_string_to_event_dict)
 
 # Consume push events
-screen_3_push_events_consumer_group_id_1 = "screen_3_push_consumer_group_id_1"
+screen_3_push_events_consumer_group_id = "screen_3_push_consumer_group_id"
 push_events_topic = "push_events_topic"    
-push_events_source = KafkaSource.builder() \
-            .set_bootstrap_servers(kafka_bootstrap_servers) \
-            .set_starting_offsets(KafkaOffsetsInitializer\
-                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(screen_3_push_events_consumer_group_id_1)\
-            .set_topics(push_events_topic) \
-            .set_value_only_deserializer(SimpleStringSchema()) \
-            .set_properties(kafka_props)\
-            .build()
+push_events_source = create_kafka_source(kafka_bootstrap_servers=kafka_bootstrap_servers,
+                                         consumer_group_id=screen_3_push_events_consumer_group_id,
+                                         topic=push_events_topic,
+                                         kafka_properties=kafka_props)
 push_events_ds = env.from_source(source=push_events_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="push_events_source")\
             .map(map_event_string_to_event_dict)
             
+            
 # Consume pull request events
 screen_3_pull_request_events_consumer_group_id = "screen_3_pull_request_consumer_group_id"
 pull_request_events_topic = "pull_request_events_topic"    
-pull_request_events_source = KafkaSource.builder() \
-            .set_bootstrap_servers(kafka_bootstrap_servers) \
-            .set_starting_offsets(KafkaOffsetsInitializer\
-                .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(screen_3_pull_request_events_consumer_group_id)\
-            .set_topics(pull_request_events_topic) \
-            .set_value_only_deserializer(SimpleStringSchema()) \
-            .set_properties(kafka_props)\
-            .build()
+pull_request_events_source = create_kafka_source(kafka_bootstrap_servers=kafka_bootstrap_servers,
+                                         consumer_group_id=screen_3_pull_request_events_consumer_group_id,
+                                         topic=pull_request_events_topic,
+                                         kafka_properties=kafka_props)
 pull_request_events_ds = env.from_source(source=pull_request_events_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="pull_request_events_source")\
@@ -132,7 +139,7 @@ pull_request_events_ds = env.from_source(source=pull_request_events_source, \
             
 #endregion
 
-# V. Transform the original datastream, extract fields and store into Cassandra tables
+# IV. Transform datastreams, extract fields and store into Cassandra tables
 #region 
 
 cassandra_host = 'cassandra_stelios'
