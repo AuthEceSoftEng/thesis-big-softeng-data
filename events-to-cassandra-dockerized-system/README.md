@@ -92,6 +92,7 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_4_q11_q15_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
 
+# Legacy
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_4_q11_q15_flink_job_backup_27_4.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
 
 ```
