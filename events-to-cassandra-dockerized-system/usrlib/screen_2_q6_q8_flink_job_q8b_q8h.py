@@ -401,14 +401,6 @@ if __name__ =='__main__':
 
 
     # Screen 2
-    create_number_of_pull_requests_by_humans_q7_h = \
-        "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_pull_requests_by_humans "\
-        "(day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, "\
-        "were_accepted)));"
-    session.execute(create_number_of_pull_requests_by_humans_q7_h)
-
-
-    # Create the table if not exists
     create_number_of_pull_requests_by_bots_q8_b = \
         "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_bot_events_per_type_by_day "\
         "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
