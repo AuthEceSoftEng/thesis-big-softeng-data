@@ -59,16 +59,26 @@ services:
       - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
       - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
+      # # Multiple Screen 2 jobs instead of 1
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
+
+
+      # User's legacy jobs
+      - ./usrlib/screen_2_q6_q8_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_backup_27_4.py
+      - ./usrlib/screen_3_q9_q10_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job_backup_27_4.py
+      - ./usrlib/screen_4_q11_q15_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job_backup_27_4.py
+      # # Multiple Screen 2 jobs instead of 1
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py
+
 
       # Screen 2 screen accelerated
       - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
       - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
       - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
 
-      # # Multiple Screen 2 jobs instead of 1
-      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
-      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
-
+      
 
       # Config file
       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
@@ -79,7 +89,7 @@ services:
       - | 
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 1
+        taskmanager.numberOfTaskSlots: 32
         parallelism.default: 4
         rest.flamegraph.enabled: true
         metrics.latency.interval: 1000
@@ -92,7 +102,7 @@ services:
     # # Increase resources for the taskmanager-1
     deploy:
     #   mode: replicated-job
-      replicas: 4
+      # replicas: 4
       resources:
         limits:
           cpus: '2.0'   # Limit this container to 4 CPUs
@@ -123,7 +133,21 @@ services:
       - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
       - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
-    
+    # # Multiple Screen 2 jobs instead of 1
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
+
+
+    # User's legacy jobs
+      - ./usrlib/screen_2_q6_q8_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_backup_27_4.py
+      - ./usrlib/screen_3_q9_q10_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job_backup_27_4.py
+      - ./usrlib/screen_4_q11_q15_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job_backup_27_4.py
+    # # Multiple Screen 2 jobs instead of 1
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py
+
+
+
     # Cancel all jobs
       - ./usrlib/cancel_all_flink_jobs.py:/opt/flink/usrlib/cancel_all_flink_jobs.py
     
@@ -133,10 +157,7 @@ services:
       - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
       - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
 
-    # # Multiple Screen 2 jobs instead of 1
-      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py
-      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py
-
+    
 
 
     # Config file
@@ -415,6 +436,46 @@ services:
       - kafka
     networks:
       - data-network
+
+
+
+# Producer of a small sample of the events of a file (Used for ingestion speed testing)
+  python-100.000-events-producer-legacy:
+    image: python:3.10-script-executing-image
+    container_name: python-100.000-events-producer-legacy
+    volumes: 
+      # /usrlib
+      - ./usrlib/100.000-events-producer_backup_27_4.py:/usrlib/100.000-events-producer_backup_27_4.py
+      - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
+      - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py     
+      
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
+      - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
+      - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
+      
+      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
+      
+      
+      # usrlib/helpers
+      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
+
+      # github_data
+      - ./usrlib/github_data_for_speed_testing:/github_data_for_speed_testing
+      - ./usrlib/github_data_for_speed_testing/files_parsed.json:/github_data_for_speed_testing/files_parsed.json
+
+
+      
+    command: ['python', '100.000-events-producer_backup_27_4.py', '/usrlib/helpers/getting-started-in-docker.ini']
+
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+
 
 # Cancel all running jobs
   cancel-all-flink-jobs:

@@ -65,19 +65,15 @@ In terminals 5-7, change the pyclientexec option to the host python environment 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
-# Part 1
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
-
-# Part 2
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+# Screen 2 job split in 2 
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 
-# Alternatives to accelerate data ingestion performance
-# Use of functions process() and session.execute_async()
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_testing.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+# Legacy screen 2 parts
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
-# Use of functions process() and session.execute_concurrent_with_args
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_testing_concurrent.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 
 ```
 
@@ -85,6 +81,9 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python
 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_3_q9_q10_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
+
+# Legacy
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_3_q9_q10_flink_job_backup_27_4.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 ```
 
 
@@ -92,6 +91,8 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python
 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_4_q11_q15_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_4_q11_q15_flink_job_backup_27_4.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
 
 ```
 

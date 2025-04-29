@@ -397,29 +397,22 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
                                 
 
                 if event_dict["type"] == "PushEvent":
-                    number_of_contributions = event_dict["payload"]["distinct_size"]
                     event_str = str({"day": event_day,
                                      "repo": event_dict["repo"]["full_name"],
                                      "username": event_dict["actor"], 
-                                     "number_of_contributions": number_of_contributions,
+                                     "number_of_contributions": event_dict["payload"]["distinct_size"],
                                     "size": event_dict["payload"]["size"],
                                     "distinct_size": event_dict["payload"]["distinct_size"]})
                     push_events_producer.produce(push_events_topic, value= event_str, callback=delivery_callback)
                 
                 elif event_dict["type"] == "PullRequestEvent":
-                    number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
-                    if event_dict["payload"]["pull_request"]["merged_at"] != None:
-                        were_accepted = True
-                    else:
-                        were_accepted = False   
                     event_str = str({"day": event_day, 
                                     "repo": event_dict["repo"]["full_name"], 
                                     "username": event_dict["payload"]["pull_request"]["user"],
-                                    "number_of_contributions": number_of_contributions,
+                                    "number_of_contributions": event_dict["payload"]["pull_request"]["commits"],
                                     "pull_request_number": event_dict["payload"]["pull_request"]["number"],
                                     "opening_time": event_dict["payload"]["pull_request"]["created_at"], 
                                     "closing_time": event_dict["payload"]["pull_request"]["closed_at"], 
-                                    "were_accepted": were_accepted, 
                                     "action": event_dict["payload"]["action"],
                                     "merged_at": event_dict["payload"]["pull_request"]["merged_at"]})
                     pull_request_events_producer.produce(pull_request_events_topic, value=event_str, callback=delivery_callback)
@@ -543,7 +536,7 @@ if __name__ == '__main__':
             heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
 
             input_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned.json.gz'
-            number_of_lines_to_keep = 200000
+            number_of_lines_to_keep = 20000
             limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
             create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
             

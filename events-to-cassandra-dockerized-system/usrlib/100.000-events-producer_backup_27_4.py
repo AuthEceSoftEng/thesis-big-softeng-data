@@ -673,8 +673,8 @@ def produce_all_lines_of_file(topic=str, filepath=str, config=dict):
                 # Poll to cleanup the producer queue after every message production
                 producer.poll(0)
                 
-                if i == 1000: 
-                    break
+                # if i == 1000: 
+                #     break
                 # # # Short time to capture output
                 time.sleep(time_between_produced_messages)
             
