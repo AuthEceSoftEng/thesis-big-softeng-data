@@ -232,71 +232,14 @@ cassandra_sink_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h
     .build()
 # endregion
 
+
 # Q7_b: Number of pull requests by bots
 # region
 
-# Q7_b_1. Transform the original stream 
-# Filter out events of type that contain no info we need
-def filter_out_non_pull_request_events_q7_b(eventString):
-    '''
-    Keep only PullRequestEvents and also exclude human events
-    '''
-
-    # Turn the json event object into event into a dict
-    event_types_with_info_q7_b = ["PullRequestEvent"]
-    # event_dict = json.loads(eventString)
-    event_dict = eval(eventString)
-
-    # Keep only PullRequest events
-    is_pull_request_event = False
-    event_type = event_dict["type"]
-    if (event_type == "PullRequestEvent" and \
-    event_dict["payload"]["action"] == "closed"):
-        is_pull_request_event = True
-    else:
-        is_pull_request_event = False
-        return False
-    
-    # Keep only bot events
-    # Exclude human events
-    username = event_dict["payload"]["pull_request"]["user"]
-    if username.endswith('[bot]'):
-        is_bot = True
-    else:
-        is_bot = False
-        return False
-        
-    # Keep push and merged pull-request events only if not created by bots
-    if is_pull_request_event and is_bot:
-        return True
-    
-def extract_number_of_pull_requests_and_create_row_q7_b(eventString):
-    
-    event_dict = eval(eventString)
-    # event_dict = json.loads(eventString)
-    
-    # Extract [day, username, number_of_contributions]
-    # day
-    created_at = event_dict["created_at"]
-    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
-    day = created_at_year_month_day_only
-    
-    # Number of pull requests
-    number_of_pull_requests = 1
-    if event_dict["payload"]["pull_request"]["merged_at"] != None:
-        was_accepted = True
-    else:
-        was_accepted = False
-    pull_requests_by_bots_info_row = Row(number_of_pull_requests, was_accepted, day)
-    return pull_requests_by_bots_info_row
-
-# Type info for number of pull requests by bots by day
 number_of_pull_requests_by_bots_by_day_type_info_q7_b = \
     Types.ROW_NAMED(['number_of_pull_requests', 'was_accepted', 'day'], \
     [Types.LONG(),\
         Types.BOOLEAN(), Types.STRING()])
-
 
 def filter_out_non_closed_pull_requests(event_dict):
     if event_dict["payload"]["action"] == "closed":
@@ -314,18 +257,19 @@ def create_row_q7(event_dict):
                was_accepted, 
                event_dict["day"])
 
+number_of_closed_pull_requests_ds = pull_request_events_ds\
+    .filter(filter_out_non_closed_pull_requests)\
 
-number_of_pull_requests_ds_q7_b = pull_request_events_ds\
-            .filter(filter_out_human_events)\
-            .filter(filter_out_non_closed_pull_requests)\
-            .map(create_row_q7, \
-                    output_type=number_of_pull_requests_by_bots_by_day_type_info_q7_b) \
+number_of_closed_pull_requests_ds_q7_b = number_of_closed_pull_requests_ds\
+    .filter(filter_out_human_events)\
+    .map(create_row_q7, \
+        output_type=number_of_pull_requests_by_bots_by_day_type_info_q7_b) \
 
 upsert_element_into_T7_b_number_of_pull_requests_by_bots = \
             "UPDATE prod_gharchive.number_of_pull_requests_by_bots "\
             "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
             "was_accepted = ? AND day = ?;"
-cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_ds_q7_b)\
+cassandra_sink_q7_b = CassandraSink.add_sink(number_of_closed_pull_requests_ds_q7_b)\
     .set_query(upsert_element_into_T7_b_number_of_pull_requests_by_bots)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
@@ -333,6 +277,88 @@ cassandra_sink_q7_b = CassandraSink.add_sink(number_of_pull_requests_ds_q7_b)\
     .build()
     
 #endregion
+
+
+# Q7_h: Number of pull requests by humans
+# region
+
+def filter_out_non_pull_request_events_q7_h(eventString):
+    '''
+    Keep only closing PullRequestEvents and also exclude bot events
+    '''
+
+    # Turn the json event object into event into a dict
+    event_types_with_info_q7_h = ["PullRequestEvent"]
+    
+    # event_dict = json.loads(eventString)
+    event_dict = eval(eventString)
+
+    # Keep only PullRequest events
+    is_pull_request_event = False
+    event_type = event_dict["type"]
+    if (event_type == "PullRequestEvent" and \
+    event_dict["payload"]["action"] == "closed"):
+        is_pull_request_event = True
+    else:
+        is_pull_request_event = False
+    
+    # Keep only human events
+    is_human = False
+    username = None
+    if (event_type == "PullRequestEvent"):
+        username = event_dict['payload']['pull_request']['user']
+        # Exclude bot events
+        if not username.endswith('[bot]'):
+            is_human = True
+        
+    # Keep push and merged pull-request events only if not created by bots
+    if is_pull_request_event and is_human:
+        return True
+    
+    
+def extract_number_of_pull_requests_and_create_row_q7_h(eventString):
+    
+    event_dict = eval(eventString)
+    # event_dict = json.loads(eventString)
+    
+    # Extract [day, username, number_of_contributions]
+    # day
+    created_at = event_dict["created_at"]
+    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
+    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
+    day = created_at_year_month_day_only
+    
+    # Number of pull requests
+    number_of_pull_requests = 1
+    if event_dict["payload"]["pull_request"]["merged_at"] != None:
+        were_accepted = True
+    else:
+        were_accepted = False    
+    pull_requests_by_humans_info_row = Row(number_of_pull_requests, were_accepted, day)
+    return pull_requests_by_humans_info_row
+
+number_of_pull_requests_by_humans_by_day_type_info_q7_h = number_of_pull_requests_by_bots_by_day_type_info_q7_b
+    
+number_of_closed_pull_requests_info_ds_q7_h = number_of_closed_pull_requests_ds\
+            .filter(filter_out_bot_events)\
+            .map(create_row_q7, \
+                output_type=number_of_pull_requests_by_humans_by_day_type_info_q7_h) 
+
+upsert_element_into_T7_h_number_of_pull_requests_by_humans = \
+            "UPDATE prod_gharchive.number_of_pull_requests_by_humans "\
+            "SET number_of_pull_requests = number_of_pull_requests + ? WHERE "\
+            "were_accepted = ? AND day = ?;"
+
+cassandra_sink_q7_h = CassandraSink.add_sink(number_of_closed_pull_requests_info_ds_q7_h)\
+    .set_query(upsert_element_into_T7_h_number_of_pull_requests_by_humans)\
+    .set_host(host=cassandra_host, port=cassandra_port)\
+    .set_max_concurrent_requests(max_concurrent_requests)\
+    .enable_ignore_null_fields()\
+    .build()
+
+# endregion
+
+
 
 
 # endregion
