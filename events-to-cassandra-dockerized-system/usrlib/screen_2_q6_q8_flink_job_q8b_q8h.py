@@ -14,10 +14,6 @@ from pyflink.common.serialization import SimpleStringSchema
 from pyflink.common.restart_strategy import RestartStrategies
 
 from pyflink.datastream import StreamExecutionEnvironment, RuntimeExecutionMode
-from pyflink.datastream.functions import RuntimeContext, KeyedProcessFunction, \
-    RuntimeContext
-from pyflink.datastream.state import ValueStateDescriptor
-from pyflink.datastream.formats.json import JsonRowSerializationSchema
 
 from pyflink.datastream.connectors.kafka import KafkaSource, \
     KafkaOffsetResetStrategy, KafkaOffsetsInitializer
@@ -28,7 +24,6 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from configparser import ConfigParser
 
 from cassandra.cluster import Cluster 
-from datetime import datetime
 import os
 
 # Note: Sections I-IV are used by all the transformed datastreams-to-table processes
@@ -116,76 +111,37 @@ print(f"Start reading data from kafka topics to create "
 
 # Q8_b: Number of events by bots
 # region
-
-# Q8_b_1. Transform the original stream 
-def filter_out_human_events_q8_b(eventString):
-    '''
-    Exclude human events
-    '''
-    # event_dict = json.loads(eventString)
-    event_dict = eval(eventString)
-
-    # Keep only bot events
-    is_bot = False
-    # Exclude human events
-    username = event_dict['actor']
-    if username.endswith('[bot]'):
-        is_bot = True
-        
-    # Keep events only if created by bots
-    if is_bot:
-        return True   
+def keep_bot_events(event_dict):
+    if event_dict["username"].endswith('[bot]'):
+        return True
+    else:
+        return False
     
-# Extract the number of events made by humans per type and day
-def extract_number_of_bot_events_per_type_and_create_row_q8_b(eventString):
+def keep_human_events(event_dict):
+    if not event_dict["username"].endswith('[bot]'):
+        return True
+    else:
+        return False
     
-    event_dict = eval(eventString)
-    # event_dict = json.loads(eventString)
-    
-    # Extract [day, event_type, number_of_events]
-    # day
-    created_at = event_dict["created_at"]
-    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
-    day = created_at_year_month_day_only
-    
-    # event_type 
-    event_type = event_dict["type"]
-    
-    # number_of_events
+def create_row_8(event_dict):
     number_of_events = 1
-    
-    number_of_bot_events_per_type_by_day_info_row = Row(number_of_events, event_type, day)
-    return number_of_bot_events_per_type_by_day_info_row
+    return Row(number_of_events,
+               event_dict["type"], 
+               event_dict["day"])
 
-
-
-
-# Type info for number of pull requests by bots by day
 number_of_bot_events_per_type_by_day_type_info_q8_b = \
     Types.ROW_NAMED(['number_of_events', 'event_type', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
-    
-    
-# Datastream with extracted fields
-number_of_events_info_ds_q8_b = raw_events_ds.filter(filter_out_human_events_q8_b) \
-                    .disable_chaining()\
-                    .map(extract_number_of_bot_events_per_type_and_create_row_q8_b, \
-                           output_type=number_of_bot_events_per_type_by_day_type_info_q8_b)
+number_of_events_info_ds_q8_b = pull_request_events_ds\
+        .filter(keep_bot_events) \
+        .map(create_row_8, 
+                output_type=number_of_bot_events_per_type_by_day_type_info_q8_b)
 
-
-
-# Q8_b_2. Sink data into the Cassandra table
-
-
-# Upsert query to be executed for every element
 upsert_element_into_number_of_bot_events_per_type_by_day_q8_b = \
             "UPDATE prod_gharchive.number_of_bot_events_per_type_by_day "\
             "SET number_of_events = number_of_events + ? WHERE "\
             "event_type = ? AND day = ?;"
-
-# Sink events into the Cassandra table 
 cassandra_sink_q8_b = CassandraSink.add_sink(number_of_events_info_ds_q8_b)\
     .set_query(upsert_element_into_number_of_bot_events_per_type_by_day_q8_b)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -195,76 +151,21 @@ cassandra_sink_q8_b = CassandraSink.add_sink(number_of_events_info_ds_q8_b)\
 
 #endregion
 
+
+
 # Q8_h: Number of events by humans
 # region
-
-# Q8_h_1. Transform the original stream 
-def filter_out_bot_events_q8_h(eventString):
-    '''
-    Exclude bot events
-    '''
-    # event_dict = json.loads(eventString)
-    event_dict = eval(eventString)
-
-    # Keep only human events
-    is_human = False
-    # Exclude bot events
-    username = event_dict['actor']
-    if not username.endswith('[bot]'):
-        is_human = True
-        
-    # Keep events only if created by humans
-    if is_human:
-        return True   
-    
-    
-# Extract the number of events made by humans per type and day
-def extract_number_of_human_events_per_type_and_create_row_q8_h(eventString):
-    
-    event_dict = eval(eventString)
-    # event_dict = json.loads(eventString)
-    
-    # Extract [day, event_type, number_of_events]
-    # day
-    created_at = event_dict["created_at"]
-    created_at_full_datetime = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-    created_at_year_month_day_only = datetime.strftime(created_at_full_datetime, "%Y-%m-%d")
-    day = created_at_year_month_day_only
-    
-    # event_type 
-    event_type = event_dict["type"]
-    
-    # number_of_events
-    number_of_events = 1
-    
-    number_of_human_events_per_type_by_day_info_row = Row(number_of_events, event_type, day)
-    return number_of_human_events_per_type_by_day_info_row
-
-
-
-# Type info for number of pull requests by bots by day
 number_of_human_events_per_type_by_day_type_info_q8_h = \
-    Types.ROW_NAMED(['number_of_events', 'event_type', 'day'], \
-    [Types.LONG(), Types.STRING(), \
-        Types.STRING()])
-    
-    
-# Datastream with extracted fields
-number_of_events_info_ds_q8_h = raw_events_ds.filter(filter_out_bot_events_q8_h) \
-                    .disable_chaining()\
-                    .map(extract_number_of_human_events_per_type_and_create_row_q8_h, \
-                           output_type=number_of_human_events_per_type_by_day_type_info_q8_h)\
+    number_of_bot_events_per_type_by_day_type_info_q8_b
+number_of_events_info_ds_q8_h = pull_request_events_ds\
+            .filter(keep_human_events) \
+            .map(create_row_8, \
+                    output_type=number_of_human_events_per_type_by_day_type_info_q8_h)\
                     
-                    
-# Q8_h_2. Sink data into the Cassandra table
-
-# Upsert query to be executed for every element
 upsert_element_into_number_of_human_events_per_type_by_day_q8_h = \
             "UPDATE prod_gharchive.number_of_human_events_per_type_by_day "\
             "SET number_of_events = number_of_events + ? WHERE "\
             "event_type = ? AND day = ?;"
-
-# Sink events into the Cassandra table 
 cassandra_sink_q8_h = CassandraSink.add_sink(number_of_events_info_ds_q8_h)\
     .set_query(upsert_element_into_number_of_human_events_per_type_by_day_q8_h)\
     .set_host(host=cassandra_host, port=cassandra_port)\
