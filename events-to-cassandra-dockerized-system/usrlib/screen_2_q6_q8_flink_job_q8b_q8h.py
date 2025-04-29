@@ -79,21 +79,21 @@ kafka_props = {'enable.auto.commit': 'true',
 def map_event_string_to_event_dict(event_string):
     return eval(event_string)
 
-# Consume pull request events
-screen_2_pull_request_events_consumer_group_id_2 = "screen_2_pull_request_consumer_group_id_2"
-pull_request_events_topic = "pull_request_events_topic"    
-pull_request_events_source = KafkaSource.builder() \
+# Consume all events
+screen_2_all_events_consumer_group_id_2 = "screen_2_all_events_consumer_group_id_2"
+all_events_topic = "all_events"    
+all_events_source = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer\
                 .committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(screen_2_pull_request_events_consumer_group_id_2)\
-            .set_topics(pull_request_events_topic) \
+            .set_group_id(screen_2_all_events_consumer_group_id_2)\
+            .set_topics(all_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
-pull_request_events_ds = env.from_source(source=pull_request_events_source, \
+all_events_ds = env.from_source(source=all_events_source, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
-            source_name="pull_request_events_source")\
+            source_name="all_events_source")\
             .map(map_event_string_to_event_dict)
             
             
@@ -133,7 +133,7 @@ number_of_bot_events_per_type_by_day_type_info_q8_b = \
     Types.ROW_NAMED(['number_of_events', 'event_type', 'day'], \
     [Types.LONG(), Types.STRING(), \
         Types.STRING()])
-number_of_events_info_ds_q8_b = pull_request_events_ds\
+number_of_events_info_ds_q8_b = all_events_ds\
         .filter(keep_bot_events) \
         .map(create_row_8, 
                 output_type=number_of_bot_events_per_type_by_day_type_info_q8_b)
@@ -157,7 +157,7 @@ cassandra_sink_q8_b = CassandraSink.add_sink(number_of_events_info_ds_q8_b)\
 # region
 number_of_human_events_per_type_by_day_type_info_q8_h = \
     number_of_bot_events_per_type_by_day_type_info_q8_b
-number_of_events_info_ds_q8_h = pull_request_events_ds\
+number_of_events_info_ds_q8_h = all_events_ds\
             .filter(keep_human_events) \
             .map(create_row_8, \
                     output_type=number_of_human_events_per_type_by_day_type_info_q8_h)\
@@ -198,20 +198,20 @@ if __name__ =='__main__':
 
 
     # Screen 2
-    create_number_of_pull_requests_by_bots_q8_b = \
+    create_number_of_events_by_bots_q8_b = \
         "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_bot_events_per_type_by_day "\
         "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
         "event_type)) WITH CLUSTERING ORDER BY "\
         "(event_type ASC);"
-    session.execute(create_number_of_pull_requests_by_bots_q8_b)
+    session.execute(create_number_of_events_by_bots_q8_b)
 
 
-    create_number_of_pull_requests_by_humans_q8_h = \
+    create_number_of_all_events_by_humans_q8_h = \
         "CREATE TABLE IF NOT EXISTS prod_gharchive.number_of_human_events_per_type_by_day "\
         "(day text, event_type text, number_of_events counter, PRIMARY KEY ((day), "\
         "event_type)) WITH CLUSTERING ORDER BY "\
         "(event_type ASC);"
-    session.execute(create_number_of_pull_requests_by_humans_q8_h)
+    session.execute(create_number_of_all_events_by_humans_q8_h)
         
     cluster.shutdown()
     
