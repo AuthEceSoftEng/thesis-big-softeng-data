@@ -398,14 +398,13 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
 
                 if event_dict["type"] == "PushEvent":
                     number_of_contributions = event_dict["payload"]["distinct_size"]
-                    event_str = str({"day": event_day, 
+                    event_str = str({"day": event_day,
                                      "repo": event_dict["repo"]["full_name"],
                                      "username": event_dict["actor"], 
-                                     "number_of_contributions": number_of_contributions})
-                    # Produce only regular push events
-                    if (number_of_contributions <= 100) or (number_of_contributions <= 200
-                    and event_dict["payload"]["size"] == event_dict["payload"]["distinct_size"]):
-                        push_events_producer.produce(push_events_topic, value= event_str, callback=delivery_callback)
+                                     "number_of_contributions": number_of_contributions,
+                                    "size": event_dict["payload"]["size"],
+                                    "distinct_size": event_dict["payload"]["distinct_size"]})
+                    push_events_producer.produce(push_events_topic, value= event_str, callback=delivery_callback)
                 
                 elif event_dict["type"] == "PullRequestEvent":
                     number_of_contributions = event_dict["payload"]["pull_request"]["commits"]
@@ -420,12 +419,10 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
                                     "pull_request_number": event_dict["payload"]["pull_request"]["number"],
                                     "opening_time": event_dict["payload"]["pull_request"]["created_at"], 
                                     "closing_time": event_dict["payload"]["pull_request"]["closed_at"], 
-                                    "were_accepted": were_accepted})
-                    # Produce only regular pull request events that have been merged
-                    if number_of_contributions <= 200 and \
-                    event_dict["payload"]["action"] == "closed" and \
-                    event_dict["payload"]["pull_request"]["merged_at"] != None:
-                        pull_request_events_producer.produce(pull_request_events_topic, value=event_str, callback=delivery_callback)
+                                    "were_accepted": were_accepted, 
+                                    "action": event_dict["payload"]["action"],
+                                    "merged_at": event_dict["payload"]["pull_request"]["merged_at"]})
+                    pull_request_events_producer.produce(pull_request_events_topic, value=event_str, callback=delivery_callback)
                 
                 
                 elif event_dict["type"] == "IssuesEvent":
