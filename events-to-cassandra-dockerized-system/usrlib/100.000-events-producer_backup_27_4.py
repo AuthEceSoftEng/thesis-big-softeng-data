@@ -767,7 +767,7 @@ if __name__ == '__main__':
             # Sample the first {number_of_lines_to_keep} lines of the thinned file
             # filename-thinned.json.gz -> filename-thinned_first_{number_of_lines_to_keep}_only.json.gz
             input_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned.json.gz'
-            number_of_lines_to_keep = 20000
+            number_of_lines_to_keep = 200000
             limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
             create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
             

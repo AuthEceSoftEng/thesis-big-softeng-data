@@ -106,7 +106,7 @@ services:
       resources:
         limits:
           cpus: '2.0'   # Limit this container to 4 CPUs
-          memory: 2g
+          memory: 1g
 
         # reservations:
         #   cpus: '2.0'   # Guarantee at least 2 CPUs
