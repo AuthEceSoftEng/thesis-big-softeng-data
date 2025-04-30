@@ -391,6 +391,8 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
                 
                 
                 event_str = str({"day": event_day, 
+                                 "username": event_dict["actor"],
+                                 "repo": event_dict["repo"]["full_name"],
                                  "type": event_dict["type"]})
                 historical_events_producer.produce(all_events_topic, value=event_str, callback=delivery_callback)
                 # producer.produce(topic, value=lines[i], callback=delivery_callback)

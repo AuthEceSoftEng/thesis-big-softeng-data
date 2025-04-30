@@ -176,9 +176,9 @@ def keep_star_events(event_dict):
 
 def create_row_q9(event_dict):
     number_of_stars = 1
-    return Row(event_dict["number_of_stars": number_of_stars,
-                          "repo": event_dict["repo"],
-                          "day": event_dict["day"]])    
+    return Row(number_of_stars,
+               event_dict["repo"],
+               event_dict["day"])    
 
 
 number_of_stars_on_js_repo_by_day_type_info_q9 = \
@@ -273,7 +273,7 @@ if __name__ == '__main__':
         
     # Screen 3
     create_stars_per_day_on_js_repo_table_q9 = \
-    f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.stars_per_day_on_js_repo cassandra_keyspace\
+    f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.stars_per_day_on_js_repo \
     (day text, repo_name text, number_of_stars counter, PRIMARY KEY ((day, \
     repo_name)));"
     session.execute(create_stars_per_day_on_js_repo_table_q9)
