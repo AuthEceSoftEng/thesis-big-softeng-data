@@ -1,3 +1,4 @@
+from produce_from_last_line_of_file import produce_from_last_line_of_file
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer, Consumer, admin
@@ -21,8 +22,6 @@ import os
 
 from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, create_topic_if_not_exists, delete_topic_if_full
 
-from get_parsed_gharchive_files import save_files_parsed, restore_parsed_files
-from produce_from_last_line_of_file import extract_compressed_file_from_path
 
 def download_compressed_GHA_file(gha_file_url, folderpath):
     '''
@@ -278,199 +277,12 @@ def get_running_job_names():
      
 # endregion
 
-
-def delivery_callback(err, msg):
-    '''Optional per-message delivery callback (triggered by poll() or flush())
-    when a message has been successfully delivered or permanently
-    failed delivery (after retries).
-    '''
-    if err:
-        print('ERROR: Message failed delivery: {}'.format(err))
-    else:
-        pass
-        ## No need to print the items read from the file to the terminal
-        # print("\nProduced event to topic {topic}: value = {value:12}".format(
-        #     topic=msg.topic(), value=msg.value().decode('utf-8')))
-
-
-def produce_from_line_we_left_off(topic=str, filepath=str, \
-    parsed_files_filepath=str, config=dict):
-    '''
-    Produces messages from a .json file into a topic
-    topic: the name of the topic to produce messages into
-    filepath: the path to the *.json.gz file to decompress and read from
-    parsed_files_dict: dictionary with the files and the line we left off 
-    last time we read it
-    
-    :returns: the_whole_file_was_read:
-    True: if the whole file was read 
-    False: otherwise (either because of KeyboardInterrupt or because of error)
-    
-    the_whole_file_was_read_beforehand:
-    True: if the whole file was read 
-    False: otherwise (either because of KeyboardInterrupt or because of error)
-    
-    '''
-    
-    
-    
-    # Decompress gharchive file    
-    decompressed_file_path = extract_compressed_file_from_path(\
-        filepath)
-    
-    # Calculate size of file (number of lines of file)    
-    with open(decompressed_file_path, 'r') as file_object:
-        linesInFile = len(file_object.readlines())
-    
-    # Get the lines where we left off for the file and continue from there
-    parsed_files_dict = restore_parsed_files(parsed_files_filepath)
-    filename = os.path.basename(filepath)
-    if filename not in parsed_files_dict.keys():
-        parsed_files_dict[filename] = 0    
-    line_we_left_off = parsed_files_dict[filename]
-
-    # Initialize variables
-    linesProduced = 0
-    the_whole_file_was_read = False
-    the_whole_file_was_read_beforehand = False
-    number_of_lines_produced_per_print = 100000
-    seconds_between_produced_messages = pow(10, -6)
-    i = 0 # Line tracker
-    
-    # Read lines of file to be added in kafka topic until keyboard interrupt
-    # of EOF
-    
-    # Case 1: The file has not been read yet 
-    # or has been read up to a line before the last one
-    if line_we_left_off < linesInFile:
-        try:
-            # Create Producer instance
-            producer = Producer(config)
-            with open(decompressed_file_path, 'r') as file_object:
-                lines = file_object.readlines()
-                print(f"Reading lines of {filename} until EOF or keyboard interrupt...")
-                print(f'Producing events from line No.{line_we_left_off+1} of {filename}')
-                
-                for i in range(line_we_left_off, linesInFile):    
-                    # JSON object to be inserted in the Cassandra database
-                    jsonDict = json.loads(lines[i])
-                    jsonStr = str(jsonDict)
-                    
-                    if i % number_of_lines_produced_per_print == 0:
-                        sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i+1, linesInFile))
-                        sys.stdout.flush()
-                        
-                    producer.produce(topic, value=jsonStr, callback=delivery_callback)
-                    linesProduced = i+1
-                    
-                    # # Break production if only 10000 events have been sent
-                    # if i >= line_we_left_off + 20000:
-                    #     break
-                    
-                    # Poll to cleanup the producer queue after every message production
-                    if i % 100: 
-                        producer.poll(0)
-                    # # Time sleep is used here to capture output
-                    time.sleep(seconds_between_produced_messages)
-                        
-                sys.stdout.write("\rJSON objects produced: {0}/{1}".format(i, linesInFile))
-                sys.stdout.flush()
-                        
-        
-        # Case 1.1: Keyboard interrupt while reading the file
-        except KeyboardInterrupt:
-            print('\nKeyboard interrupt\n')
-            the_whole_file_was_read = False
-        finally:
-            # Once done reading the decompressed file, 
-            # delete it to save space and save the state
-            os.remove(decompressed_file_path)
-            parsed_files_dict[filename] = linesProduced      
-            save_files_parsed(parsed_files_dict, parsed_files_filepath)
-            
-            # Block until the messages are sent (wait for 10000 seconds).
-            producer.poll(10000)
-            # Wait for all messages in the Producer queue to be delivered
-            producer.flush()
-            print('Producer closed properly')
-            
-        
-        
-        # Case 1.2: EOF 
-        # In this case, the file was read up to the last line and
-        # no keyboard interrupt occured
-        if linesProduced == linesInFile:
-            print('\nEOF\n')
-            # Keyboard interrupt did not occur, the whole file was read 
-            the_whole_file_was_read = True
-            if os.path.exists(decompressed_file_path):
-                # Remove the decompressed file
-                os.remove(decompressed_file_path)
-            
-                # # Save state
-                # parsed_files_dict[filename] = linesProduced      
-                # save_files_parsed(parsed_files_dict, parsed_files_filepath)
-                
-                # # Poll and close the producer.
-                # producer.poll(10000)
-                # producer.flush()
-                # print('Producer closed properly')
-            
-    
-            
-    # Case 2: If the whole file was read before the execution of the script
-    # (line_we_left_off = flinesInFile)
-    elif line_we_left_off == linesInFile:
-        print('EOF: '
-            f'All lines of file {filename} have already been read '
-            f'and produced into topic: {topic}')
-        the_whole_file_was_read = True   
-        the_whole_file_was_read_beforehand = True
-        if os.path.exists(decompressed_file_path):
-            # Once done reading the decompressed file, delete it to save space 
-            os.remove(decompressed_file_path)
-            # # Save the state  (state should have already been saved if 
-            # # line_we_left_off == linesInFile
-            # linesProduced = linesInFile
-            # parsed_files_dict[filename] = linesProduced      
-            # save_files_parsed(parsed_files_dict, parsed_files_filepath)
-            print()
-    # Case 3: An error occurred: (lines_we_left_off > linesInFile)
-    else:
-        raise ValueError(f'Lines we read: ({linesProduced}) should be more than the ones '
-                         f'already existing in file {decompressed_file_path} '
-                         f'({linesInFile})')
-    return the_whole_file_was_read, the_whole_file_was_read_beforehand
-   
-   
-def produce_from_last_line_of_file(topic=str, filepath=str, parsed_files_filepath=str):   
-    # Parse the command line.
-    parser = ArgumentParser()
-    parser.add_argument('config_file', type=FileType('r'))
-    args = parser.parse_args()
-
-    # Parse the configuration.
-    # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
-    config_parser = ConfigParser()
-    config_parser.read_file(args.config_file)
-    config = dict(config_parser['default_producer'])
-    
-    config_port = str(config['bootstrap.servers'])
-    
-    create_topic_if_not_exists(topic, config_port)
-     
-    # Produce from file into topic
-    the_whole_file_was_read, the_whole_file_was_read_beforehand = produce_from_line_we_left_off(topic, filepath, parsed_files_filepath, config)
-    return the_whole_file_was_read, the_whole_file_was_read_beforehand
-
-
-
         
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-01-1'
-    ending_date_formatted =  '2024-12-01-1' 
+    starting_date_formatted =  '2024-12-02-22'
+    ending_date_formatted =  '2024-12-02-22' 
 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
@@ -487,15 +299,13 @@ if __name__ == '__main__':
     
     
     # ATTENTION: Set explicit_wait_for_busy_jobs = True for the performance of jobs to be calculated
-    skip_transformation_region = True
-    if skip_transformation_region == False:
-        running_job_names_in_cluster = get_running_job_names()
-        running_job_names_in_cluster = sorted(running_job_names_in_cluster)
-        # start_time: The time when the job started
-        # stop_time: The time when the job stopped
-        # total_busy_time: The total working time of the job
-        jobs_completion_times = {job_name: {"starting_time": None, "ending_time" : None, "time_elapsed" : 0 } for job_name in running_job_names_in_cluster}
-        
+    running_job_names_in_cluster = get_running_job_names()
+    running_job_names_in_cluster = sorted(running_job_names_in_cluster)
+    # start_time: The time when the job started
+    # stop_time: The time when the job stopped
+    # total_busy_time: The total working time of the job
+    jobs_completion_times = {job_name: {"starting_time": None, "ending_time" : None, "time_elapsed" : 0 } for job_name in running_job_names_in_cluster}
+    
     total_dur = 0
 
     # Pipeline from starting date to the ending date
@@ -595,8 +405,8 @@ if __name__ == '__main__':
         # 4. Wait for flink jobs to finish
         # region
 
-        # Set True or False to skip region - see up in the script
-        # skip_transformation_region = True
+        # Set True or False to skip region 
+        skip_transformation_region = False
         st = time.time()
 
         if skip_transformation_region == False:
@@ -753,7 +563,7 @@ if __name__ == '__main__':
         # 5. Delete and recreate the topic if too large
         # region
         # Set True or False to skip region
-        skip_delete_topic = True
+        skip_delete_topic = False
         st = time.time()
         
         # Delete topic and recreate it
@@ -775,11 +585,10 @@ if __name__ == '__main__':
     for k, v in sections_performance.items():
         print(f"{k}: {round(v, 1)}")
 
-    if skip_transformation_region == False:
-        print("\nTotal busy times of jobs:")
-        for k, v in jobs_completion_times.items():
-            temp_time_to_complete = round(v["time_elapsed"], 1)
-            print(f"{k}: {temp_time_to_complete}")
+    print("\nTotal busy times of jobs:")
+    for k, v in jobs_completion_times.items():
+        temp_time_to_complete = round(v["time_elapsed"], 1)
+        print(f"{k}: {temp_time_to_complete}")
 
 
 
