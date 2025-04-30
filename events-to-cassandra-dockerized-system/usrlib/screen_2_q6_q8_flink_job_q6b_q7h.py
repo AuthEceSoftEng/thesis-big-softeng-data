@@ -250,14 +250,14 @@ number_of_pull_requests_by_bots_by_day_type_info_q7_b = \
         Types.BOOLEAN(), Types.STRING()])
 
 def filter_out_non_closed_pull_requests(event_dict):
-    if event_dict["payload"]["action"] == "closed":
+    if event_dict["action"] == "closed":
         return True
     else:
         return False
 
 def create_row_q7(event_dict):
     number_of_pull_requests = 1
-    if event_dict["payload"]["pull_request"]["merged_at"] != None:
+    if event_dict["merged_at"] != None:
         was_accepted = True
     else:
         was_accepted = False

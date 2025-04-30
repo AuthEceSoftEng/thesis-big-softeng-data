@@ -185,7 +185,7 @@ cassandra_sink_q11_12 = CassandraSink.add_sink(pull_request_closing_times_ds_q11
 # Q13_14: Issue closing times
 # region
 def keep_closed_issues(event_dict):
-    if event_dict["payload"]["action"] == "closed":
+    if event_dict["action"] == "closed":
         return True
     else:
         return False
