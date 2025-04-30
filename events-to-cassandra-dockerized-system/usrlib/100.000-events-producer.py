@@ -425,6 +425,7 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
                                 "issue_number": event_dict["payload"]["issue"]["number"],
                                 "opening_time": event_dict["payload"]["issue"]["created_at"],
                                 "closing_time": event_dict["payload"]["issue"]["closed_at"],
+                                "action": event_dict["payload"]["action"],
                                 "labels": event_dict["payload"]["issue"]["labels"]})
                     issue_events_producer.produce(issue_events_topic, value=event_str, callback=delivery_callback)
 
