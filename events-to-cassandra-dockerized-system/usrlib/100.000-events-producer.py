@@ -366,7 +366,7 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
     
     
     try:
-        historical_events_producer = Producer(config)
+        all_events_producer = Producer(config)
         push_events_producer = Producer(config)
         pull_request_events_producer = Producer(config)
         issue_events_producer = Producer(config)
@@ -391,10 +391,10 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
                 
                 
                 event_str = str({"day": event_day, 
-                                 "username": event_dict["actor"],
                                  "repo": event_dict["repo"]["full_name"],
+                                 "username": event_dict["actor"],
                                  "type": event_dict["type"]})
-                historical_events_producer.produce(all_events_topic, value=event_str, callback=delivery_callback)
+                all_events_producer.produce(all_events_topic, value=event_str, callback=delivery_callback)
                 # producer.produce(topic, value=lines[i], callback=delivery_callback)
                                 
 
@@ -421,7 +421,7 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
                 
                 
                 elif event_dict["type"] == "IssuesEvent":
-                    event_dict = str({"repo": event_dict["repo"]["full_name"], 
+                    event_str = str({"repo": event_dict["repo"]["full_name"], 
                                 "issue_number": event_dict["payload"]["issue"]["number"],
                                 "opening_time": event_dict["payload"]["issue"]["created_at"],
                                 "closing_time": event_dict["payload"]["issue"]["closed_at"],
@@ -434,7 +434,7 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
                 lines_produced = lines_produced+1
                 
                 # Poll to cleanup the producer queue after every message production
-                historical_events_producer.poll(0)
+                all_events_producer.poll(0)
                 push_events_producer.poll(0)
                 pull_request_events_producer.poll(0)
                 issue_events_producer.poll(0)
@@ -470,8 +470,8 @@ def produce_all_lines_of_file(all_events_topic=str, push_events_topic = str, pul
             os.remove(decompressed_file_path)
         
         # Wait for messages' delivery
-        historical_events_producer.poll(0)
-        historical_events_producer.flush()  
+        all_events_producer.poll(0)
+        all_events_producer.flush()  
         push_events_producer.poll(0)
         push_events_producer.flush()
         pull_request_events_producer.poll(0)
@@ -539,7 +539,7 @@ if __name__ == '__main__':
             heavy_thin_data_of_file(filepath_of_file_to_thin, filepath_of_thinned_file)
 
             input_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned.json.gz'
-            number_of_lines_to_keep = 20000
+            number_of_lines_to_keep = 200000
             limited_number_of_lines_filepath = f'/github_data_for_speed_testing/{current_date_formatted}-thinned_first_{number_of_lines_to_keep}_only.json.gz'
             create_file_with_k_first_lines(input_filepath, limited_number_of_lines_filepath, number_of_lines_to_keep)
             
