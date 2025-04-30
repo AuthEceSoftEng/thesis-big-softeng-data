@@ -89,8 +89,8 @@ services:
       - | 
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 32
-        parallelism.default: 4
+        taskmanager.numberOfTaskSlots: 1
+        parallelism.default: 1
         rest.flamegraph.enabled: true
         metrics.latency.interval: 1000
     # taskmanager.memory.jvm-metaspace.size: 1728m
@@ -101,12 +101,12 @@ services:
 
     # # Increase resources for the taskmanager-1
     deploy:
-    #   mode: replicated-job
-      # replicas: 4
+      # mode: replicated-job
+      replicas: 4
       resources:
         limits:
           cpus: '2.0'   # Limit this container to 4 CPUs
-          memory: 1g
+          memory: 2g
 
         # reservations:
         #   cpus: '2.0'   # Guarantee at least 2 CPUs
