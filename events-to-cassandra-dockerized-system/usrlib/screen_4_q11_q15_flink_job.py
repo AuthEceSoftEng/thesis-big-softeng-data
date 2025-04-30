@@ -300,27 +300,27 @@ if __name__ == "__main__":
 
     # Screen 4
     create_pull_request_closing_times_table_q11_12 = \
-        "CREATE TABLE IF NOT EXISTS {0}.pull_request_closing_times "\
-        "(repo_name text, pull_request_number int, opening_time text, "\
-        "closing_time text, PRIMARY KEY ((repo_name), "\
-        "pull_request_number)) WITH CLUSTERING ORDER BY "\
-        "(pull_request_number ASC);".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.pull_request_closing_times \
+        (repo_name text, pull_request_number int, opening_time text, \
+        closing_time text, PRIMARY KEY ((repo_name), \
+        pull_request_number)) WITH CLUSTERING ORDER BY \
+        (pull_request_number ASC);"
     session.execute(create_pull_request_closing_times_table_q11_12)
 
     create_issue_closing_times_table_q13_14 = \
-        "CREATE TABLE IF NOT EXISTS {0}.issue_closing_times "\
-        "(repo_name text, issue_number int, opening_time text, "\
-        "closing_time text, PRIMARY KEY ((repo_name), "\
-        "issue_number)) WITH CLUSTERING ORDER BY "\
-        "(issue_number ASC);".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.issue_closing_times \
+        (repo_name text, issue_number int, opening_time text, \
+        closing_time text, PRIMARY KEY ((repo_name), \
+        issue_number)) WITH CLUSTERING ORDER BY \
+        (issue_number ASC);"
     session.execute(create_issue_closing_times_table_q13_14)
 
     create_issue_closing_times_by_label_table_q15 = \
-        "CREATE TABLE IF NOT EXISTS {0}.issue_closing_times_by_label "\
-        "(repo_name text, issue_number int, opening_time text, "\
-        "closing_time text, label text, PRIMARY KEY ((repo_name), "\
-        "label, issue_number)) WITH CLUSTERING ORDER BY "\
-        "(label ASC, issue_number ASC);".format(cassandra_keyspace)
+        f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.issue_closing_times_by_label \
+        (repo_name text, issue_number int, opening_time text, \
+        closing_time text, label text, PRIMARY KEY ((repo_name), \
+        label, issue_number)) WITH CLUSTERING ORDER BY \
+        (label ASC, issue_number ASC);"
     session.execute(create_issue_closing_times_by_label_table_q15)
     
         
