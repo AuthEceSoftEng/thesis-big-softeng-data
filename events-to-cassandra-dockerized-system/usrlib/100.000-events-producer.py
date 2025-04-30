@@ -583,7 +583,7 @@ if __name__ == '__main__':
             # endregion
 
             
-        skip_step_4 = True
+        skip_step_4 = False
         if skip_step_4 == False:
             # 4. Wait for data transformation (Check if the jobs stopped working)
             # region

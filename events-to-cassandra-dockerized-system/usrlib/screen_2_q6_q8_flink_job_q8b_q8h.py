@@ -203,8 +203,8 @@ if __name__ =='__main__':
     # Connect without creating keyspace. Once connected create the keyspace
     session = cluster.connect()
     create_keyspace = f"CREATE KEYSPACE IF NOT EXISTS \
-        {cassandra_keyspace} WITH replication = {'class': 'SimpleStrategy', \
-        'replication_factor': '1'} AND durable_writes = true;"
+        {cassandra_keyspace} WITH replication = {{'class': 'SimpleStrategy', \
+        'replication_factor': '1'}} AND durable_writes = true;"
     session.execute(create_keyspace)
 
     session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)

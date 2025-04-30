@@ -104,7 +104,7 @@ def create_kafka_source(kafka_bootstrap_servers=str, consumer_group_id=str, topi
 
 # Consume pull request events
 screen_4_pull_request_events_consumer_group_id = "screen_4_pull_request_consumer_group_id"
-pull_request_events_topic = "pull_request_events_topic"    
+pull_request_events_topic = "pull_request_events"    
 pull_request_events_source = create_kafka_source(kafka_bootstrap_servers=kafka_bootstrap_servers,
                                          consumer_group_id=screen_4_pull_request_events_consumer_group_id,
                                          topic=pull_request_events_topic,
@@ -116,7 +116,7 @@ pull_request_events_ds = env.from_source(source=pull_request_events_source, \
      
 # Consume issue events   
 screen_4_issue_events_consumer_group_id = "screen_4_issue_consumer_group_id"
-issue_events_topic = "issue_events_topic"    
+issue_events_topic = "issue_events"    
 issue_events_source = create_kafka_source(kafka_bootstrap_servers=kafka_bootstrap_servers,
                                          consumer_group_id=screen_4_issue_events_consumer_group_id,
                                          topic=issue_events_topic,
