@@ -1,4 +1,5 @@
-from produce_from_last_line_of_file import produce_from_last_line_of_file
+from produce_from_last_line_of_file import extract_compressed_file_from_path
+
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer, Consumer, admin
@@ -21,6 +22,7 @@ import requests
 import os
 
 from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, create_topic_if_not_exists, delete_topic_if_full
+from get_parsed_gharchive_files import save_files_parsed, restore_parsed_files
 
 
 def download_compressed_GHA_file(gha_file_url, folderpath):
@@ -277,13 +279,209 @@ def get_running_job_names():
      
 # endregion
 
+def delivery_callback(err, msg):
+            '''Optional per-message delivery callback (triggered by poll() or flush())
+            when a message has been successfully delivered or permanently
+            failed delivery (after retries).
+            '''
+            if err:
+                print('ERROR: Message failed delivery: {}'.format(err))
+            else:
+                pass
+                ## No need to print the items read from the file to the terminal
+                # print("\nProduced event to topic {topic}: value = {value:12}".format(
+                #     topic=msg.topic(), value=msg.value().decode('utf-8')))
+
+
+def produce_from_line_we_left_off(all_events_topic=str, push_events_topic = str, pull_request_events_topic = str, issue_events_topic = str, filepath=str, \
+    parsed_files_filepath=str, config=dict):
+    '''
+    Produces messages from a .json file into a topic
+    
+    :param topic: the name of the topic to produce messages into
+    :param filepath: the path to the *.json.gz file to decompress and read from
+    :param parsed_files_dict: dictionary with the files and the line we left off 
+    last time we read it
+    
+    :returns the_whole_file_was_read:
+    True: if the whole file was read, False: otherwise (either because of KeyboardInterrupt or because of error)
+    :returns the_whole_file_was_read_beforehand:
+    True: if the whole file was read, False: otherwise (either because of KeyboardInterrupt or because of error)
+    
+    '''
+    
+    filename = os.path.basename(filepath)
+    decompressed_file_path = extract_compressed_file_from_path(\
+        filepath)
+    with open(decompressed_file_path, 'r') as file_object:
+        lines_in_file = len(file_object.readlines())   
+    parsed_files_dict = restore_parsed_files(parsed_files_filepath)
+    # Get the lines where we left off for the file and continue from there
+    if filename not in parsed_files_dict.keys():
+        parsed_files_dict[filename] = 0    
+    line_we_left_off = parsed_files_dict[filename]
+    lines_produced = 0
+    the_whole_file_was_read = False
+    the_whole_file_was_read_beforehand = False
+    number_of_lines_produced_per_print = 100000
+    time_between_produced_messages = pow(10, -6)
+    i = 0 # Line tracker
+    
+    
+    # Read lines of file to be produced in kafka topic until keyboard interrupt
+    # or EOF
+    # Case 1: The file has not been read yet 
+    # or has been read up to a line before the last one
+    if line_we_left_off < lines_in_file:
+        try:
+            
+            all_events_producer = Producer(config)
+            push_events_producer = Producer(config)
+            pull_request_events_producer = Producer(config)
+            issue_events_producer = Producer(config)
+            
+            with open(decompressed_file_path, 'r') as file_object:
+                
+                lines = file_object.readlines()
+                
+                # All events in file are of the same day
+                event_dict = json.loads(lines[0])
+                first_event_dict = event_dict["created_at"]
+                event_full_datetime = datetime.strptime(first_event_dict, "%Y-%m-%dT%H:%M:%SZ") 
+                event_day = datetime.strftime(event_full_datetime, "%Y-%m-%d")
+
+
+                print(f"Reading lines of {filename} until EOF or keyboard interrupt...")
+                print(f'Producing events from line No.{line_we_left_off+1} of {filename}')
+                
+                for i in range(line_we_left_off, lines_in_file):    
+                    event_dict = json.loads(lines[i])
+                    
+                    event_str = str({"day": event_day, 
+                            "repo": event_dict["repo"]["full_name"],
+                            "username": event_dict["actor"],
+                            "type": event_dict["type"]})
+                    all_events_producer.produce(all_events_topic, value=event_str, callback=delivery_callback)
+                    # producer.produce(topic, value=lines[i], callback=delivery_callback)
+                    
+        
+                    
+                if event_dict["type"] == "PushEvent":
+                    event_str = str({"day": event_day,
+                                    "repo": event_dict["repo"]["full_name"],
+                                    "username": event_dict["actor"], 
+                                    "number_of_contributions": event_dict["payload"]["distinct_size"],
+                                    "size": event_dict["payload"]["size"],
+                                    "distinct_size": event_dict["payload"]["distinct_size"]})
+                    push_events_producer.produce(push_events_topic, value= event_str, callback=delivery_callback)
+                
+                elif event_dict["type"] == "PullRequestEvent":
+                    event_str = str({"day": event_day, 
+                                    "repo": event_dict["repo"]["full_name"], 
+                                    "username": event_dict["payload"]["pull_request"]["user"],
+                                    "number_of_contributions": event_dict["payload"]["pull_request"]["commits"],
+                                    "pull_request_number": event_dict["payload"]["pull_request"]["number"],
+                                    "opening_time": event_dict["payload"]["pull_request"]["created_at"], 
+                                    "closing_time": event_dict["payload"]["pull_request"]["closed_at"], 
+                                    "action": event_dict["payload"]["action"],
+                                    "merged_at": event_dict["payload"]["pull_request"]["merged_at"]})
+                    pull_request_events_producer.produce(pull_request_events_topic, value=event_str, callback=delivery_callback)
+                
+                elif event_dict["type"] == "IssuesEvent":
+                    event_str = str({"repo": event_dict["repo"]["full_name"], 
+                                "issue_number": event_dict["payload"]["issue"]["number"],
+                                "opening_time": event_dict["payload"]["issue"]["created_at"],
+                                "closing_time": event_dict["payload"]["issue"]["closed_at"],
+                                "action": event_dict["payload"]["action"],
+                                "labels": event_dict["payload"]["issue"]["labels"]})
+                    issue_events_producer.produce(issue_events_topic, value=event_str, callback=delivery_callback)
+
+                lines_produced = i+1
+                    
+                
+                # Poll to cleanup the producer queue after every message production
+                if i % 100: 
+                    all_events_producer.poll(0)
+                    push_events_producer.poll(0)
+                    pull_request_events_producer.poll(0)
+                    issue_events_producer.poll(0)
+                
+                if lines_produced % number_of_lines_produced_per_print == 0:
+                    sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced,lines_in_file))
+                    sys.stdout.flush()
+                
+                # # Break production if only 10000 events have been sent
+                # if i >= line_we_left_off + 20000:
+                #     break
+                
+                # Short time to capture output
+                time.sleep(time_between_produced_messages)
+            
+            # Once the total number of lines were produced, print it
+            sys.stdout.write(f"\rJSON objects produced: {i+1}/{lines_in_file}")
+            sys.stdout.flush()
+                                    
+        
+        # Case 1.1: Keyboard interrupt while reading the file
+        except KeyboardInterrupt:
+            print('\nKeyboard interrupt\n')
+            the_whole_file_was_read = False
+        finally:
+            os.remove(decompressed_file_path)
+            parsed_files_dict[filename] = lines_produced      
+            save_files_parsed(parsed_files_dict, parsed_files_filepath)
+            
+            # Wait for message delivery
+            all_events_producer.poll(10000)
+            all_events_producer.flush()
+            push_events_producer.poll(10000)
+            push_events_producer.flush()
+            pull_request_events_producer.poll(10000)
+            pull_request_events_producer.flush()
+            issue_events_producer.poll(10000)
+            issue_events_producer.flush()
+            
+            
+            print('Producer closed properly')
+            
+        # Case 1.2: EOF 
+        # In this case, the file was read up to the last line and
+        # no keyboard interrupt occured
+        if lines_produced == lines_in_file:
+            print('\nEOF\n')
+            # Keyboard interrupt did not occur, the whole file was read 
+            the_whole_file_was_read = True
+            if os.path.exists(decompressed_file_path):
+                # Remove the decompressed file
+                os.remove(decompressed_file_path)
+                        
+            
+    # Case 2: If the whole file was read before the execution of the script
+    # (line_we_left_off = flines_in_file)
+    elif line_we_left_off == lines_in_file:
+        print('EOF: '
+            f'All lines of file {filename} have already been read '
+            f'and produced into topics')
+        the_whole_file_was_read = True   
+        the_whole_file_was_read_beforehand = True
+        if os.path.exists(decompressed_file_path):
+            # Once done reading the decompressed file, delete it to save space 
+            os.remove(decompressed_file_path)
+            print()
+    # Case 3: An error occurred: (lines_we_left_off > lines_in_file)
+    else:
+        raise ValueError(f'Lines we read: ({lines_produced}) should be more than the ones '
+                        f'already existing in file {decompressed_file_path} '
+                        f'({lines_in_file})')
+    return the_whole_file_was_read, the_whole_file_was_read_beforehand
+
+
         
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
     starting_date_formatted =  '2024-12-02-22'
     ending_date_formatted =  '2024-12-02-22' 
-
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -298,7 +496,7 @@ if __name__ == '__main__':
                             "Total time elapsed": 0}
     
     
-    # ATTENTION: Set explicit_wait_for_busy_jobs = True for the performance of jobs to be calculated
+    # ATTENTION: Set set_`explicit_wait_for_busy_jobs = True for the performance of jobs to be calculated
     running_job_names_in_cluster = get_running_job_names()
     running_job_names_in_cluster = sorted(running_job_names_in_cluster)
     # start_time: The time when the job started
@@ -371,13 +569,36 @@ if __name__ == '__main__':
         print("\n3. Produce thinned events:")
         # Store the files produced and up to which point
         parsed_files_filepath = "/github_data/files_parsed.json"
-        topic_to_produce_into = 'historical-raw-events'
+        
         the_whole_file_was_read_beforehand = None      
         
-        # If the file was read beforehand, its events have already produced
-        _ , the_whole_file_was_read_beforehand = produce_from_last_line_of_file(topic_to_produce_into, filepath_of_thinned_file, parsed_files_filepath)
+        
+        
+        # Get kafka_host:kafka_port
+        parser = ArgumentParser()
+        parser.add_argument('config_file', type=FileType('r'))
+        args = parser.parse_args()
+        config_parser = ConfigParser()
+        config_parser.read_file(args.config_file)
+        config = dict(config_parser['default_producer'])
+        config_port = str(config['bootstrap.servers'])
+        
+        all_events_topic = "all_events"
+        push_events_topic = "push_events"
+        pull_request_events_topic = "pull_request_events"
+        issue_events_topic = "issue_events"
+        create_topic_if_not_exists(pull_request_events_topic, config_port)
+        create_topic_if_not_exists(issue_events_topic, config_port)
+        create_topic_if_not_exists(all_events_topic, config_port)
+        create_topic_if_not_exists(push_events_topic, config_port)
+        
+        
+        
+        
+        # Produce from file into topic
+        the_whole_file_was_read, the_whole_file_was_read_beforehand = produce_from_line_we_left_off(all_events_topic, push_events_topic, pull_request_events_topic, issue_events_topic, filepath_of_thinned_file, parsed_files_filepath, config)
 
-        # If the file's events have already been produced, continue with the next one
+        # If the file's events have already been produced, do not wait for jobs to start 
         if the_whole_file_was_read_beforehand:
             current_date = current_date + timedelta(hours=1)
             current_date_formatted = datetime.strftime(current_date, '%Y-%m-%d-%-H')
@@ -395,7 +616,6 @@ if __name__ == '__main__':
 
         
         # Variable initialization
-        topic = topic_to_produce_into
         bootstrap_servers = get_kafka_broker_config(topic)        
         number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
         max_number_of_messages = 1000000
@@ -454,23 +674,19 @@ if __name__ == '__main__':
                     if times_waited_before_start == 3:
                         jobs_are_under_low_load = True
                         break
-            
+                if jobs_are_under_low_load == True:
+                    continue
             
             # Starting time for jobs 
             for single_job_name in running_job_names_in_cluster:
-                # Update starting time only if the job was not running from the previous loop iteration
+                # Update starting time only if the job had stopped in the previous loop iteration
                 # Else keep the start time of the job of the previous iteration
                 if jobs_completion_times[single_job_name]["starting_time"] == None:
                     jobs_completion_times[single_job_name]["starting_time"] = jobs_started_time
             
             
-            # If jobs are not busy, continue with next file
-            if jobs_are_under_low_load == True:
-                continue
-            
-            
             # Uncomment to wait for all jobs to start running
-            # This is used to measure the jobs performances
+            # This is used to measure the jobs' performances
             are_all_jobs_running = False
             print("Waiting for all jobs to start running")
             while(are_all_jobs_running == False):
@@ -481,27 +697,23 @@ if __name__ == '__main__':
                 time.sleep(3)
             
             
-            
-                  
-            
-            # Set True to wait for jobs to complete after every file
-            explicit_wait_for_busy_jobs = True 
+            # Conditions to wait for jobs to complete
+            # Explicit statement to wait for the jobs to complete
+            max_job_busy_ratio_threshold = 1
+            set_explicit_wait_for_busy_jobs = True 
+            if set_explicit_wait_for_busy_jobs == True:
+                wait_for_busy_jobs = True            
             # If the topic size is too large, wait for jobs to complete, then delete it
-            if number_of_messages > max_number_of_messages:
+            elif number_of_messages > max_number_of_messages:
                 wait_for_busy_jobs = True
             # On the file of the ending date, wait for the jobs to complete
             elif current_date == ending_date:
                 wait_for_busy_jobs = True
-            # Explicit statement to wait for the jobs to complete
-            elif explicit_wait_for_busy_jobs == True:
-                wait_for_busy_jobs = True
-            
-            
             # Wait for jobs to stop             
             if wait_for_busy_jobs == True:        
                 print("Waiting for pyflink jobs to stop completely")        
             elif wait_for_busy_jobs == False:
-                print("Waiting for pyflink jobs busy ratios to drop from 100%% before producing new messages") 
+                print(f"Waiting for pyflink jobs busy ratios to drop from {max_job_busy_ratio_threshold*100}%% before producing new messages") 
 
                 
             #  While there is at least one working job, wait for it to finish
@@ -527,8 +739,8 @@ if __name__ == '__main__':
                 max_job_busy_ratio = max(jobs_busy_ratios.values())
                 
                 # If the jobs stopped (busy ratio 0%) or are not at busy ratio 100%, continue producing messages
-                if (is_a_job_running == False or max_job_busy_ratio < 1) and wait_for_busy_jobs == False:
-                    print("\nPyflink jobs stopped or are not 100%% busy. Can continue producing messages")
+                if (is_a_job_running == False or max_job_busy_ratio < max_job_busy_ratio_threshold) and wait_for_busy_jobs == False:
+                    print(f"\nPyflink jobs stopped or are not {max_job_busy_ratio_threshold*100}%% busy. Can continue producing messages")
                     break
                 # Only if the jobs stopped (busy ratio 0%), continue producing messages
                 elif is_a_job_running == False and wait_for_busy_jobs == True:
@@ -566,13 +778,16 @@ if __name__ == '__main__':
         skip_delete_topic = False
         st = time.time()
         
-        # Delete topic and recreate it
-        if skip_delete_topic == False:
-            print("5. Delete and recreate topic")
+        # Delete and recreate topics if too large
+        for topic in [all_events_topic, push_events_topic, pull_request_events_topic, issue_events_topic]:
+            bootstrap_servers = get_kafka_broker_config(topic)
+            number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
+            max_number_of_messages = 2000000    
             delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
             # Short delay to update kafka cluster metadata before recreating the topic
             time.sleep(5)
             create_topic_if_not_exists(topic, bootstrap_servers)
+
     
         et = time.time()
         dur = et - st
