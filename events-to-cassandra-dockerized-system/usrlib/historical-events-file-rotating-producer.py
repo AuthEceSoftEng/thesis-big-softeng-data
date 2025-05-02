@@ -363,60 +363,59 @@ def produce_from_line_we_left_off(all_events_topic=str, push_events_topic = str,
                             "type": event_dict["type"]})
                     all_events_producer.produce(all_events_topic, value=event_str, callback=delivery_callback)
                     # producer.produce(topic, value=lines[i], callback=delivery_callback)
-                    
-        
-                    
-                if event_dict["type"] == "PushEvent":
-                    event_str = str({"day": event_day,
-                                    "repo": event_dict["repo"]["full_name"],
-                                    "username": event_dict["actor"], 
-                                    "number_of_contributions": event_dict["payload"]["distinct_size"],
-                                    "size": event_dict["payload"]["size"],
-                                    "distinct_size": event_dict["payload"]["distinct_size"]})
-                    push_events_producer.produce(push_events_topic, value= event_str, callback=delivery_callback)
-                
-                elif event_dict["type"] == "PullRequestEvent":
-                    event_str = str({"day": event_day, 
-                                    "repo": event_dict["repo"]["full_name"], 
-                                    "username": event_dict["payload"]["pull_request"]["user"],
-                                    "number_of_contributions": event_dict["payload"]["pull_request"]["commits"],
-                                    "pull_request_number": event_dict["payload"]["pull_request"]["number"],
-                                    "opening_time": event_dict["payload"]["pull_request"]["created_at"], 
-                                    "closing_time": event_dict["payload"]["pull_request"]["closed_at"], 
-                                    "action": event_dict["payload"]["action"],
-                                    "merged_at": event_dict["payload"]["pull_request"]["merged_at"]})
-                    pull_request_events_producer.produce(pull_request_events_topic, value=event_str, callback=delivery_callback)
-                
-                elif event_dict["type"] == "IssuesEvent":
-                    event_str = str({"repo": event_dict["repo"]["full_name"], 
-                                "issue_number": event_dict["payload"]["issue"]["number"],
-                                "opening_time": event_dict["payload"]["issue"]["created_at"],
-                                "closing_time": event_dict["payload"]["issue"]["closed_at"],
-                                "action": event_dict["payload"]["action"],
-                                "labels": event_dict["payload"]["issue"]["labels"]})
-                    issue_events_producer.produce(issue_events_topic, value=event_str, callback=delivery_callback)
-
-                lines_produced = i+1
-                    
-                
-                # Poll to cleanup the producer queue after every message production
-                if i % 100: 
+                    # Poll to cleanup the producer queue after every message production
                     all_events_producer.poll(0)
-                    push_events_producer.poll(0)
-                    pull_request_events_producer.poll(0)
-                    issue_events_producer.poll(0)
+                    
+                        
+                    if event_dict["type"] == "PushEvent":
+                        event_str = str({"day": event_day,
+                                        "repo": event_dict["repo"]["full_name"],
+                                        "username": event_dict["actor"], 
+                                        "number_of_contributions": event_dict["payload"]["distinct_size"],
+                                        "size": event_dict["payload"]["size"],
+                                        "distinct_size": event_dict["payload"]["distinct_size"]})
+                        push_events_producer.produce(push_events_topic, value= event_str, callback=delivery_callback)
+                        push_events_producer.poll(0)
                 
-                if lines_produced % number_of_lines_produced_per_print == 0:
-                    sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced,lines_in_file))
-                    sys.stdout.flush()
-                
-                # # Break production if only 10000 events have been sent
-                # if i >= line_we_left_off + 20000:
-                #     break
-                
-                # Short time to capture output
-                time.sleep(time_between_produced_messages)
+                    elif event_dict["type"] == "PullRequestEvent":
+                        event_str = str({"day": event_day, 
+                                        "repo": event_dict["repo"]["full_name"], 
+                                        "username": event_dict["payload"]["pull_request"]["user"],
+                                        "number_of_contributions": event_dict["payload"]["pull_request"]["commits"],
+                                        "pull_request_number": event_dict["payload"]["pull_request"]["number"],
+                                        "opening_time": event_dict["payload"]["pull_request"]["created_at"], 
+                                        "closing_time": event_dict["payload"]["pull_request"]["closed_at"], 
+                                        "action": event_dict["payload"]["action"],
+                                        "merged_at": event_dict["payload"]["pull_request"]["merged_at"]})
+                        pull_request_events_producer.produce(pull_request_events_topic, value=event_str, callback=delivery_callback)
+                        pull_request_events_producer.poll(0)
+                    
+                    elif event_dict["type"] == "IssuesEvent":
+                        event_str = str({"repo": event_dict["repo"]["full_name"], 
+                                    "issue_number": event_dict["payload"]["issue"]["number"],
+                                    "opening_time": event_dict["payload"]["issue"]["created_at"],
+                                    "closing_time": event_dict["payload"]["issue"]["closed_at"],
+                                    "action": event_dict["payload"]["action"],
+                                    "labels": event_dict["payload"]["issue"]["labels"]})
+                        issue_events_producer.produce(issue_events_topic, value=event_str, callback=delivery_callback)
+                        issue_events_producer.poll(0)
             
+                    lines_produced = i+1
+                        
+                    
+                    
+                    
+                    if lines_produced % number_of_lines_produced_per_print == 0:
+                        sys.stdout.write("\rJSON objects produced: {0}/{1}".format(lines_produced,lines_in_file))
+                        sys.stdout.flush()
+                    
+                    # Break production if only 10000 events have been sent
+                    if i >= line_we_left_off + 20000:
+                        break
+                    
+                    # Short time to capture output
+                    time.sleep(time_between_produced_messages)
+                
             # Once the total number of lines were produced, print it
             sys.stdout.write(f"\rJSON objects produced: {i+1}/{lines_in_file}")
             sys.stdout.flush()
@@ -432,17 +431,17 @@ def produce_from_line_we_left_off(all_events_topic=str, push_events_topic = str,
             save_files_parsed(parsed_files_dict, parsed_files_filepath)
             
             # Wait for message delivery
-            all_events_producer.poll(10000)
+            # all_events_producer.poll(0)
             all_events_producer.flush()
-            push_events_producer.poll(10000)
+            # push_events_producer.poll(0)
             push_events_producer.flush()
-            pull_request_events_producer.poll(10000)
+            # pull_request_events_producer.poll(0)
             pull_request_events_producer.flush()
-            issue_events_producer.poll(10000)
+            # issue_events_producer.poll(0)
             issue_events_producer.flush()
             
             
-            print('Producer closed properly')
+            print('Producers closed properly')
             
         # Case 1.2: EOF 
         # In this case, the file was read up to the last line and
@@ -480,8 +479,8 @@ def produce_from_line_we_left_off(all_events_topic=str, push_events_topic = str,
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-02-22'
-    ending_date_formatted =  '2024-12-02-22' 
+    starting_date_formatted =  '2024-12-06-14'
+    ending_date_formatted =  '2024-12-06-14' 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -572,8 +571,6 @@ if __name__ == '__main__':
         
         the_whole_file_was_read_beforehand = None      
         
-        
-        
         # Get kafka_host:kafka_port
         parser = ArgumentParser()
         parser.add_argument('config_file', type=FileType('r'))
@@ -615,10 +612,6 @@ if __name__ == '__main__':
         # endregion
 
         
-        # Variable initialization
-        bootstrap_servers = get_kafka_broker_config(topic)        
-        number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-        max_number_of_messages = 1000000
         
 
 
@@ -677,28 +670,37 @@ if __name__ == '__main__':
                 if jobs_are_under_low_load == True:
                     continue
             
+            
             # Starting time for jobs 
             for single_job_name in running_job_names_in_cluster:
                 # Update starting time only if the job had stopped in the previous loop iteration
                 # Else keep the start time of the job of the previous iteration
                 if jobs_completion_times[single_job_name]["starting_time"] == None:
                     jobs_completion_times[single_job_name]["starting_time"] = jobs_started_time
-            
-            
-            # Uncomment to wait for all jobs to start running
-            # This is used to measure the jobs' performances
-            are_all_jobs_running = False
-            print("Waiting for all jobs to start running")
-            while(are_all_jobs_running == False):
-                are_all_jobs_running = True
-                # If one job is not running, are_all_jobs_running will become false
-                for single_job_name in running_job_names_in_cluster:
-                    are_all_jobs_running = are_all_jobs_running and check_if_job_is_busy(single_job_name, hostname)
-                time.sleep(3)
+            # # Uncomment to wait for all jobs to start running
+            # # This is used to measure the jobs' performances
+            # are_all_jobs_running = False
+            # print("Waiting for all jobs to start running")
+            # while(are_all_jobs_running == False):
+            #     are_all_jobs_running = True
+            #     # If one job is not running, are_all_jobs_running will become false
+            #     for single_job_name in running_job_names_in_cluster:
+            #         are_all_jobs_running = are_all_jobs_running and check_if_job_is_busy(single_job_name, hostname)
+            #     time.sleep(3)
             
             
             # Conditions to wait for jobs to complete
             # Explicit statement to wait for the jobs to complete
+            # Variable initialization
+            bootstrap_servers = get_kafka_broker_config(all_events_topic)        
+            max_number_of_messages = 1000000
+            number_of_messages = 0
+            for topic in [all_events_topic, push_events_topic, pull_request_events_topic, issue_events_topic]:
+                number_of_messages = max(number_of_messages, get_topic_number_of_messages(topic, bootstrap_servers))
+                
+            
+                
+        
             max_job_busy_ratio_threshold = 1
             set_explicit_wait_for_busy_jobs = True 
             if set_explicit_wait_for_busy_jobs == True:
@@ -775,25 +777,26 @@ if __name__ == '__main__':
         # 5. Delete and recreate the topic if too large
         # region
         # Set True or False to skip region
-        skip_delete_topic = False
+        skip_delete_topic = True
         st = time.time()
         
-        # Delete and recreate topics if too large
-        for topic in [all_events_topic, push_events_topic, pull_request_events_topic, issue_events_topic]:
+        if skip_delete_topic == False:
+            # Delete and recreate topics if too large
             bootstrap_servers = get_kafka_broker_config(topic)
-            number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-            max_number_of_messages = 2000000    
-            delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
-            # Short delay to update kafka cluster metadata before recreating the topic
-            time.sleep(5)
-            create_topic_if_not_exists(topic, bootstrap_servers)
-
+            for topic in [all_events_topic, push_events_topic, pull_request_events_topic, issue_events_topic]:
+                number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
+                max_number_of_messages = 2000000    
+                delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
+                # Short delay to update kafka cluster metadata before recreating the topic
+                time.sleep(5)
+                create_topic_if_not_exists(topic, bootstrap_servers)
     
         et = time.time()
         dur = et - st
         total_dur += dur
         sections_performance["5. Delete and recreate topic"] += dur
         # endregion
+        
         
     sections_performance["Total time elapsed"] = total_dur
     print("Execution times of pipeline parts in seconds:")

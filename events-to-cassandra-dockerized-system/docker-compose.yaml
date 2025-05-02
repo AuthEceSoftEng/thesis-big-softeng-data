@@ -89,7 +89,7 @@ services:
       - | 
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 1
+        taskmanager.numberOfTaskSlots: 16
         parallelism.default: 1
         rest.flamegraph.enabled: true
         metrics.latency.interval: 1000
@@ -102,7 +102,7 @@ services:
     # # Increase resources for the taskmanager-1
     deploy:
       # mode: replicated-job
-      replicas: 4
+      # replicas: 4
       resources:
         limits:
           cpus: '2.0'   # Limit this container to 4 CPUs
@@ -331,6 +331,45 @@ services:
       - kafka
     networks:
       - data-network
+
+# Historical events producer legacy
+  python-historical-events-producer_backup_27_4:
+    image: python:3.10-script-executing-image
+    container_name: python-historical-events-producer_backup_27_4
+    volumes: 
+      # /usrlib
+      - ./usrlib/historical-events-file-rotating-producer_backup_27_4.py:/usrlib/historical-events-file-rotating-producer_backup_27_4.py
+      - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
+      - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
+      - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
+      - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
+      
+      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
+      
+
+      # usrlib/helpers
+      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
+
+      # github_data
+      - ./usrlib/github_data:/github_data
+      - ./usrlib/github_data/files_parsed.json:/github_data/files_parsed.json
+      
+    command: ['python', 'historical-events-file-rotating-producer_backup_27_4.py', '/usrlib/helpers/getting-started-in-docker.ini']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+
+
+
+
 
 
 # # Historical events files thinner 1

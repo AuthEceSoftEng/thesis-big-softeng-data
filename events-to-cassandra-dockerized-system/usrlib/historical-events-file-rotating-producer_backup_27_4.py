@@ -281,8 +281,8 @@ def get_running_job_names():
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-01-19'
-    ending_date_formatted =  '2024-12-01-21' 
+    starting_date_formatted =  '2024-12-06-14'
+    ending_date_formatted =  '2024-12-06-14' 
 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
@@ -375,7 +375,7 @@ if __name__ == '__main__':
         the_whole_file_was_read_beforehand = None      
         
         # If the file was read beforehand, its events have already produced
-        _ , the_whole_file_was_read_beforehand = produce_from_last_line_of_file(topic_to_produce_into, filepath_of_thinned_file, parsed_files_filepath)
+        the_whole_file_was_read , the_whole_file_was_read_beforehand = produce_from_last_line_of_file(topic_to_produce_into, filepath_of_thinned_file, parsed_files_filepath)
 
         # If the file's events have already been produced, continue with the next one
         if the_whole_file_was_read_beforehand:
@@ -563,7 +563,7 @@ if __name__ == '__main__':
         # 5. Delete and recreate the topic if too large
         # region
         # Set True or False to skip region
-        skip_delete_topic = False
+        skip_delete_topic = True
         st = time.time()
         
         # Delete topic and recreate it
