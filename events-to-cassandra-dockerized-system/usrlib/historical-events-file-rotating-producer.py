@@ -491,8 +491,8 @@ if __name__ == '__main__':
     jobs_completion_times = {job_name: {"starting_time": None, "stopping_time" : None, "time_elapsed" : 0 } for job_name in running_job_names_in_cluster}
     total_dur = 0
 
-    starting_date_formatted =  '2024-12-06-14'
-    ending_date_formatted =  '2024-12-06-15' 
+    starting_date_formatted =  '2024-12-03-6'
+    ending_date_formatted =  '2024-12-03-9' 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -509,8 +509,8 @@ if __name__ == '__main__':
         
         # 1. Download gharchive file
         # region
-        print(f"\nGharchive file: {current_date_formatted}\n\
-            1. Download gharchive file:")
+        print(f"\nGharchive file: {current_date_formatted}\n"\
+            "1. Download gharchive file:")
         
         st = time.time()
         
@@ -695,22 +695,21 @@ if __name__ == '__main__':
                 # Conditions to wait for jobs to complete
                 if set_explicit_wait_for_busy_jobs == True:
                     wait_for_busy_jobs = True      
-                    print("Explicit set to wait for all jobs to finish.\n \
-                        Waiting for pyflink jobs to stop completely")      
+                    print("Explicit set to wait for all jobs to finish.\n"\
+                        "Waiting for pyflink jobs to stop completely")      
                 elif number_of_messages > max_number_of_messages:
                     wait_for_busy_jobs = True
-                    print("Max number of messages of topic reached. \
-                        Topic messages must be deleted.\n\
-                        Waiting for pyflink jobs to stop completely")
+                    print("Max number of messages of topic reached. "\
+                        "Topic messages must be deleted.\n"\
+                        "Waiting for pyflink jobs to stop completely")
                 elif current_date == ending_date:
                     wait_for_busy_jobs = True
-                    print("Producing messages from the last file in the \
-                        time range to produce from.\n\
-                        Waiting for pyflink jobs to stop completely")
+                    print("Producing messages from the last file in the time range \n"\
+                        "Waiting for pyflink jobs to stop completely")
                 if wait_for_busy_jobs == False:
-                    print(f"Waiting for busiest pyflink job's busy ratio \
-                        to drop from {max_job_busy_ratio_threshold*100}%% \
-                        before producing new messages") 
+                    print(f"Waiting for busiest pyflink job's busy ratio "\
+                        f"to drop from {max_job_busy_ratio_threshold*100}%% "\
+                        "before producing new messages") 
                 
                 jobs_busy_ratios = {}
                 is_a_job_running = True
@@ -744,13 +743,13 @@ if __name__ == '__main__':
                     sys.stdout.flush()
                     max_job_busy_ratio = max(jobs_busy_ratios.values())
                     
-                    # If the jobs stopped (busy ratio 0%) or are not at busy ratio 100%, continue producing messages
+                    # If the jobs stopped (busy ratio 0%) or are not at busy ratio max_job_busy_ratio_threshold*100%, continue producing messages
                     if (is_a_job_running == False or \
                         max_job_busy_ratio < max_job_busy_ratio_threshold) \
                         and wait_for_busy_jobs == False:
-                        print(f"\nPyflink jobs stopped or are not \
-                            {round(max_job_busy_ratio_threshold*100)}% busy. \
-                            Can continue producing messages")
+                        print(f"\nPyflink jobs stopped or are not "\
+                            f"{round(max_job_busy_ratio_threshold*100)}% busy. "\
+                            "Can continue producing messages")
                         break
                     # Only if the jobs stopped (busy ratio 0%), continue producing messages
                     elif is_a_job_running == False and wait_for_busy_jobs == True:
