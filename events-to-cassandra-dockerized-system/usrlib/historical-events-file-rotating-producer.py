@@ -491,8 +491,8 @@ if __name__ == '__main__':
     jobs_completion_times = {job_name: {"starting_time": None, "stopping_time" : None, "time_elapsed" : 0 } for job_name in running_job_names_in_cluster}
     total_dur = 0
 
-    starting_date_formatted =  '2024-12-04-3'
-    ending_date_formatted =  '2024-12-04-4' 
+    starting_date_formatted =  '2024-12-04-17'
+    ending_date_formatted =  '2024-12-04-18' 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -592,6 +592,11 @@ if __name__ == '__main__':
 
         # Set True or False to skip region 
         skip_transformation_region = False
+        
+        # Set True or False to skip topic deletion
+        skip_delete_topic = True
+        
+        
         st = time.time()
 
         # If the file's events have already been produced in a previous loop iteration, do not wait for jobs to start 
@@ -680,7 +685,7 @@ if __name__ == '__main__':
             all_kafka_topics = [all_events_topic, push_events_topic, \
                 pull_request_events_topic, issue_events_topic]
             
-            def wait_for_jobs_to_stop(running_job_names_in_cluster, hostname, jobs_completion_times, all_kafka_topics):
+            def wait_for_jobs_to_stop(running_job_names_in_cluster, hostname, jobs_completion_times, all_kafka_topics, skip_delete_topic=True):
                 #  While there is at least one working job, wait for it to finish
                 wait_for_busy_jobs = False      
                 set_explicit_wait_for_busy_jobs = False # Set true to wait for jobs to complete
@@ -697,7 +702,7 @@ if __name__ == '__main__':
                     wait_for_busy_jobs = True      
                     print("Explicit set to wait for all jobs to finish.\n"\
                         "Waiting for pyflink jobs to stop completely")      
-                elif number_of_messages > max_number_of_messages:
+                elif number_of_messages > max_number_of_messages and skip_delete_topic==False:
                     wait_for_busy_jobs = True
                     print("Max number of messages of topic reached. "\
                         "Topic messages must be deleted.\n"\
@@ -767,9 +772,13 @@ if __name__ == '__main__':
                     sys.stdout.write("\033[F" * len(running_job_names_in_cluster))  
                 return jobs_completion_times
             
-                
+                    # Set True or False to skip region
+        
+            
+
+
             jobs_completion_times = wait_for_jobs_to_stop(running_job_names_in_cluster, hostname, \
-                jobs_completion_times, all_kafka_topics)
+                jobs_completion_times, all_kafka_topics, skip_delete_topic)
             
             
             def reset_starting_and_stopping_times_of_stopped_job(job_name, jobs_completion_times):
@@ -795,8 +804,8 @@ if __name__ == '__main__':
         
         # 5. Delete and recreate the topic if too large
         # region
-        # Set True or False to skip region
-        skip_delete_topic = False
+        
+        # To skip region, see region 4
         st = time.time()
         
         if skip_delete_topic == False:
