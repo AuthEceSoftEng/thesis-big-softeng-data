@@ -491,8 +491,8 @@ if __name__ == '__main__':
     jobs_completion_times = {job_name: {"starting_time": None, "stopping_time" : None, "time_elapsed" : 0 } for job_name in running_job_names_in_cluster}
     total_dur = 0
 
-    starting_date_formatted =  '2024-12-03-6'
-    ending_date_formatted =  '2024-12-03-9' 
+    starting_date_formatted =  '2024-12-04-3'
+    ending_date_formatted =  '2024-12-04-4' 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -685,7 +685,7 @@ if __name__ == '__main__':
                 wait_for_busy_jobs = False      
                 set_explicit_wait_for_busy_jobs = False # Set true to wait for jobs to complete
                 bootstrap_servers = get_kafka_broker_config(all_events_topic)        
-                max_number_of_messages = 10000000
+                max_number_of_messages = 2000000
                 number_of_messages = 0
                 max_job_busy_ratio_threshold = 0.7
                 
@@ -796,15 +796,15 @@ if __name__ == '__main__':
         # 5. Delete and recreate the topic if too large
         # region
         # Set True or False to skip region
-        skip_delete_topic = True
+        skip_delete_topic = False
         st = time.time()
         
         if skip_delete_topic == False:
             # Delete and recreate topics if too large
-            bootstrap_servers = get_kafka_broker_config(topic)
+            bootstrap_servers = get_kafka_broker_config(all_events_topic)
             for topic in [all_events_topic, push_events_topic, pull_request_events_topic, issue_events_topic]:
                 number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-                max_number_of_messages = 2000000    
+                max_number_of_messages = 2000000  
                 delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
                 # Short delay to update kafka cluster metadata before recreating the topic
                 time.sleep(5)
