@@ -136,10 +136,10 @@ pull_request_events_ds = env.from_source(source=pull_request_events_source, \
 max_concurrent_requests = 1000
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-cassandra_keyspace = "prod_gharchive_testing"
+cassandra_keyspace = "prod_gharchive"
 print(f"Insert data from kafka topics into Cassandra tables:\n"
         "T6_b: top_bot_contributions_by_day, T6_h: top_human_contributors_by_day,\n"
-        "T7_b: number_of_pull_requests_by_bots")
+        "T7_b: number_of_pull_requests_by_bots, T7_h: number_of_pull_requests_by_humans")
 
 
 

@@ -491,8 +491,8 @@ if __name__ == '__main__':
     jobs_completion_times = {job_name: {"starting_time": None, "stopping_time" : None, "time_elapsed" : 0 } for job_name in running_job_names_in_cluster}
     total_dur = 0
 
-    starting_date_formatted =  '2024-12-04-17'
-    ending_date_formatted =  '2024-12-04-18' 
+    starting_date_formatted =  '2024-12-01-1'
+    ending_date_formatted =  '2024-12-01-1' 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')

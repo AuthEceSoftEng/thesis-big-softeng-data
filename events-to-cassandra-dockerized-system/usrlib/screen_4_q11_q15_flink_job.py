@@ -135,7 +135,7 @@ issue_events_ds = env.from_source(source=issue_events_source, \
 max_concurrent_requests = 1000
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-cassandra_keyspace = "prod_gharchive_testing"
+cassandra_keyspace = "prod_gharchive"
 print(f"Start reading data from kafka topics to create "
         f"Cassandra tables:\n"
         "T11_12: pull_request_closing_times, T13_14: issue_closing_times\n"
