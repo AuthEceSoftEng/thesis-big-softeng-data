@@ -491,8 +491,8 @@ if __name__ == '__main__':
     jobs_completion_times = {job_name: {"starting_time": None, "stopping_time" : None, "time_elapsed" : 0 } for job_name in running_job_names_in_cluster}
     total_dur = 0
 
-    starting_date_formatted =  '2024-12-01-1'
-    ending_date_formatted =  '2024-12-01-1' 
+    starting_date_formatted =  '2024-12-29-0'
+    ending_date_formatted =  '2024-12-31-23' 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
     ending_date = datetime.strptime(ending_date_formatted, '%Y-%m-%d-%H')
@@ -690,7 +690,7 @@ if __name__ == '__main__':
                 wait_for_busy_jobs = False      
                 set_explicit_wait_for_busy_jobs = False # Set true to wait for jobs to complete
                 bootstrap_servers = get_kafka_broker_config(all_events_topic)        
-                max_number_of_messages = 2000000
+                max_number_of_messages = 200000
                 number_of_messages = 0
                 max_job_busy_ratio_threshold = 0.7
                 
@@ -713,7 +713,7 @@ if __name__ == '__main__':
                         "Waiting for pyflink jobs to stop completely")
                 if wait_for_busy_jobs == False:
                     print(f"Waiting for busiest pyflink job's busy ratio "\
-                        f"to drop from {max_job_busy_ratio_threshold*100}%% "\
+                        f"to drop from {max_job_busy_ratio_threshold*100}% "\
                         "before producing new messages") 
                 
                 jobs_busy_ratios = {}
@@ -813,7 +813,7 @@ if __name__ == '__main__':
             bootstrap_servers = get_kafka_broker_config(all_events_topic)
             for topic in [all_events_topic, push_events_topic, pull_request_events_topic, issue_events_topic]:
                 number_of_messages = get_topic_number_of_messages(topic, bootstrap_servers)
-                max_number_of_messages = 2000000  
+                max_number_of_messages = 200000  
                 delete_topic_if_full(topic, max_number_of_messages, bootstrap_servers)
                 # Short delay to update kafka cluster metadata before recreating the topic
                 time.sleep(5)
