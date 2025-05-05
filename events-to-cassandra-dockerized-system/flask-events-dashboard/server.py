@@ -127,8 +127,7 @@ def query_distinct_results(cassandra_session, select_query=str, number_of_result
         # (or equivalently if the query_limit exceeds the number 
         # of returned table rows)
         if query_limit > len(res_rows_list) :
-            print()
-            print(f"The number of distinct results that was asked for "
+            print(f"\nThe number of distinct results that was asked for "
                 f"({number_of_results}) is too high "
                 f"for the given cassandra table field (field index: "
                 f"{distinct_field_index_in_row} with name "
@@ -1039,7 +1038,8 @@ def get_pull_request_closing_times():
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
-    
+    # Keep only closed (with non None closing times) pull requests
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
     # Get all repos' closing times 
     closing_times_list = []
@@ -1055,9 +1055,9 @@ def get_pull_request_closing_times():
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
             # # Print closing times to get a sense of the data
             # # Print and verify the if the actual closing times 
@@ -1072,12 +1072,13 @@ def get_pull_request_closing_times():
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            raise Exception(e)
+            print(f"Exception: {e}\n"
+                f"Repo name: {getattr(row, 'repo_name')}"
+                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                f"Opening time of row: {opening_time_of_row}\n"
+                f"Closing time of row: {closing_time_of_row}\n")
+            
         
         closing_times_list.append(closing_time_in_seconds)
 
@@ -1109,6 +1110,8 @@ def get_pull_request_closing_times():
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
+    # Keep only closed (with non None closing times) pull requests
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
     # Get the closing times of repo 1
     closing_times_of_repo_1 = []
@@ -1125,9 +1128,9 @@ def get_pull_request_closing_times():
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"\
+                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"\
+                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}\n")
                 
             # # Print closing times to get a sense of the data
             # # Print and verify the if the actual closing times 
@@ -1142,12 +1145,12 @@ def get_pull_request_closing_times():
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            print(f"Exception: {e}\n")
+                f"Repo name: {getattr(row, 'repo_name')}\n"
+                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                f"Opening time of row: {opening_time_of_row}\n"
+                f"Closing time of row: {closing_time_of_row}\n"
+            
         
         closing_times_of_repo_1.append(closing_time_in_seconds)
 
@@ -1179,6 +1182,8 @@ def get_pull_request_closing_times():
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
+    # Keep only closed (with non None closing times) pull requests
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
     # Get the closing times of repo 1
     closing_times_of_repo_2 = []
@@ -1195,9 +1200,9 @@ def get_pull_request_closing_times():
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
             # # Print closing times to get a sense of the data
             # # Print and verify the if the actual closing times 
@@ -1212,12 +1217,12 @@ def get_pull_request_closing_times():
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            print(f"Exception: {e}\n"
+                f"Repo name: {getattr(row, 'repo_name')}\n"
+                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                f"Opening time of row: {opening_time_of_row}"
+                f"Closing time of row: {closing_time_of_row}\n")
+            
         
         closing_times_of_repo_2.append(closing_time_in_seconds)
     
@@ -1271,9 +1276,9 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     Example JSON to be exposed:
     
     """
-    print("Get pull-request closing times from database:")
-    print(f"Repo 1: {repo_name_1}")
-    print(f"Repo 2: {repo_name_2}")
+    print("Get pull-request closing times from database:\n"
+        f"Repo 1: {repo_name_1}\n"
+        f"Repo 2: {repo_name_2}\n")
     
     # Query Cassandra
     cassandra_container_name = 'cassandra_stelios'
@@ -1290,6 +1295,8 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
+    # Keep only closed (with non None closing times) pull requests
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
     # Get all repos' closing times 
     
@@ -1306,9 +1313,9 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                    f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
                 
             # # Print closing times to get a sense of the data
             # # Print and verify the if the actual closing times 
@@ -1323,12 +1330,11 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            print(f"Exception: {e}"
+                f"Repo name: {getattr(row, 'repo_name')}\n"
+                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                f"Opening time of row: {opening_time_of_row}\n"
+                f"Closing time of row: {closing_time_of_row}\n")
         
         closing_times_list.append(closing_time_in_seconds)
     
@@ -1357,6 +1363,8 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
+    # Keep only closed (with non None closing times) pull requests
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
     # Get the closing times of repo 1
     closing_times_of_repo_1 = []
@@ -1373,9 +1381,9 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
             # # Print closing times to get a sense of the data
             # # Print and verify the if the actual closing times 
@@ -1390,12 +1398,12 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            print(f"Exception: {e}\n"
+                f"Repo name: {getattr(row, 'repo_name')}\n"
+                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                f"Opening time of row: {opening_time_of_row}\n"
+                f"Closing time of row: {closing_time_of_row}\n")
+            
         
         closing_times_of_repo_1.append(closing_time_in_seconds)
     
@@ -1425,6 +1433,8 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
+    # Keep only closed (with non None closing times) pull requests
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
     # Get the closing times of repo 2
     closing_times_of_repo_2 = []
@@ -1441,9 +1451,9 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
             # # Print closing times to get a sense of the data
             # # Print and verify the if the actual closing times 
@@ -1458,12 +1468,12 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Pull-request number: {getattr(row, 'pull_request_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            print(f"Exception: {e}\n"
+                f"Repo name: {getattr(row, 'repo_name')}\n"
+                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                f"Opening time of row: {opening_time_of_row}\n"
+                f"Closing time of row: {closing_time_of_row}\n")
+            
         
         closing_times_of_repo_2.append(closing_time_in_seconds)
     
@@ -1519,11 +1529,11 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     Example JSON to be exposed:
     
     """
-    print(f"Get issues' pull-requests' closing times from database:")
-    print(f"Repo 1: {repo_name_1}")
-    print(f"Repo 2: {repo_name_2}")
+    print(f"Get issues' closing times from database:\n"\
+        f"Repo 1: {repo_name_1}\n"
+        f"Repo 2: {repo_name_2}")
     
-    # Closing times of pull-requests
+    # Closing times of issues
     
     # All repos
    
@@ -1543,7 +1553,8 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
-    #
+    # Keep only closed (with non None closing times) issues
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
     
     # Get all repos' closing times 
     
@@ -1560,21 +1571,21 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Issue number: {getattr(row, 'issue_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Issue number: {getattr(row, 'issue_number')}\n"
+                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
   
         except ValueError:
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Issue number: {getattr(row, 'issue_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            print(f"Exception: {e}\n"
+                f"Repo name: {getattr(row, 'repo_name')}"
+                f"Issue number: {getattr(row, 'issue_number')}\n"
+                f"Opening time of row: {opening_time_of_row}\n"
+                f"Closing time of row: {closing_time_of_row}\n")
+            
         
         closing_times_list.append(closing_time_in_seconds)
     
@@ -1604,6 +1615,8 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
+    # Keep only closed (with non None closing times) issues
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
     
     # Get the closing times of repo 1
     closing_times_of_repo_1 = []
@@ -1620,9 +1633,9 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Issue number: {getattr(row, 'issue_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"\
+                    f"Issue number: {getattr(row, 'issue_number')}\n"\
+                    f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
                 
             # # Print closing times to get a sense of the data
             # # Print and verify the if the actual closing times 
@@ -1637,12 +1650,12 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Issue number: {getattr(row, 'issue_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            print(f"Exception: {e}\n"\
+                f"Repo name: {getattr(row, 'repo_name')}\n"\
+                f"Issue number: {getattr(row, 'issue_number')}\n"\
+                f"Opening time of row: {opening_time_of_row}\n"\
+                f"Closing time of row: {closing_time_of_row}\n")
+
         
         closing_times_of_repo_1.append(closing_time_in_seconds)
     
@@ -1663,7 +1676,7 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
             # Once the interval in which the average closing time lies, break the loop
             break
     
-    # Average pull-request closing time of repo 2
+    # Average issues closing time of repo 2
     
     # Prepare the query
     prepared_query = f" SELECT repo_name, issue_number, \
@@ -1672,6 +1685,8 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
+    # Keep only closed (with non None closing times) issues
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
     
     # Get the closing times of repo 2
     closing_times_of_repo_2 = []
@@ -1688,9 +1703,9 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Issue number: {getattr(row, 'issue_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"\
+                    f"Issue number: {getattr(row, 'issue_number')}\n"\
+                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
             # # Print closing times to get a sense of the data
             # # Print and verify the if the actual closing times 
@@ -1705,12 +1720,12 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Issue number: {getattr(row, 'issue_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            print(f"Exception: {e}\n"\
+                f"Repo name: {getattr(row, 'repo_name')}\n"\
+                f"Issue number: {getattr(row, 'issue_number')}\n"\
+                f"Opening time of row: {opening_time_of_row}\n"
+                f"Closing time of row: {closing_time_of_row}\n")
+            
         
         closing_times_of_repo_2.append(closing_time_in_seconds)
     
@@ -1845,6 +1860,8 @@ def get_issues_closing_times_by_label(repo_name):
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
+    # Keep only closed (with non None closing times) issues
+    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
     
         
     # Map each issue closing time to a list with the corresponding label
@@ -1867,9 +1884,9 @@ def get_issues_closing_times_by_label(repo_name):
             time_diff = closing_datetime - opening_datetime
             closing_time_in_seconds = time_diff.total_seconds()
             if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}")
-                print(f"Issue number: {getattr(row, 'issue_number')}")
-                print(f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                print(f"Repo name: {getattr(row, 'repo_name')}\n"\
+                    f"Issue number: {getattr(row, 'issue_number')}\n"\
+                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
             # # Print closing times to get a sense of the data
             # # Print and verify the if the actual closing times 
@@ -1884,12 +1901,12 @@ def get_issues_closing_times_by_label(repo_name):
             pass
         # Remove rows containing None opening or closing times
         except Exception as e:
-            print(f"Exception: {e}")
-            print(f"Repo name: {getattr(row, 'repo_name')}")
-            print(f"Issue number: {getattr(row, 'issue_number')}")
-            print(f"Opening time of row: {opening_time_of_row}")
-            print(f"Closing time of row: {closing_time_of_row}")
-            print()
+            print(f"Exception: {e}\n"\
+                f"Repo name: {getattr(row, 'repo_name')}"
+                f"Issue number: {getattr(row, 'issue_number')}\n"
+                f"Opening time of row: {opening_time_of_row}\n"
+                f"Closing time of row: {closing_time_of_row}")
+
         
         # Add the closing time to the to the list
         closing_times_per_issue_label[issue_label].append(closing_time_in_seconds)
