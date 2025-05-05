@@ -121,7 +121,7 @@ all_events_ds = env.from_source(source=all_events_source, \
 max_concurrent_requests = 1000
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-cassandra_keyspace = "prod_gharchive"
+cassandra_keyspace = "prod_gharchive_backup"
 print(f"Start reading data from kafka topics to create "
         f"Cassandra tables:\n"
         "T8_b: number_of_events_by_bots, T8_h: number_of_events_by_humans")
