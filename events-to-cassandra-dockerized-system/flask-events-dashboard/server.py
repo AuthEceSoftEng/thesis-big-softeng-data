@@ -20,7 +20,10 @@ from collections import OrderedDict
 app = Flask(__name__)
 # To return sorted dictionaries
 app.config['JSON_SORT_KEYS'] = False
+app.config['JSON_AS_ASCII'] = False
+app.url_map.strict_slashes = False
 CORS(app)
+
 
 def query_distinct_results(cassandra_session, select_query=str, number_of_results=int, 
                 distinct_field_name=str, initial_query_limit=5, 
@@ -74,7 +77,10 @@ def query_distinct_results(cassandra_session, select_query=str, number_of_result
     
     """
     
-    
+    near_real_time_keyspace = 'near_real_time_gharchive'    
+    cluster = Cluster(['cassandra_stelios'], port=9142)
+    session = cluster.connect(f'{near_real_time_keyspace}')
+
     # Get the field index returned by the query corresponding to the 
     # `distinct_field_name`
     res_result_set_to_get_fields = \
@@ -133,9 +139,9 @@ def query_distinct_results(cassandra_session, select_query=str, number_of_result
     # print(distinct_field_list)
 
 
-cluster = Cluster(['cassandra_stelios'], port=9142)
-session = cluster.connect('prod_gharchive')
-session.execute('USE prod_gharchive')
+# cluster = Cluster(['cassandra_stelios'], port=9142)
+# session = cluster.connect('prod_gharchive')
+# session.execute('USE prod_gharchive')
 
 number_of_results = 10
 initial_query_limit = 10
@@ -145,11 +151,15 @@ initial_query_limit = 10
 # region
 # Expose stats_by_day for Q1
 
-near_real_time_keyspace = 'near_real_time_gharchive'
+
 
 @app.route('/stats_by_day', methods=['GET'])
 def get_stats_of_day():
     
+    near_real_time_keyspace = 'near_real_time_gharchive'    
+    cluster = Cluster(['cassandra_stelios'], port=9142)
+    session = cluster.connect(f'{near_real_time_keyspace}')
+
     # Figure the latest date for which data is available (either today or yesterday)
     latest_date_available = datetime.now().strftime("%Y-%m-%d")
     stats_select_query = f" \
@@ -189,7 +199,7 @@ def get_stats_of_day():
 @app.route('/most_starred_repos_by_day', methods=['GET'])
 def get_most_starred_repos_by_day():
     distinct_field_name = 'repo_name'
-
+    near_real_time_keyspace = 'near_real_time_gharchive'    
     # Figure the latest date for which data is available (either today or yesterday)
     latest_date_available = datetime.now().strftime("%Y-%m-%d")
     topic_select_query = f" \
@@ -197,6 +207,9 @@ def get_most_starred_repos_by_day():
         WHERE day = '{latest_date_available}' \
         ORDER BY stars DESC LIMIT 1;\
     "
+    cluster = Cluster(['cassandra_stelios'], port=9142)
+    session = cluster.connect(f'{near_real_time_keyspace}')
+
     # Query to figure out the latest day for which data is available
     rows = query_distinct_results(session, topic_select_query, number_of_results, \
         distinct_field_name, initial_query_limit)
@@ -215,7 +228,8 @@ def get_most_starred_repos_by_day():
         # Perform the query again should there be no queried rows from today
         rows = query_distinct_results(session, topic_select_query, number_of_results, \
         distinct_field_name, initial_query_limit)
-        
+    
+    cluster.shutdown()
     result = []
     # Create a JSON-serializable object from the resulting data
     for row in rows:
@@ -227,6 +241,10 @@ def get_most_starred_repos_by_day():
 @app.route('/most_forked_repos_by_day', methods=['GET'])
 def get_most_forked_repos_by_day():
     distinct_field_name = 'repo_name'
+
+    near_real_time_keyspace = 'near_real_time_gharchive'    
+    cluster = Cluster(['cassandra_stelios'], port=9142)
+    session = cluster.connect(f'{near_real_time_keyspace}')
 
     # Figure the latest date for which data is available (either today or yesterday)
     latest_date_available = datetime.now().strftime("%Y-%m-%d")
@@ -253,7 +271,8 @@ def get_most_forked_repos_by_day():
         # Perform the query again should there be no queried rows from today
         rows = query_distinct_results(session, topic_select_query, number_of_results, \
         distinct_field_name, initial_query_limit)
-        
+    
+    cluster.shutdown()
     result = []
     # Create a JSON-serializable object from the resulting data
     for row in rows:
@@ -266,6 +285,10 @@ def get_most_forked_repos_by_day():
 @app.route('/popular_languages_by_day', methods=['GET'])
 def get_languages_by_day():
     distinct_field_name = 'language'
+    
+    near_real_time_keyspace = 'near_real_time_gharchive'    
+    cluster = Cluster(['cassandra_stelios'], port=9142)
+    session = cluster.connect(f'{near_real_time_keyspace}')
 
     # Figure the latest date for which data is available (either today or yesterday)
     latest_date_available = datetime.now().strftime("%Y-%m-%d")
@@ -298,13 +321,16 @@ def get_languages_by_day():
     # Create a JSON-serializable object from the resulting data
     for row in rows:
         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
-            
+    cluster.shutdown()
     return jsonify(result)
 
 # Expose popular_topics_by_day for Q5
 @app.route('/popular_topics_by_day', methods=['GET'])
 def get_topics_by_day():
     distinct_field_name = 'topic'
+    near_real_time_keyspace = 'near_real_time_gharchive'    
+    cluster = Cluster(['cassandra_stelios'], port=9142)
+    session = cluster.connect(f'{near_real_time_keyspace}')
 
     # Figure the latest date for which data is available (either today or yesterday)
     latest_date_available = datetime.now().strftime("%Y-%m-%d")
@@ -331,7 +357,7 @@ def get_topics_by_day():
         # Perform the query again should there be no queried rows from today
         rows = query_distinct_results(session, topic_select_query, number_of_results, \
         distinct_field_name, initial_query_limit)
-        
+    cluster.shutdown()
     result = []
     # Create a JSON-serializable object from the resulting data
     for row in rows:
@@ -379,17 +405,18 @@ def get_top_human_contributors_by_day(day):
     day_datetime_formatted = datetime.strptime(day, "%d")
     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
+    cassandra_container_name = 'cassandra_stelios'
+    keyspace = 'prod_gharchive'
+    cluster = Cluster([cassandra_container_name],port=9142)
+    session = cluster.connect(keyspace)
+    
+    
     # Top contributors 
     prepared_query = f" \
     SELECT username, number_of_contributions FROM {keyspace}.top_human_contributors_by_day \
         WHERE day = '{day_only}';"
     
     
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
     
     rows = session.execute(prepared_query)
     
@@ -407,6 +434,7 @@ def get_top_human_contributors_by_day(day):
     
     dict_to_expose["top_contributors"] = result_sorted[0:5]    
     
+    cluster.shutdown()
     return jsonify(dict_to_expose)
 
 
@@ -441,7 +469,7 @@ def get_top_bot_contributors_by_day(day):
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
+
     
     prepared_query = f" \
     SELECT username, number_of_contributions FROM {keyspace}.top_bot_contributors_by_day\
@@ -457,7 +485,8 @@ def get_top_bot_contributors_by_day(day):
     # Create a JSON-serializable object from the queried data
     for row in rows:
         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
-           
+    
+    cluster.shutdown()       
 
     result_sorted = sorted(result, key=lambda x: x["number_of_contributions"], reverse=True)
     
@@ -489,7 +518,7 @@ def get_number_of_all_pull_requests_by_humans_by_day(day):
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
+
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     if rows == []:
@@ -507,16 +536,12 @@ def get_number_of_all_pull_requests_by_humans_by_day(day):
     SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans \
         WHERE day = '{day_only}' and were_accepted = False;\
     "
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     # Only one result (one element in the rows list) is expected
     number_of_rejected_pull_requests = getattr(rows[0], "number_of_pull_requests")
     
+    cluster.shutdown()       
     
     dict_to_expose = {'day': day_only, 
                       "number_of_accepted_pull_requests": number_of_accepted_pull_requests,
@@ -549,9 +574,7 @@ def get_number_of_all_pull_requests_by_bots_by_day(day):
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
 
-    rows = session.execute(prepared_query)
     rows = session.execute(prepared_query)
     if rows == []:
         dict_to_expose = {'day': day_only, 
@@ -569,17 +592,14 @@ def get_number_of_all_pull_requests_by_bots_by_day(day):
     SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots \
         WHERE day = '{day_only}' and was_accepted = False;\
     "
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
+    
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     row = rows.one()
     # Only one result (one element in the rows list) is expected
     number_of_rejected_pull_requests = getattr(row, "number_of_pull_requests")
     
+    cluster.shutdown()       
     
     dict_to_expose = {'day': day_only, 
                       "number_of_accepted_pull_requests": number_of_accepted_pull_requests,
@@ -641,7 +661,7 @@ def get_number_of_events_for_humans_and_bots_by_day(day):
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
+    
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     
@@ -678,7 +698,7 @@ def get_number_of_events_for_humans_and_bots_by_day(day):
     
     combined_dict_to_expose = {"humans": humans_dict_to_expose, "bots": bots_dict_to_expose}
     
-    
+    cluster.shutdown()
     
     return jsonify(combined_dict_to_expose)
 
@@ -715,7 +735,6 @@ def get_number_of_stars_of_js_repo_by_day():
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
     
     # List of Javascript repos monitored
     js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
@@ -769,7 +788,7 @@ def get_number_of_stars_of_js_repo_by_day():
         dict_to_be_exposed[js_repo]['total_stars_for_all_days'] = \
             total_stars_for_all_days
     
-    
+    cluster.shutdown()
     
     dict_to_be_exposed_ordered_by_total_number_of_stars = OrderedDict( \
         sorted(dict_to_be_exposed.items(), key=lambda x: x[1]['total_stars_for_all_days'],\
@@ -823,13 +842,9 @@ def get_number_of_stars_of_js_repo_by_day():
 
 
 
-app.config['JSON_AS_ASCII'] = False
-app.url_map.strict_slashes = False
-
 # Experiment: Expose top contributors of js repo
 @app.route('/javascript_frameworks/top_contributors_of_js_repo/<path:js_repo>', methods=['GET'])
 def get_top_js_repo_contributors_given_js_repo_name(js_repo):
-    
     """
     Example JSON to be exposed:
     {
@@ -851,7 +866,6 @@ def get_top_js_repo_contributors_given_js_repo_name(js_repo):
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
     
     # Top contributors of given js_repo
     # js_repo_unquoted = unquote(js_repo)
@@ -1009,7 +1023,6 @@ def get_pull_request_closing_times():
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
     
     # Get month and stars for every repo
     # for js_repo in js_repos_list:
@@ -1246,7 +1259,7 @@ def get_pull_request_closing_times():
         
     # Expose pull-request closing time for repo_1
     
-    
+    cluster.shutdown()
     return jsonify(dict_to_be_exposed)
 
 
@@ -1267,7 +1280,6 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
     
 
     dict_to_be_exposed = {}
@@ -1492,7 +1504,7 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_2"] = \
         bin_of_average_pull_request_closing_time_of_repo_2.tolist()
     
-    
+    cluster.shutdown()
     return jsonify(dict_to_be_exposed)
 
 
@@ -1743,13 +1755,14 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     # Expose bin edges
     dict_to_be_exposed["bin_edges_log_transformed"] = bin_edges.tolist()
     
-    
+    cluster.shutdown()
     return jsonify(dict_to_be_exposed)
 
 def get_only_first_two_not_zero_times(num_of_seconds):
     """
-    Input: num_of_seconds: number of seconds to convert to higher time durations (years, months, etc)
-    Output: The first two largest time durations that the seconds are converted into:
+    :param num_of_seconds: number of seconds to convert to higher time durations (years, months, etc)
+    :return time_dict_keep_largest_two_non_zero_durations: The first two largest time durations that the seconds are converted into:
+    
     Example:
     For input num_of_seconds = 168039959, we get 
     output: time_dict_keep_largest_two_non_zero_durations = {'years': 5, 'months': 3}
@@ -1822,7 +1835,6 @@ def get_issues_closing_times_by_label(repo_name):
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
     
     repo_unquoted = unquote(repo_name)
     prepared_query = f" \
@@ -1929,15 +1941,14 @@ def get_issues_closing_times_by_label(repo_name):
         {"repo_name": repo_name, \
             "closing_times_per_label": average_closing_time_of_issues_per_label_list_sorted}
     
+    cluster.shutdown()
     # Expose the dictionary {label: closing_time in format (days, hours, minutes)}
     return jsonify(dict_to_expose)
 # endregion
     
-cluster.shutdown()
 
 if __name__ == '__main__':
-    # month = "January"
-    # get_top_human_contributors_by_day(month)
+    
     app.run(host="0.0.0.0", port=3200)
     
     
