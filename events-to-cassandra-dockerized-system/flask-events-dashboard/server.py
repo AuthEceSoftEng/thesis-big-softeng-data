@@ -35,7 +35,7 @@ def query_distinct_results(cassandra_session, select_query=str, number_of_result
     
     :param query: The query to get the response from. Should be in the form of
     
-    >>> Example SELECT * FROM prod_gharchive.popular_topics_by_day \
+    >>> Example SELECT * FROM {keyspace}.popular_topics_by_day \
         WHERE day = '2024-09-09' \
         ORDER BY number_of_events DESC LIMIT {query_limit};
     
@@ -176,6 +176,7 @@ def get_stats_of_day():
 
     # return(jsonify(stats_select_query))
     
+    cluster.shutdown()
     result = []
     # Create a JSON-serializable object from the resulting data
     for row in rows:
@@ -380,15 +381,15 @@ def get_top_human_contributors_by_day(day):
     
     # Top contributors 
     prepared_query = f" \
-    SELECT username, number_of_contributions FROM prod_gharchive.top_human_contributors_by_day \
+    SELECT username, number_of_contributions FROM {keyspace}.top_human_contributors_by_day \
         WHERE day = '{day_only}';"
     
     
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     
     rows = session.execute(prepared_query)
     
@@ -435,19 +436,21 @@ def get_top_bot_contributors_by_day(day):
     day_datetime_formatted = datetime.strptime(day, "%d")
     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
+    
+    cassandra_container_name = 'cassandra_stelios'
+    keyspace = 'prod_gharchive'
+    cluster = Cluster([cassandra_container_name],port=9142)
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
+    
     prepared_query = f" \
-    SELECT username, number_of_contributions FROM prod_gharchive.top_bot_contributors_by_day\
+    SELECT username, number_of_contributions FROM {keyspace}.top_bot_contributors_by_day\
         WHERE day = '{day_only}';\
     "
     
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
-    
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
+    cluster.shutdown()
     
     dict_to_expose = {'day': day_only, 'top_contributors': []}
     result = []
@@ -479,14 +482,14 @@ def get_number_of_all_pull_requests_by_humans_by_day(day):
     
     # number_of_accepted_pull_requests
     prepared_query = f" \
-    SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_humans \
+    SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans \
         WHERE day = '{day_only}' and were_accepted = True;\
     "
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     if rows == []:
@@ -501,14 +504,14 @@ def get_number_of_all_pull_requests_by_humans_by_day(day):
     
     # number_of_rejected_pull_requests
     prepared_query = f" \
-    SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_humans \
+    SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans \
         WHERE day = '{day_only}' and were_accepted = False;\
     "
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     # Only one result (one element in the rows list) is expected
@@ -539,14 +542,14 @@ def get_number_of_all_pull_requests_by_bots_by_day(day):
     
     # number_of_accepted_pull_requests
     prepared_query = f" \
-    SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_bots \
-        WHERE day = '{day_only}' and were_accepted = True;\
+    SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots \
+        WHERE day = '{day_only}' and was_accepted = True;\
     "
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
 
     rows = session.execute(prepared_query)
     rows = session.execute(prepared_query)
@@ -563,14 +566,14 @@ def get_number_of_all_pull_requests_by_bots_by_day(day):
     
     # number_of_rejected_pull_requests
     prepared_query = f" \
-    SELECT number_of_pull_requests FROM prod_gharchive.number_of_pull_requests_by_bots \
-        WHERE day = '{day_only}' and were_accepted = False;\
+    SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots \
+        WHERE day = '{day_only}' and was_accepted = False;\
     "
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     row = rows.one()
@@ -631,14 +634,14 @@ def get_number_of_events_for_humans_and_bots_by_day(day):
     total_number_of_events = 0
     
     prepared_query = f" \
-    SELECT number_of_events, event_type FROM prod_gharchive.number_of_human_events_per_type_by_day \
+    SELECT number_of_events, event_type FROM {keyspace}.number_of_human_events_per_type_by_day \
         WHERE day = '{day_only}';\
     "
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     
@@ -657,7 +660,7 @@ def get_number_of_events_for_humans_and_bots_by_day(day):
     total_number_of_events = 0
     
     prepared_query = f" \
-    SELECT number_of_events, event_type FROM prod_gharchive.number_of_bot_events_per_type_by_day \
+    SELECT number_of_events, event_type FROM {keyspace}.number_of_bot_events_per_type_by_day \
         WHERE day = '{day_only}';\
     "
     
@@ -709,10 +712,10 @@ def get_number_of_stars_of_js_repo_by_day():
     
     
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     
     # List of Javascript repos monitored
     js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
@@ -744,7 +747,7 @@ def get_number_of_stars_of_js_repo_by_day():
         total_stars_for_all_days = 0
         # Prepare the query
         prepared_query = f" SELECT day, number_of_stars \
-            FROM prod_gharchive.stars_per_day_on_js_repo \
+            FROM {keyspace}.stars_per_day_on_js_repo \
             WHERE repo_name = '{js_repo}' ALLOW FILTERING;"    
         rows = session.execute(prepared_query)
         rows_list = rows.all()
@@ -786,15 +789,15 @@ def get_number_of_stars_of_js_repo_by_day():
     
 #     """
 #     cassandra_container_name = 'cassandra_stelios'
-#     keyspace_to_use = 'prod_gharchive'
+#     keyspace = 'prod_gharchive'
 #     cluster = Cluster([cassandra_container_name],port=9142)
-#     session = cluster.connect(keyspace_to_use)
-#     session.execute(f'USE {keyspace_to_use}')
+#     session = cluster.connect(keyspace)
+#     session.execute(f'USE {keyspace}')
     
 #     # Top contributors of given js_repo
 #     js_repo_unquoted = unquote(js_repo)
 #     prepared_query = f" \
-#         select * from prod_gharchive.top_contributors_of_js_repo \
+#         select * from {keyspace}.top_contributors_of_js_repo \
 #         where repo_name = '{js_repo_unquoted}' ALLOW FILTERING;\
 #     "
     
@@ -845,15 +848,15 @@ def get_top_js_repo_contributors_given_js_repo_name(js_repo):
     """
     unquoted_js_repo = unquote(js_repo)
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     
     # Top contributors of given js_repo
     # js_repo_unquoted = unquote(js_repo)
     prepared_query = f" \
-        select * from prod_gharchive.top_contributors_of_js_repo \
+        select * from {keyspace}.top_contributors_of_js_repo \
         where repo_name = '{unquoted_js_repo}' ALLOW FILTERING;\
     "
     
@@ -1003,10 +1006,10 @@ def get_pull_request_closing_times():
     
     # Query Cassandra
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     
     # Get month and stars for every repo
     # for js_repo in js_repos_list:
@@ -1014,12 +1017,12 @@ def get_pull_request_closing_times():
     
     # # Prepare the query
     # prepared_query = f" SELECT opening_time, closing_time \
-    #     FROM prod_gharchive.pull_request_closing_times;"    
+    #     FROM {keyspace}.pull_request_closing_times;"    
     
     # Prepare the query
     prepared_query = f" SELECT repo_name, pull_request_number, \
         opening_time, closing_time \
-        FROM prod_gharchive.pull_request_closing_times;"    
+        FROM {keyspace}.pull_request_closing_times;"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1089,7 +1092,7 @@ def get_pull_request_closing_times():
     # Prepare the query
     prepared_query = f" SELECT \
         opening_time, closing_time \
-        FROM prod_gharchive.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
+        FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1159,7 +1162,7 @@ def get_pull_request_closing_times():
     # Prepare the query
     prepared_query = f" SELECT \
         opening_time, closing_time \
-        FROM prod_gharchive.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
+        FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1261,17 +1264,17 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     
     # Query Cassandra
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     
 
     dict_to_be_exposed = {}
     
     # Prepare the query
-    prepared_query = f" SELECT opening_time, closing_time \
-        FROM prod_gharchive.pull_request_closing_times;"    
+    prepared_query = f" SELECT repo_name, pull_request_number, opening_time, closing_time \
+        FROM {keyspace}.pull_request_closing_times;"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1338,7 +1341,7 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     # Prepare the query
     prepared_query = f" SELECT \
         opening_time, closing_time \
-        FROM prod_gharchive.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
+        FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1406,7 +1409,7 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     # Prepare the query
     prepared_query = f" SELECT repo_name, pull_request_number, \
         opening_time, closing_time \
-        FROM prod_gharchive.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
+        FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1514,17 +1517,17 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
    
     # Query Cassandra
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     
 
     dict_to_be_exposed = {}
     
     # Prepare the query
     prepared_query = f" SELECT repo_name, issue_number, opening_time, closing_time \
-        FROM prod_gharchive.issue_closing_times;"    
+        FROM {keyspace}.issue_closing_times;"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1585,7 +1588,7 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     # Prepare the query
     prepared_query = f" SELECT repo_name, issue_number, \
         opening_time, closing_time \
-        FROM prod_gharchive.issue_closing_times WHERE repo_name = '{repo_name_1}';"    
+        FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_1}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1653,7 +1656,7 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     # Prepare the query
     prepared_query = f" SELECT repo_name, issue_number, \
         opening_time, closing_time \
-        FROM prod_gharchive.issue_closing_times WHERE repo_name = '{repo_name_2}';"    
+        FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_2}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1816,15 +1819,15 @@ def get_issues_closing_times_by_label(repo_name):
     
     # Query Cassandra
     cassandra_container_name = 'cassandra_stelios'
-    keyspace_to_use = 'prod_gharchive'
+    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace_to_use)
-    session.execute(f'USE {keyspace_to_use}')
+    session = cluster.connect(keyspace)
+    session.execute(f'USE {keyspace}')
     
     repo_unquoted = unquote(repo_name)
     prepared_query = f" \
         select repo_name, issue_number, label, opening_time, closing_time \
-        from prod_gharchive.issue_closing_times_by_label \
+        from {keyspace}.issue_closing_times_by_label \
         where repo_name = '{repo_unquoted}';\
     "
     
@@ -1889,7 +1892,7 @@ def get_issues_closing_times_by_label(repo_name):
 
     number_of_issues_per_label_dict = {}
     get_number_of_issues_per_label_query = "SELECT count(*) as number_of_issues_with_this_label, "\
-        f"label FROM prod_gharchive.issue_closing_times_by_label WHERE repo_name = '{repo_name}' "\
+        f"label FROM {keyspace}.issue_closing_times_by_label WHERE repo_name = '{repo_name}' "\
         "GROUP BY label;" 
     number_of_issues_per_label_rows = session.execute(get_number_of_issues_per_label_query)
     number_of_issues_per_label_rows = number_of_issues_per_label_rows.all()
@@ -1930,7 +1933,7 @@ def get_issues_closing_times_by_label(repo_name):
     return jsonify(dict_to_expose)
 # endregion
     
-
+cluster.shutdown()
 
 if __name__ == '__main__':
     # month = "January"
