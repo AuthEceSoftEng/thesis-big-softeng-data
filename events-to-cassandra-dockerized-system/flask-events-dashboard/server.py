@@ -15,6 +15,7 @@ import numpy as np
 import time 
 from collections import OrderedDict
 
+import sys
 
 
 app = Flask(__name__)
@@ -146,679 +147,732 @@ number_of_results = 10
 initial_query_limit = 10
 
 
-# Screen 1: Near real time events
-# region
-# Expose stats_by_day for Q1
+# # Screen 1: Near real time events
+# # region
+# # Expose stats_by_day for Q1
 
 
 
-@app.route('/stats_by_day', methods=['GET'])
-def get_stats_of_day():
+# @app.route('/stats_by_day', methods=['GET'])
+# def get_stats_of_day():
     
-    near_real_time_keyspace = 'near_real_time_gharchive'    
-    cluster = Cluster(['cassandra_stelios'], port=9142)
-    session = cluster.connect(f'{near_real_time_keyspace}')
+#     near_real_time_keyspace = 'near_real_time_gharchive'    
+#     cluster = Cluster(['cassandra_stelios'], port=9142)
+#     session = cluster.connect(f'{near_real_time_keyspace}')
 
-    # Figure the latest date for which data is available (either today or yesterday)
-    latest_date_available = datetime.now().strftime("%Y-%m-%d")
-    stats_select_query = f" \
-    SELECT day, SUM(stars) AS total_stars, SUM(forks) AS total_forks, \
-        SUM(commits) AS total_commits, SUM(pull_requests) AS total_pull_requests \
-        FROM {near_real_time_keyspace}.stats_by_day \
-        WHERE day = '{latest_date_available}';\
-    "
-    # Query to figure out the latest day for which data is available
-    rows = session.execute(stats_select_query)
+#     # Figure the latest date for which data is available (either today or yesterday)
+#     latest_date_available = datetime.now().strftime("%Y-%m-%d")
+#     stats_select_query = f" \
+#     SELECT day, SUM(stars) AS total_stars, SUM(forks) AS total_forks, \
+#         SUM(commits) AS total_commits, SUM(pull_requests) AS total_pull_requests \
+#         FROM {near_real_time_keyspace}.stats_by_day \
+#         WHERE day = '{latest_date_available}';\
+#     "
+#     # Query to figure out the latest day for which data is available
+#     rows = session.execute(stats_select_query)
    
-    # Change the latest date available to yesterday and make the query on that day
-    if rows.one().day == None:
-        latest_date_available = datetime.now() - timedelta(days=1)    
-        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
-        stats_select_query = f" \
-        SELECT day, SUM(stars) AS total_stars, SUM(forks) AS total_forks, \
-            SUM(commits) AS total_commits, SUM(pull_requests) AS total_pull_requests \
-            FROM {near_real_time_keyspace}.stats_by_day \
-            WHERE day = '{latest_date_available}';\
-        "
-        # Perform the query again should there be no queried rows from today
-        rows = session.execute(stats_select_query)
+#     # Change the latest date available to yesterday and make the query on that day
+#     if rows.one().day == None:
+#         latest_date_available = datetime.now() - timedelta(days=1)    
+#         latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+#         stats_select_query = f" \
+#         SELECT day, SUM(stars) AS total_stars, SUM(forks) AS total_forks, \
+#             SUM(commits) AS total_commits, SUM(pull_requests) AS total_pull_requests \
+#             FROM {near_real_time_keyspace}.stats_by_day \
+#             WHERE day = '{latest_date_available}';\
+#         "
+#         # Perform the query again should there be no queried rows from today
+#         rows = session.execute(stats_select_query)
 
-    # return(jsonify(stats_select_query))
+#     # return(jsonify(stats_select_query))
     
-    cluster.shutdown()
-    result = []
-    # Create a JSON-serializable object from the resulting data
-    for row in rows:
-        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+#     cluster.shutdown()
+#     result = []
+#     # Create a JSON-serializable object from the resulting data
+#     for row in rows:
+#         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
             
-    return jsonify(result)
+#     return jsonify(result)
 
 
-# Expose most_starred_repos_by_day for Q2
-@app.route('/most_starred_repos_by_day', methods=['GET'])
-def get_most_starred_repos_by_day():
-    distinct_field_name = 'repo_name'
-    near_real_time_keyspace = 'near_real_time_gharchive'    
-    # Figure the latest date for which data is available (either today or yesterday)
-    latest_date_available = datetime.now().strftime("%Y-%m-%d")
-    topic_select_query = f" \
-    SELECT day, repo_name, stars FROM {near_real_time_keyspace}.stats_by_day \
-        WHERE day = '{latest_date_available}' \
-        ORDER BY stars DESC LIMIT 1;\
-    "
-    cluster = Cluster(['cassandra_stelios'], port=9142)
-    session = cluster.connect(f'{near_real_time_keyspace}')
+# # Expose most_starred_repos_by_day for Q2
+# @app.route('/most_starred_repos_by_day', methods=['GET'])
+# def get_most_starred_repos_by_day():
+#     distinct_field_name = 'repo_name'
+#     near_real_time_keyspace = 'near_real_time_gharchive'    
+#     # Figure the latest date for which data is available (either today or yesterday)
+#     latest_date_available = datetime.now().strftime("%Y-%m-%d")
+#     topic_select_query = f" \
+#     SELECT day, repo_name, stars FROM {near_real_time_keyspace}.stats_by_day \
+#         WHERE day = '{latest_date_available}' \
+#         ORDER BY stars DESC LIMIT 1;\
+#     "
+#     cluster = Cluster(['cassandra_stelios'], port=9142)
+#     session = cluster.connect(f'{near_real_time_keyspace}')
 
-    # Query to figure out the latest day for which data is available
-    rows = query_distinct_results(session, topic_select_query, number_of_results, \
-        distinct_field_name, initial_query_limit)
+#     # Query to figure out the latest day for which data is available
+#     rows = query_distinct_results(session, topic_select_query, number_of_results, \
+#         distinct_field_name, initial_query_limit)
 
 
 
-    # Change the latest date available to yesterday and make the query on that day
-    if rows == []:
-        latest_date_available = datetime.now() - timedelta(days=1)    
-        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
-        topic_select_query = f" \
-        SELECT day, repo_name, stars FROM {near_real_time_keyspace}.stats_by_day \
-            WHERE day = '{latest_date_available}' \
-            ORDER BY stars DESC LIMIT 1;\
-        "
-        # Perform the query again should there be no queried rows from today
-        rows = query_distinct_results(session, topic_select_query, number_of_results, \
-        distinct_field_name, initial_query_limit)
+#     # Change the latest date available to yesterday and make the query on that day
+#     if rows == []:
+#         latest_date_available = datetime.now() - timedelta(days=1)    
+#         latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+#         topic_select_query = f" \
+#         SELECT day, repo_name, stars FROM {near_real_time_keyspace}.stats_by_day \
+#             WHERE day = '{latest_date_available}' \
+#             ORDER BY stars DESC LIMIT 1;\
+#         "
+#         # Perform the query again should there be no queried rows from today
+#         rows = query_distinct_results(session, topic_select_query, number_of_results, \
+#         distinct_field_name, initial_query_limit)
     
-    cluster.shutdown()
-    result = []
-    # Create a JSON-serializable object from the resulting data
-    for row in rows:
-        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+#     cluster.shutdown()
+#     result = []
+#     # Create a JSON-serializable object from the resulting data
+#     for row in rows:
+#         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
             
-    return jsonify(result)
+#     return jsonify(result)
 
-# Expose most_forked_repos_by_day for Q3
-@app.route('/most_forked_repos_by_day', methods=['GET'])
-def get_most_forked_repos_by_day():
-    distinct_field_name = 'repo_name'
+# # Expose most_forked_repos_by_day for Q3
+# @app.route('/most_forked_repos_by_day', methods=['GET'])
+# def get_most_forked_repos_by_day():
+#     distinct_field_name = 'repo_name'
 
-    near_real_time_keyspace = 'near_real_time_gharchive'    
-    cluster = Cluster(['cassandra_stelios'], port=9142)
-    session = cluster.connect(f'{near_real_time_keyspace}')
+#     near_real_time_keyspace = 'near_real_time_gharchive'    
+#     cluster = Cluster(['cassandra_stelios'], port=9142)
+#     session = cluster.connect(f'{near_real_time_keyspace}')
 
-    # Figure the latest date for which data is available (either today or yesterday)
-    latest_date_available = datetime.now().strftime("%Y-%m-%d")
-    topic_select_query = f" \
-    SELECT * FROM {near_real_time_keyspace}.forks_by_day \
-        WHERE day = '{latest_date_available}' \
-        ORDER BY forks DESC LIMIT 1;\
-    "
-    # Query to figure out the latest day for which data is available
-    rows = query_distinct_results(session, topic_select_query, number_of_results, \
-        distinct_field_name, initial_query_limit)
+#     # Figure the latest date for which data is available (either today or yesterday)
+#     latest_date_available = datetime.now().strftime("%Y-%m-%d")
+#     topic_select_query = f" \
+#     SELECT * FROM {near_real_time_keyspace}.forks_by_day \
+#         WHERE day = '{latest_date_available}' \
+#         ORDER BY forks DESC LIMIT 1;\
+#     "
+#     # Query to figure out the latest day for which data is available
+#     rows = query_distinct_results(session, topic_select_query, number_of_results, \
+#         distinct_field_name, initial_query_limit)
 
 
 
-    # Change the latest date available to yesterday and make the query on that day
-    if rows == []:
-        latest_date_available = datetime.now() - timedelta(days=1)    
-        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
-        topic_select_query = f" \
-        SELECT * FROM {near_real_time_keyspace}.forks_by_day \
-            WHERE day = '{latest_date_available}' \
-            ORDER BY forks DESC LIMIT 1;\
-        "
-        # Perform the query again should there be no queried rows from today
-        rows = query_distinct_results(session, topic_select_query, number_of_results, \
-        distinct_field_name, initial_query_limit)
+#     # Change the latest date available to yesterday and make the query on that day
+#     if rows == []:
+#         latest_date_available = datetime.now() - timedelta(days=1)    
+#         latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+#         topic_select_query = f" \
+#         SELECT * FROM {near_real_time_keyspace}.forks_by_day \
+#             WHERE day = '{latest_date_available}' \
+#             ORDER BY forks DESC LIMIT 1;\
+#         "
+#         # Perform the query again should there be no queried rows from today
+#         rows = query_distinct_results(session, topic_select_query, number_of_results, \
+#         distinct_field_name, initial_query_limit)
     
-    cluster.shutdown()
-    result = []
-    # Create a JSON-serializable object from the resulting data
-    for row in rows:
-        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+#     cluster.shutdown()
+#     result = []
+#     # Create a JSON-serializable object from the resulting data
+#     for row in rows:
+#         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
             
-    return jsonify(result)
+#     return jsonify(result)
 
 
-# Expose popular_languages_by_day for Q4
-@app.route('/popular_languages_by_day', methods=['GET'])
-def get_languages_by_day():
-    distinct_field_name = 'language'
+# # Expose popular_languages_by_day for Q4
+# @app.route('/popular_languages_by_day', methods=['GET'])
+# def get_languages_by_day():
+#     distinct_field_name = 'language'
     
-    near_real_time_keyspace = 'near_real_time_gharchive'    
-    cluster = Cluster(['cassandra_stelios'], port=9142)
-    session = cluster.connect(f'{near_real_time_keyspace}')
+#     near_real_time_keyspace = 'near_real_time_gharchive'    
+#     cluster = Cluster(['cassandra_stelios'], port=9142)
+#     session = cluster.connect(f'{near_real_time_keyspace}')
 
-    # Figure the latest date for which data is available (either today or yesterday)
-    latest_date_available = datetime.now().strftime("%Y-%m-%d")
-    topic_select_query = f" \
-    SELECT * FROM {near_real_time_keyspace}.popular_languages_by_day \
-        WHERE day = '{latest_date_available}' \
-        ORDER BY number_of_events DESC LIMIT 1;\
-    "
-    # Query to figure out the latest day for which data is available
-    rows = query_distinct_results(session, topic_select_query, number_of_results, \
-        distinct_field_name, initial_query_limit)
+#     # Figure the latest date for which data is available (either today or yesterday)
+#     latest_date_available = datetime.now().strftime("%Y-%m-%d")
+#     topic_select_query = f" \
+#     SELECT * FROM {near_real_time_keyspace}.popular_languages_by_day \
+#         WHERE day = '{latest_date_available}' \
+#         ORDER BY number_of_events DESC LIMIT 1;\
+#     "
+#     # Query to figure out the latest day for which data is available
+#     rows = query_distinct_results(session, topic_select_query, number_of_results, \
+#         distinct_field_name, initial_query_limit)
 
 
 
-    # Change the latest date available to yesterday and make the query on that day
+#     # Change the latest date available to yesterday and make the query on that day
     
-    if rows == []:
-        latest_date_available = datetime.now() - timedelta(days=1)    
-        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
-        topic_select_query = f" \
-        SELECT * FROM {near_real_time_keyspace}.popular_languages_by_day \
-            WHERE day = '{latest_date_available}' \
-            ORDER BY number_of_events DESC LIMIT 1;\
-        "
-        # Perform the query again should there be no queried rows from today
-        rows = query_distinct_results(session, topic_select_query, number_of_results, \
-        distinct_field_name, initial_query_limit)
+#     if rows == []:
+#         latest_date_available = datetime.now() - timedelta(days=1)    
+#         latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+#         topic_select_query = f" \
+#         SELECT * FROM {near_real_time_keyspace}.popular_languages_by_day \
+#             WHERE day = '{latest_date_available}' \
+#             ORDER BY number_of_events DESC LIMIT 1;\
+#         "
+#         # Perform the query again should there be no queried rows from today
+#         rows = query_distinct_results(session, topic_select_query, number_of_results, \
+#         distinct_field_name, initial_query_limit)
         
-    result = []
-    # Create a JSON-serializable object from the resulting data
-    for row in rows:
-        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
-    cluster.shutdown()
-    return jsonify(result)
+#     result = []
+#     # Create a JSON-serializable object from the resulting data
+#     for row in rows:
+#         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+#     cluster.shutdown()
+#     return jsonify(result)
 
-# Expose popular_topics_by_day for Q5
-@app.route('/popular_topics_by_day', methods=['GET'])
-def get_topics_by_day():
-    distinct_field_name = 'topic'
-    near_real_time_keyspace = 'near_real_time_gharchive'    
-    cluster = Cluster(['cassandra_stelios'], port=9142)
-    session = cluster.connect(f'{near_real_time_keyspace}')
+# # Expose popular_topics_by_day for Q5
+# @app.route('/popular_topics_by_day', methods=['GET'])
+# def get_topics_by_day():
+#     distinct_field_name = 'topic'
+#     near_real_time_keyspace = 'near_real_time_gharchive'    
+#     cluster = Cluster(['cassandra_stelios'], port=9142)
+#     session = cluster.connect(f'{near_real_time_keyspace}')
 
-    # Figure the latest date for which data is available (either today or yesterday)
-    latest_date_available = datetime.now().strftime("%Y-%m-%d")
-    topic_select_query = f" \
-    SELECT * FROM {near_real_time_keyspace}.popular_topics_by_day \
-        WHERE day = '{latest_date_available}' \
-        ORDER BY number_of_events DESC LIMIT 1;\
-    "
-    # Query to figure out the latest day for which data is available
-    rows = query_distinct_results(session, topic_select_query, number_of_results, \
-        distinct_field_name, initial_query_limit)
+#     # Figure the latest date for which data is available (either today or yesterday)
+#     latest_date_available = datetime.now().strftime("%Y-%m-%d")
+#     topic_select_query = f" \
+#     SELECT * FROM {near_real_time_keyspace}.popular_topics_by_day \
+#         WHERE day = '{latest_date_available}' \
+#         ORDER BY number_of_events DESC LIMIT 1;\
+#     "
+#     # Query to figure out the latest day for which data is available
+#     rows = query_distinct_results(session, topic_select_query, number_of_results, \
+#         distinct_field_name, initial_query_limit)
 
 
 
-    # Change the latest date available to yesterday and make the query on that day
-    if rows == []:
-        latest_date_available = datetime.now() - timedelta(days=1)    
-        latest_date_available = latest_date_available.strftime("%Y-%m-%d")
-        topic_select_query = f" \
-        SELECT * FROM {near_real_time_keyspace}.popular_topics_by_day \
-            WHERE day = '{latest_date_available}' \
-            ORDER BY number_of_events DESC LIMIT 1;\
-        "
-        # Perform the query again should there be no queried rows from today
-        rows = query_distinct_results(session, topic_select_query, number_of_results, \
-        distinct_field_name, initial_query_limit)
-    cluster.shutdown()
-    result = []
-    # Create a JSON-serializable object from the resulting data
-    for row in rows:
-        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+#     # Change the latest date available to yesterday and make the query on that day
+#     if rows == []:
+#         latest_date_available = datetime.now() - timedelta(days=1)    
+#         latest_date_available = latest_date_available.strftime("%Y-%m-%d")
+#         topic_select_query = f" \
+#         SELECT * FROM {near_real_time_keyspace}.popular_topics_by_day \
+#             WHERE day = '{latest_date_available}' \
+#             ORDER BY number_of_events DESC LIMIT 1;\
+#         "
+#         # Perform the query again should there be no queried rows from today
+#         rows = query_distinct_results(session, topic_select_query, number_of_results, \
+#         distinct_field_name, initial_query_limit)
+#     cluster.shutdown()
+#     result = []
+#     # Create a JSON-serializable object from the resulting data
+#     for row in rows:
+#         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
             
-    return jsonify(result)
+#     return jsonify(result)
 
 
 
 
 
 
-# endregion
+# # endregion
 
 
-# Screen 2: Bots vs humans
-# region
+# # Screen 2: Bots vs humans
+# # region
 
-# Expose top contributing humans
-@app.route('/bots_vs_humans/top_contributing_humans/<day>', methods=['GET'])
-def get_top_human_contributors_by_day(day):
-    
-    """
-    Example JSON to be exposed:
-    {
-        "day": "2024-03-01",
-        "top_contributors": [
-            {
-            "number_of_contributions": 56991,
-            "username": "censameesss"
-            },
-            {
-            "number_of_contributions": 30007,
-            "username": "RiskyGUY22"
-            },
-            {
-            "number_of_contributions": 21877,
-            "username": "R3CI"
-            }
-        ]
-    }
-    """
-    
-    # day
-    day_datetime_formatted = datetime.strptime(day, "%d")
-    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
-    
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    
-    
-    # Top contributors 
-    prepared_query = f" "\
-        f"SELECT username, number_of_contributions FROM {keyspace}.top_human_contributors_by_day "\
-        f"WHERE day = '{day_only}';"
-    
-    
-    
-    rows = session.execute(prepared_query)
-    
-    # Sort the rows based on number of contributions
-    dict_to_expose = {'day': day_only, 'top_contributors': []}
-    
-    
-    result = []
-    # Create a JSON-serializable object from the queried data
-    for row in rows:
-        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
-    
-    result_sorted = sorted(result, key=lambda x: x["number_of_contributions"], reverse=True)
-    # print(result_sorted)
-    
-    dict_to_expose["top_contributors"] = result_sorted[0:5]    
-    
-    cluster.shutdown()
-    return jsonify(dict_to_expose)
-
-
-# Expose top contributing bots
-@app.route('/bots_vs_humans/top_contributing_bots/<day>', methods=['GET'])
-def get_top_bot_contributors_by_day(day):
-    """
-    Example JSON to be exposed:
-    {
-        "day": "2024-03-01",
-        "top_contributors": [
-            {
-            "number_of_contributions": 20423,
-            "username": "github-actions[bot]"
-            },
-            {
-            "number_of_contributions": 6569,
-            "username": "pull[bot]"
-            },
-            {
-            "number_of_contributions": 2129,
-            "username": "renovate[bot]"
-            }
-        ]
-    }
-    """
-    day_datetime_formatted = datetime.strptime(day, "%d")
-    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
-    
-    
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-
-    
-    prepared_query = f""\
-        f"SELECT username, number_of_contributions FROM {keyspace}.top_bot_contributors_by_day "\
-        f"WHERE day = '{day_only}';"
-    
-    
-    # Query to figure out the latest day for which data is available
-    rows = session.execute(prepared_query)
-    cluster.shutdown()
-    
-    dict_to_expose = {'day': day_only, 'top_contributors': []}
-    result = []
-    # Create a JSON-serializable object from the queried data
-    for row in rows:
-        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
-    
-    cluster.shutdown()       
-
-    result_sorted = sorted(result, key=lambda x: x["number_of_contributions"], reverse=True)
-    
-    dict_to_expose["top_contributors"] = result_sorted[0:5]
-    return jsonify(dict_to_expose)
-
-# Expose pull-requests that were accepted and initiated by humans   
-@app.route('/bots_vs_humans/pull_requests_by_humans/<day>', methods=['GET'])
-def get_number_of_all_pull_requests_by_humans_by_day(day):
-    """
-    Example JSON to be exposed:
-    {
-        "day": "2024-03-14",
-        "number_of_accepted_pull_requests": 3493,
-        "number_of_rejected_pull_requests": 626
-    }
-    """
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-
-    # month
-    day_datetime_formatted = datetime.strptime(day, "%d")
-    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
-    
-    # number_of_accepted_pull_requests
-    prepared_query = f""\
-        f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans "\
-        f"WHERE day = '{day_only}' and were_accepted = True; "
-    
-    
-    # Query to figure out the latest day for which data is available
-    rows = session.execute(prepared_query)
-    if rows == []:
-        dict_to_expose = {'day': day_only, 
-                      "number_of_accepted_pull_requests": None,
-                      "number_of_rejected_pull_requests": None}    
-        return jsonify(dict_to_expose)
-    
-    # Only one result (one element in the rows list) is expected
-    number_of_accepted_pull_requests = getattr(rows[0], "number_of_pull_requests")
-    
-    
-    # number_of_rejected_pull_requests
-    prepared_query = f""\
-        f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans "\
-        f"WHERE day = '{day_only}' and were_accepted = False;"
-    
-    # Query to figure out the latest day for which data is available
-    rows = session.execute(prepared_query)
-    # Only one result (one element in the rows list) is expected
-    number_of_rejected_pull_requests = getattr(rows[0], "number_of_pull_requests")
-    
-    cluster.shutdown()       
-    
-    dict_to_expose = {'day': day_only, 
-                      "number_of_accepted_pull_requests": number_of_accepted_pull_requests,
-                      "number_of_rejected_pull_requests": number_of_rejected_pull_requests}    
-    
-    return jsonify(dict_to_expose)
-
-# Expose pull-requests (accepted and rejected) that were initiated by bots
-@app.route('/bots_vs_humans/pull_requests_by_bots/<day>', methods=['GET'])
-def get_number_of_all_pull_requests_by_bots_by_day(day):
-    """
-    Example JSON to be exposed:
-    {
-        "day": "2024-03-10",
-        "number_of_accepted_pull_requests": 434,
-        "number_of_rejected_pull_requests": 166
-    }
-    """
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-
-    # month
-    day_datetime_formatted = datetime.strptime(day, "%d")
-    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
-    
-    # number_of_accepted_pull_requests
-    prepared_query = f""\
-        f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots  "\
-        f"WHERE day = '{day_only}' and was_accepted = True;"
-    
-    
-    rows = session.execute(prepared_query)
-    if rows == []:
-        dict_to_expose = {'day': day_only, 
-                      "number_of_accepted_pull_requests": None,
-                      "number_of_rejected_pull_requests": None}    
-        return jsonify(dict_to_expose)
-    
-    # Only one result (one element in the rows list) is expected
-    row = rows.one()
-    number_of_accepted_pull_requests = getattr(row, "number_of_pull_requests")
-    
-    
-    # number_of_rejected_pull_requests
-    prepared_query = f""\
-        f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots  "\
-        f"WHERE day = '{day_only}' and was_accepted = False;"
-    
-    
-    # Query to figure out the latest day for which data is available
-    rows = session.execute(prepared_query)
-    row = rows.one()
-    # Only one result (one element in the rows list) is expected
-    number_of_rejected_pull_requests = getattr(row, "number_of_pull_requests")
-    
-    cluster.shutdown()       
-    
-    dict_to_expose = {'day': day_only, 
-                      "number_of_accepted_pull_requests": number_of_accepted_pull_requests,
-                      "number_of_rejected_pull_requests": number_of_rejected_pull_requests}    
-    
-    return jsonify(dict_to_expose)
-
-# Expose number of events made by humans and bots
-@app.route('/bots_vs_humans/number_of_events_by_humans_and_bots/<day>', methods=['GET'])
-def get_number_of_events_for_humans_and_bots_by_day(day):
-    """
-    Example JSON to be exposed:
-    {
-        "bots": {
-            "day": "2024-06-10",
-            "number_of_events_per_type": [
-            {
-                "event_type": "PushEvent",
-                "number_of_events": 37808
-            },
-            {
-                "event_type": "GollumEvent",
-                "number_of_events": 1
-            }
-            ],
-            "total_number_of_events": 62701
-        },
-        "humans": {
-            "day": "2024-06-09",
-            "number_of_events_per_type": [
-            {
-                "event_type": "PushEvent",
-                "number_of_events": 104605
-            },
-            {
-                "event_type": "CommitCommentEvent",
-                "number_of_events": 125
-            }
-            ],
-            "total_number_of_events": 200401
-        }
-    }
-    """
-    
-    # day
-    day_datetime_formatted = datetime.strptime(day, "%d")
-    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
-    
-    # Humans
-    # number_of_events_per_type and total_number_of_events
-    number_of_events_per_type = []
-    total_number_of_events = 0
-    
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    
-    prepared_query = f"" \
-        f"SELECT number_of_events, event_type FROM {keyspace}.number_of_human_events_per_type_by_day "\
-        f"WHERE day = '{day_only}';"
-    
-    
-    # Query to figure out the latest day for which data is available
-    rows = session.execute(prepared_query)
-    
-    for row in rows:
-        number_of_events_per_type.\
-            append({col_name: getattr(row, col_name) for col_name in row._fields})
-        total_number_of_events += row.number_of_events
-    
-    humans_dict_to_expose = {'day': day_only, 
-                      "total_number_of_events": total_number_of_events,
-                      "number_of_events_per_type": number_of_events_per_type}    
-    
-    # Bots
-    # number_of_events_per_type and total_number_of_events
-    number_of_events_per_type = []
-    total_number_of_events = 0
-    
-    prepared_query = f""\
-        f"SELECT number_of_events, event_type FROM {keyspace}.number_of_bot_events_per_type_by_day "\
-        f"WHERE day = '{day_only}';"
-    
-    
-    # Query to figure out the latest day for which data is available
-    rows = session.execute(prepared_query)
-    
-    for row in rows:
-        number_of_events_per_type.\
-            append({col_name: getattr(row, col_name) for col_name in row._fields})
-        total_number_of_events += row.number_of_events
-    
-    bots_dict_to_expose = {'day': day_only, 
-                      "total_number_of_events": total_number_of_events,
-                      "number_of_events_per_type": number_of_events_per_type}   
-    
-    combined_dict_to_expose = {"humans": humans_dict_to_expose, "bots": bots_dict_to_expose}
-    
-    cluster.shutdown()
-    
-    return jsonify(combined_dict_to_expose)
-
-# endregion
-
-# Screen 3: Javascript frameworks
-# region
-
-# Expose number of stars per repo by month for all repos
-@app.route('/javascript_frameworks/number_of_stars_by_repo', methods=['GET'])
-def get_number_of_stars_of_js_repo_by_day():
-    """
-    Example JSON to be exposed:
-    "preactjs/preact": {
-        "stars_by_day": {
-            "2024-12-01": 0,
-            ...
-            "2024-12-30": 0
-        },
-        "total_stars_for_all_days": 48
-    },
-    "angular/angular": {
-        "stars_by_day": {
-            "2024-12-01": 0,
-            ...
-            "2024-12-30": 0
-        },
-        "total_stars_for_all_days": 25
-    }
-    """
-    
-    
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    
-    # List of Javascript repos monitored
-    js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
-    'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
-    'spine/spine', 'vuejs/vue', 'vuejs/core', 'Polymer/polymer', 'facebook/react', 
-    'finom/seemple', 'aurelia/framework', 'optimizely/nuclear-js', 'jashkenas/backbone', 
-    'dojo/dojo', 'jorgebucaran/hyperapp', 'riot/riot', 'daemonite/material', 
-    'polymer/lit-element', 'aurelia/aurelia', 'sveltejs/svelte', 'neomjs/neo', 
-    'preactjs/preact', 'hotwired/stimulus', 'alpinejs/alpine', 'solidjs/solid', 
-    'ionic-team/stencil', 'jquery/jquery']
-    
-    # Get month and stars for every repo
-    # for js_repo in js_repos_list:
-    dict_to_be_exposed = {}
-    
-    for js_repo in js_repos_list:
-        # Initialize the stars history of the js repo with zeros (we set as date arbitrarily
-        # the first of the month (day = 1))
-        starting_datetime = datetime(year=2024, month=12, day=1)
-        stars_by_day_dict = {}
-        
-        for day_delta in range(31):
-            new_day = starting_datetime + relativedelta(days=+day_delta)
-            new_day_stringified = datetime.strftime(new_day, "%Y-%m-%d") 
-            stars_by_day_dict[new_day_stringified] = 0
-        
-        
-        
-        total_stars_for_all_days = 0
-        # Prepare the query
-        prepared_query = f"SELECT day, number_of_stars "\
-            f"FROM {keyspace}.stars_per_day_on_js_repo "\
-            f"WHERE repo_name = '{js_repo}' ALLOW FILTERING;"    
-        rows = session.execute(prepared_query)
-        rows_list = rows.all()
-        
-        # Populate the dict to expose
-        for row in rows_list:
-            day_of_row = getattr(row, 'day')
-            number_of_stars_of_day = getattr(row, 'number_of_stars')
-            stars_by_day_dict[day_of_row] = number_of_stars_of_day
-            total_stars_for_all_days += number_of_stars_of_day
-        
-        # print(dict_to_be_exposed[js_repo])
-        # stars_by_day_dict['total_stars_for_all_days'] = \
-        #     total_stars_for_all_days
-    
-        dict_to_be_exposed[js_repo] = {}
-        dict_to_be_exposed[js_repo]["stars_by_day"] = stars_by_day_dict
-    
-        dict_to_be_exposed[js_repo]['total_stars_for_all_days'] = \
-            total_stars_for_all_days
-    
-    cluster.shutdown()
-    
-    dict_to_be_exposed_ordered_by_total_number_of_stars = OrderedDict( \
-        sorted(dict_to_be_exposed.items(), key=lambda x: x[1]['total_stars_for_all_days'],\
-            reverse=True)
-    )
-    
-    
-    return jsonify(dict_to_be_exposed_ordered_by_total_number_of_stars)
-    
-    
-# TODO: Expose top contributors of js repo
-# @app.route('/javascript_frameworks/top_contributors_of_js_repo/<js_repo>', methods=['GET'])
-# def get_top_js_repo_contributors(js_repo):
+# # Expose top contributing humans
+# @app.route('/bots_vs_humans/top_contributing_humans/<day>', methods=['GET'])
+# def get_top_human_contributors_by_day(day):
     
 #     """
 #     Example JSON to be exposed:
+#     {
+#         "day": "2024-03-01",
+#         "top_contributors": [
+#             {
+#             "number_of_contributions": 56991,
+#             "username": "censameesss"
+#             },
+#             {
+#             "number_of_contributions": 30007,
+#             "username": "RiskyGUY22"
+#             },
+#             {
+#             "number_of_contributions": 21877,
+#             "username": "R3CI"
+#             }
+#         ]
+#     }
+#     """
     
+#     # day
+#     day_datetime_formatted = datetime.strptime(day, "%d")
+#     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
+    
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
+    
+    
+#     # Top contributors 
+#     prepared_query = f" "\
+#         f"SELECT username, number_of_contributions FROM {keyspace}.top_human_contributors_by_day "\
+#         f"WHERE day = '{day_only}';"
+    
+    
+    
+#     rows = session.execute(prepared_query)
+    
+#     # Sort the rows based on number of contributions
+#     dict_to_expose = {'day': day_only, 'top_contributors': []}
+    
+    
+#     result = []
+#     # Create a JSON-serializable object from the queried data
+#     for row in rows:
+#         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+    
+#     result_sorted = sorted(result, key=lambda x: x["number_of_contributions"], reverse=True)
+#     # print(result_sorted)
+    
+#     dict_to_expose["top_contributors"] = result_sorted[0:5]    
+    
+#     cluster.shutdown()
+#     return jsonify(dict_to_expose)
+
+
+# # Expose top contributing bots
+# @app.route('/bots_vs_humans/top_contributing_bots/<day>', methods=['GET'])
+# def get_top_bot_contributors_by_day(day):
+#     """
+#     Example JSON to be exposed:
+#     {
+#         "day": "2024-03-01",
+#         "top_contributors": [
+#             {
+#             "number_of_contributions": 20423,
+#             "username": "github-actions[bot]"
+#             },
+#             {
+#             "number_of_contributions": 6569,
+#             "username": "pull[bot]"
+#             },
+#             {
+#             "number_of_contributions": 2129,
+#             "username": "renovate[bot]"
+#             }
+#         ]
+#     }
+#     """
+#     day_datetime_formatted = datetime.strptime(day, "%d")
+#     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
+    
+    
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
+
+    
+#     prepared_query = f""\
+#         f"SELECT username, number_of_contributions FROM {keyspace}.top_bot_contributors_by_day "\
+#         f"WHERE day = '{day_only}';"
+    
+    
+#     # Query to figure out the latest day for which data is available
+#     rows = session.execute(prepared_query)
+#     cluster.shutdown()
+    
+#     dict_to_expose = {'day': day_only, 'top_contributors': []}
+#     result = []
+#     # Create a JSON-serializable object from the queried data
+#     for row in rows:
+#         result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+    
+#     cluster.shutdown()       
+
+#     result_sorted = sorted(result, key=lambda x: x["number_of_contributions"], reverse=True)
+    
+#     dict_to_expose["top_contributors"] = result_sorted[0:5]
+#     return jsonify(dict_to_expose)
+
+# # Expose pull-requests that were accepted and initiated by humans   
+# @app.route('/bots_vs_humans/pull_requests_by_humans/<day>', methods=['GET'])
+# def get_number_of_all_pull_requests_by_humans_by_day(day):
+#     """
+#     Example JSON to be exposed:
+#     {
+#         "day": "2024-03-14",
+#         "number_of_accepted_pull_requests": 3493,
+#         "number_of_rejected_pull_requests": 626
+#     }
 #     """
 #     cassandra_container_name = 'cassandra_stelios'
 #     keyspace = 'prod_gharchive'
 #     cluster = Cluster([cassandra_container_name],port=9142)
 #     session = cluster.connect(keyspace)
-#     session.execute(f'USE {keyspace}')
+
+#     # month
+#     day_datetime_formatted = datetime.strptime(day, "%d")
+#     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
+    
+#     # number_of_accepted_pull_requests
+#     prepared_query = f""\
+#         f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans "\
+#         f"WHERE day = '{day_only}' and were_accepted = True; "
+    
+    
+#     # Query to figure out the latest day for which data is available
+#     rows = session.execute(prepared_query)
+#     if rows == []:
+#         dict_to_expose = {'day': day_only, 
+#                       "number_of_accepted_pull_requests": None,
+#                       "number_of_rejected_pull_requests": None}    
+#         return jsonify(dict_to_expose)
+    
+#     # Only one result (one element in the rows list) is expected
+#     number_of_accepted_pull_requests = getattr(rows[0], "number_of_pull_requests")
+    
+    
+#     # number_of_rejected_pull_requests
+#     prepared_query = f""\
+#         f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans "\
+#         f"WHERE day = '{day_only}' and were_accepted = False;"
+    
+#     # Query to figure out the latest day for which data is available
+#     rows = session.execute(prepared_query)
+#     # Only one result (one element in the rows list) is expected
+#     number_of_rejected_pull_requests = getattr(rows[0], "number_of_pull_requests")
+    
+#     cluster.shutdown()       
+    
+#     dict_to_expose = {'day': day_only, 
+#                       "number_of_accepted_pull_requests": number_of_accepted_pull_requests,
+#                       "number_of_rejected_pull_requests": number_of_rejected_pull_requests}    
+    
+#     return jsonify(dict_to_expose)
+
+# # Expose pull-requests (accepted and rejected) that were initiated by bots
+# @app.route('/bots_vs_humans/pull_requests_by_bots/<day>', methods=['GET'])
+# def get_number_of_all_pull_requests_by_bots_by_day(day):
+#     """
+#     Example JSON to be exposed:
+#     {
+#         "day": "2024-03-10",
+#         "number_of_accepted_pull_requests": 434,
+#         "number_of_rejected_pull_requests": 166
+#     }
+#     """
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
+
+#     # month
+#     day_datetime_formatted = datetime.strptime(day, "%d")
+#     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
+    
+#     # number_of_accepted_pull_requests
+#     prepared_query = f""\
+#         f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots  "\
+#         f"WHERE day = '{day_only}' and was_accepted = True;"
+    
+    
+#     rows = session.execute(prepared_query)
+#     if rows == []:
+#         dict_to_expose = {'day': day_only, 
+#                       "number_of_accepted_pull_requests": None,
+#                       "number_of_rejected_pull_requests": None}    
+#         return jsonify(dict_to_expose)
+    
+#     # Only one result (one element in the rows list) is expected
+#     row = rows.one()
+#     number_of_accepted_pull_requests = getattr(row, "number_of_pull_requests")
+    
+    
+#     # number_of_rejected_pull_requests
+#     prepared_query = f""\
+#         f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots  "\
+#         f"WHERE day = '{day_only}' and was_accepted = False;"
+    
+    
+#     # Query to figure out the latest day for which data is available
+#     rows = session.execute(prepared_query)
+#     row = rows.one()
+#     # Only one result (one element in the rows list) is expected
+#     number_of_rejected_pull_requests = getattr(row, "number_of_pull_requests")
+    
+#     cluster.shutdown()       
+    
+#     dict_to_expose = {'day': day_only, 
+#                       "number_of_accepted_pull_requests": number_of_accepted_pull_requests,
+#                       "number_of_rejected_pull_requests": number_of_rejected_pull_requests}    
+    
+#     return jsonify(dict_to_expose)
+
+# # Expose number of events made by humans and bots
+# @app.route('/bots_vs_humans/number_of_events_by_humans_and_bots/<day>', methods=['GET'])
+# def get_number_of_events_for_humans_and_bots_by_day(day):
+#     """
+#     Example JSON to be exposed:
+#     {
+#         "bots": {
+#             "day": "2024-06-10",
+#             "number_of_events_per_type": [
+#             {
+#                 "event_type": "PushEvent",
+#                 "number_of_events": 37808
+#             },
+#             {
+#                 "event_type": "GollumEvent",
+#                 "number_of_events": 1
+#             }
+#             ],
+#             "total_number_of_events": 62701
+#         },
+#         "humans": {
+#             "day": "2024-06-09",
+#             "number_of_events_per_type": [
+#             {
+#                 "event_type": "PushEvent",
+#                 "number_of_events": 104605
+#             },
+#             {
+#                 "event_type": "CommitCommentEvent",
+#                 "number_of_events": 125
+#             }
+#             ],
+#             "total_number_of_events": 200401
+#         }
+#     }
+#     """
+    
+#     # day
+#     day_datetime_formatted = datetime.strptime(day, "%d")
+#     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
+    
+#     # Humans
+#     # number_of_events_per_type and total_number_of_events
+#     number_of_events_per_type = []
+#     total_number_of_events = 0
+    
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
+    
+#     prepared_query = f"" \
+#         f"SELECT number_of_events, event_type FROM {keyspace}.number_of_human_events_per_type_by_day "\
+#         f"WHERE day = '{day_only}';"
+    
+    
+#     # Query to figure out the latest day for which data is available
+#     rows = session.execute(prepared_query)
+    
+#     for row in rows:
+#         number_of_events_per_type.\
+#             append({col_name: getattr(row, col_name) for col_name in row._fields})
+#         total_number_of_events += row.number_of_events
+    
+#     humans_dict_to_expose = {'day': day_only, 
+#                       "total_number_of_events": total_number_of_events,
+#                       "number_of_events_per_type": number_of_events_per_type}    
+    
+#     # Bots
+#     # number_of_events_per_type and total_number_of_events
+#     number_of_events_per_type = []
+#     total_number_of_events = 0
+    
+#     prepared_query = f""\
+#         f"SELECT number_of_events, event_type FROM {keyspace}.number_of_bot_events_per_type_by_day "\
+#         f"WHERE day = '{day_only}';"
+    
+    
+#     # Query to figure out the latest day for which data is available
+#     rows = session.execute(prepared_query)
+    
+#     for row in rows:
+#         number_of_events_per_type.\
+#             append({col_name: getattr(row, col_name) for col_name in row._fields})
+#         total_number_of_events += row.number_of_events
+    
+#     bots_dict_to_expose = {'day': day_only, 
+#                       "total_number_of_events": total_number_of_events,
+#                       "number_of_events_per_type": number_of_events_per_type}   
+    
+#     combined_dict_to_expose = {"humans": humans_dict_to_expose, "bots": bots_dict_to_expose}
+    
+#     cluster.shutdown()
+    
+#     return jsonify(combined_dict_to_expose)
+
+# # endregion
+
+# # Screen 3: Javascript frameworks
+# # region
+
+# # Expose number of stars per repo by month for all repos
+# @app.route('/javascript_frameworks/number_of_stars_by_repo', methods=['GET'])
+# def get_number_of_stars_of_js_repo_by_day():
+#     """
+#     Example JSON to be exposed:
+#     "preactjs/preact": {
+#         "stars_by_day": {
+#             "2024-12-01": 0,
+#             ...
+#             "2024-12-30": 0
+#         },
+#         "total_stars_for_all_days": 48
+#     },
+#     "angular/angular": {
+#         "stars_by_day": {
+#             "2024-12-01": 0,
+#             ...
+#             "2024-12-30": 0
+#         },
+#         "total_stars_for_all_days": 25
+#     }
+#     """
+    
+    
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
+    
+#     # List of Javascript repos monitored
+#     js_repos_list = ['marko-js/marko', 'mithriljs/mithril.js', 'angular/angular', 
+#     'angular/angular.js', 'emberjs/ember.js', 'knockout/knockout', 'tastejs/todomvc',
+#     'spine/spine', 'vuejs/vue', 'vuejs/core', 'Polymer/polymer', 'facebook/react', 
+#     'finom/seemple', 'aurelia/framework', 'optimizely/nuclear-js', 'jashkenas/backbone', 
+#     'dojo/dojo', 'jorgebucaran/hyperapp', 'riot/riot', 'daemonite/material', 
+#     'polymer/lit-element', 'aurelia/aurelia', 'sveltejs/svelte', 'neomjs/neo', 
+#     'preactjs/preact', 'hotwired/stimulus', 'alpinejs/alpine', 'solidjs/solid', 
+#     'ionic-team/stencil', 'jquery/jquery']
+    
+#     # Get month and stars for every repo
+#     # for js_repo in js_repos_list:
+#     dict_to_be_exposed = {}
+    
+#     for js_repo in js_repos_list:
+#         # Initialize the stars history of the js repo with zeros (we set as date arbitrarily
+#         # the first of the month (day = 1))
+#         starting_datetime = datetime(year=2024, month=12, day=1)
+#         stars_by_day_dict = {}
+        
+#         for day_delta in range(31):
+#             new_day = starting_datetime + relativedelta(days=+day_delta)
+#             new_day_stringified = datetime.strftime(new_day, "%Y-%m-%d") 
+#             stars_by_day_dict[new_day_stringified] = 0
+        
+        
+        
+#         total_stars_for_all_days = 0
+#         # Prepare the query
+#         prepared_query = f"SELECT day, number_of_stars "\
+#             f"FROM {keyspace}.stars_per_day_on_js_repo "\
+#             f"WHERE repo_name = '{js_repo}' ALLOW FILTERING;"    
+#         rows = session.execute(prepared_query)
+#         rows_list = rows.all()
+        
+#         # Populate the dict to expose
+#         for row in rows_list:
+#             day_of_row = getattr(row, 'day')
+#             number_of_stars_of_day = getattr(row, 'number_of_stars')
+#             stars_by_day_dict[day_of_row] = number_of_stars_of_day
+#             total_stars_for_all_days += number_of_stars_of_day
+        
+#         # print(dict_to_be_exposed[js_repo])
+#         # stars_by_day_dict['total_stars_for_all_days'] = \
+#         #     total_stars_for_all_days
+    
+#         dict_to_be_exposed[js_repo] = {}
+#         dict_to_be_exposed[js_repo]["stars_by_day"] = stars_by_day_dict
+    
+#         dict_to_be_exposed[js_repo]['total_stars_for_all_days'] = \
+#             total_stars_for_all_days
+    
+#     cluster.shutdown()
+    
+#     dict_to_be_exposed_ordered_by_total_number_of_stars = OrderedDict( \
+#         sorted(dict_to_be_exposed.items(), key=lambda x: x[1]['total_stars_for_all_days'],\
+#             reverse=True)
+#     )
+    
+    
+#     return jsonify(dict_to_be_exposed_ordered_by_total_number_of_stars)
+    
+    
+# # TODO: Expose top contributors of js repo
+# # @app.route('/javascript_frameworks/top_contributors_of_js_repo/<js_repo>', methods=['GET'])
+# # def get_top_js_repo_contributors(js_repo):
+    
+# #     """
+# #     Example JSON to be exposed:
+    
+# #     """
+# #     cassandra_container_name = 'cassandra_stelios'
+# #     keyspace = 'prod_gharchive'
+# #     cluster = Cluster([cassandra_container_name],port=9142)
+# #     session = cluster.connect(keyspace)
+# #     session.execute(f'USE {keyspace}')
+    
+# #     # Top contributors of given js_repo
+# #     js_repo_unquoted = unquote(js_repo)
+# #     prepared_query = f" "\
+# #         f"select * from {keyspace}.top_contributors_of_js_repo "\
+# #         f"where repo_name = '{js_repo_unquoted}' ALLOW FILTERING;"\
+# #     
+    
+# #     # Query to figure out the latest day for which data is available
+# #     rows = session.execute(prepared_query)
+# #     rows_list = rows.all()
+    
+# #     username_dict = {}
+    
+# #     # Initialize the dict with zeros
+# #     for row_list_index in range(len(rows_list)):
+# #         username_of_row = rows_list[row_list_index]["username"]
+# #         username_dict[username_of_row] = 0
+    
+    
+# #     for row_list_index in range(len(rows_list)):
+# #         number_of_contributions_of_row = \
+# #             rows_list[row_list_index]["number_of_contributions"]
+# #         username_dict[username_of_row] += number_of_contributions_of_row
+    
+    
+# #     return jsonify(username_dict)
+
+
+
+# # Experiment: Expose top contributors of js repo
+# @app.route('/javascript_frameworks/top_contributors_of_js_repo/<path:js_repo>', methods=['GET'])
+# def get_top_js_repo_contributors_given_js_repo_name(js_repo):
+#     """
+#     Example JSON to be exposed:
+#     {
+#     "top_contributors_of_js_repo": [
+#         {
+#         "number_of_contributions": 206,
+#         "username": "mofeiZ"
+#         },
+#         ...,
+#         {
+#         "number_of_contributions": 1,
+#         "username": "hoxyq"
+#         }
+#     ]
+#     }
+#     """
+#     unquoted_js_repo = unquote(js_repo)
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
     
 #     # Top contributors of given js_repo
-#     js_repo_unquoted = unquote(js_repo)
+#     # js_repo_unquoted = unquote(js_repo)
 #     prepared_query = f" "\
-#         f"select * from {keyspace}.top_contributors_of_js_repo "\
-#         f"where repo_name = '{js_repo_unquoted}' ALLOW FILTERING;"\
-#     
+#         f"SELECT * FROM {keyspace}.top_contributors_of_js_repo "\
+#         f"WHERE repo_name = '{unquoted_js_repo}' ALLOW FILTERING;"\
     
 #     # Query to figure out the latest day for which data is available
 #     rows = session.execute(prepared_query)
@@ -828,676 +882,624 @@ def get_number_of_stars_of_js_repo_by_day():
     
 #     # Initialize the dict with zeros
 #     for row_list_index in range(len(rows_list)):
-#         username_of_row = rows_list[row_list_index]["username"]
+#         # username_of_row = rows_list[row_list_index]["username"]
+#         username_of_row = getattr(rows_list[row_list_index], "username")
 #         username_dict[username_of_row] = 0
     
+#     # # Example output username_dict 
+#     # {
+#     #     "top_contributors_of_js_repo": [
+#     #         {
+#     #         "number_of_contributions": 0,
+#     #         "username": "tobiu"
+#     #         },
+#     #         {
+#     #         "number_of_contributions": 0,
+#     #         "username": "Mark_Robin"
+#     #         },
+#     #         {
+#     #         "number_of_contributions": 0,
+#     #         "username": "tobiu"
+#     #         },
+#     #         {
+#     #         "number_of_contributions": 0,
+#     #         "username": "tobiu"
+#     #         }
+#     #     ]
+#     # }
     
+#     username_list = []
 #     for row_list_index in range(len(rows_list)):
+#         # number_of_contributions_of_row = \
+#         #     rows_list[row_list_index]["number_of_contributions"]
 #         number_of_contributions_of_row = \
-#             rows_list[row_list_index]["number_of_contributions"]
+#             getattr(rows_list[row_list_index], "number_of_contributions")
+#         username_of_row = getattr(rows_list[row_list_index], "username")
 #         username_dict[username_of_row] += number_of_contributions_of_row
-    
-    
-#     return jsonify(username_dict)
+#     # Example output username_dict 
+#     # {
+#     #     "top_contributors_of_js_repo": [
+#     #         {
+#     #         "number_of_contributions": 2,
+#     #         "username": "tobiu"
+#     #         },
+#     #         {
+#     #         "number_of_contributions": 6,
+#     #         "username": "Mark_Robin"
+#     #         }
+#     #         {
+#     #         "number_of_contributions": 1,
+#     #         "username": "tobiu"
+#     #         },
+#     #         {
+#     #         "number_of_contributions": 2,
+#     #         "username": "tobiu"
+#     #         }
+#     #     ]
+#     # }
 
-
-
-# Experiment: Expose top contributors of js repo
-@app.route('/javascript_frameworks/top_contributors_of_js_repo/<path:js_repo>', methods=['GET'])
-def get_top_js_repo_contributors_given_js_repo_name(js_repo):
-    """
-    Example JSON to be exposed:
-    {
-    "top_contributors_of_js_repo": [
-        {
-        "number_of_contributions": 206,
-        "username": "mofeiZ"
-        },
-        ...,
-        {
-        "number_of_contributions": 1,
-        "username": "hoxyq"
-        }
-    ]
-    }
-    """
-    unquoted_js_repo = unquote(js_repo)
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    
-    # Top contributors of given js_repo
-    # js_repo_unquoted = unquote(js_repo)
-    prepared_query = f" "\
-        f"SELECT * FROM {keyspace}.top_contributors_of_js_repo "\
-        f"WHERE repo_name = '{unquoted_js_repo}' ALLOW FILTERING;"\
-    
-    # Query to figure out the latest day for which data is available
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    
-    username_dict = {}
-    
-    # Initialize the dict with zeros
-    for row_list_index in range(len(rows_list)):
-        # username_of_row = rows_list[row_list_index]["username"]
-        username_of_row = getattr(rows_list[row_list_index], "username")
-        username_dict[username_of_row] = 0
-    
-    # # Example output username_dict 
-    # {
-    #     "top_contributors_of_js_repo": [
-    #         {
-    #         "number_of_contributions": 0,
-    #         "username": "tobiu"
-    #         },
-    #         {
-    #         "number_of_contributions": 0,
-    #         "username": "Mark_Robin"
-    #         },
-    #         {
-    #         "number_of_contributions": 0,
-    #         "username": "tobiu"
-    #         },
-    #         {
-    #         "number_of_contributions": 0,
-    #         "username": "tobiu"
-    #         }
-    #     ]
-    # }
-    
-    username_list = []
-    for row_list_index in range(len(rows_list)):
-        # number_of_contributions_of_row = \
-        #     rows_list[row_list_index]["number_of_contributions"]
-        number_of_contributions_of_row = \
-            getattr(rows_list[row_list_index], "number_of_contributions")
-        username_of_row = getattr(rows_list[row_list_index], "username")
-        username_dict[username_of_row] += number_of_contributions_of_row
-    # Example output username_dict 
-    # {
-    #     "top_contributors_of_js_repo": [
-    #         {
-    #         "number_of_contributions": 2,
-    #         "username": "tobiu"
-    #         },
-    #         {
-    #         "number_of_contributions": 6,
-    #         "username": "Mark_Robin"
-    #         }
-    #         {
-    #         "number_of_contributions": 1,
-    #         "username": "tobiu"
-    #         },
-    #         {
-    #         "number_of_contributions": 2,
-    #         "username": "tobiu"
-    #         }
-    #     ]
-    # }
-
-    for username_in_dict, number_of_contributions_in_dict in username_dict.items():
-        username_list.append({"username": username_in_dict, 
-                    "number_of_contributions": number_of_contributions_in_dict})
-    # Example output username_list 
-    # {
-    #     "top_contributors_of_js_repo": [
-    #         {
-    #         "number_of_contributions": 5,
-    #         "username": "tobiu"
-    #         },
-    #         {
-    #         "number_of_contributions": 6,
-    #         "username": "Mark_Robin"
-    #         }
-    #     ]
-    # }                   
+#     for username_in_dict, number_of_contributions_in_dict in username_dict.items():
+#         username_list.append({"username": username_in_dict, 
+#                     "number_of_contributions": number_of_contributions_in_dict})
+#     # Example output username_list 
+#     # {
+#     #     "top_contributors_of_js_repo": [
+#     #         {
+#     #         "number_of_contributions": 5,
+#     #         "username": "tobiu"
+#     #         },
+#     #         {
+#     #         "number_of_contributions": 6,
+#     #         "username": "Mark_Robin"
+#     #         }
+#     #     ]
+#     # }                   
     
     
-    val_based_sorted_list_of_dicts = sorted(username_list, 
-                                key= lambda item: item["number_of_contributions"],
-                                reverse=True)
-    # Example output val_based_sorted_list_of_dicts 
-    # {
-    #     "top_contributors_of_js_repo": [
-    #         {
-    #         "number_of_contributions": 6,
-    #         "username": "Mark_Robin"
-    #         },
-    #         {
-    #         "number_of_contributions": 5,
-    #         "username": "tobiu"
-    #         }
-    #     ]
-    #} 
+#     val_based_sorted_list_of_dicts = sorted(username_list, 
+#                                 key= lambda item: item["number_of_contributions"],
+#                                 reverse=True)
+#     # Example output val_based_sorted_list_of_dicts 
+#     # {
+#     #     "top_contributors_of_js_repo": [
+#     #         {
+#     #         "number_of_contributions": 6,
+#     #         "username": "Mark_Robin"
+#     #         },
+#     #         {
+#     #         "number_of_contributions": 5,
+#     #         "username": "tobiu"
+#     #         }
+#     #     ]
+#     #} 
         
-    return {"top_contributors_of_js_repo": val_based_sorted_list_of_dicts}
-    # return jsonify({val_based_sorted_list_of_dicts})
-# endregion
+#     return {"top_contributors_of_js_repo": val_based_sorted_list_of_dicts}
+#     # return jsonify({val_based_sorted_list_of_dicts})
+# # endregion
 
 # Screen 4: Deep insights, issues
 # region
 
-# Expose pull requests closing times for all repos
-# Not used
-@app.route('/deep_insights_issues/pull_request_closing_times', methods=['GET'])
-def get_pull_request_closing_times():
-    """
-    Example JSON to be exposed:
-    {
-    "abs_frequencies": [
-        3357,
-        ...
-        613
-    ],
-    "bin_centers": [
-        0.9894769542400601,
-        ...,
-        18.800062130561145
-    ],
-    "bin_of_average_pull_request_closing_time_of_repo_1": [
-        0.0,
-        ...,
-        0.0,
-        16945.0,
-        0.0,
-        ...,
-        0.0
-    ],
-    "bin_of_average_pull_request_closing_time_of_repo_2": [
-        0.0,
-        ...,
-        0.0,
-        16945.0,
-        0.0,
-        ...,
-        0.0
-    ]
-    }
-    """
+# # Expose pull requests closing times for all repos
+# # Not used
+# @app.route('/deep_insights_issues/pull_request_closing_times', methods=['GET'])
+# def get_pull_request_closing_times():
+#     """
+#     Example JSON to be exposed:
+#     {
+#     "abs_frequencies": [
+#         3357,
+#         ...
+#         613
+#     ],
+#     "bin_centers": [
+#         0.9894769542400601,
+#         ...,
+#         18.800062130561145
+#     ],
+#     "bin_of_average_pull_request_closing_time_of_repo_1": [
+#         0.0,
+#         ...,
+#         0.0,
+#         16945.0,
+#         0.0,
+#         ...,
+#         0.0
+#     ],
+#     "bin_of_average_pull_request_closing_time_of_repo_2": [
+#         0.0,
+#         ...,
+#         0.0,
+#         16945.0,
+#         0.0,
+#         ...,
+#         0.0
+#     ]
+#     }
+#     """
     
-    # Query Cassandra
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
+#     # Query Cassandra
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
     
-    # Get month and stars for every repo
-    # for js_repo in js_repos_list:
-    dict_to_be_exposed = {}
+#     # Get month and stars for every repo
+#     # for js_repo in js_repos_list:
+#     dict_to_be_exposed = {}
     
-    # # Prepare the query
-    # prepared_query = f" SELECT opening_time, closing_time \
-    #     FROM {keyspace}.pull_request_closing_times;"    
+#     # # Prepare the query
+#     # prepared_query = f" SELECT opening_time, closing_time \
+#     #     FROM {keyspace}.pull_request_closing_times;"    
     
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, pull_request_number, "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times;"    
+#     # Prepare the query
+#     prepared_query = f"SELECT repo_name, pull_request_number, "\
+#         "opening_time, closing_time "\
+#         f"FROM {keyspace}.pull_request_closing_times;"    
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) pull requests
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
-    # Get all repos' closing times 
-    closing_times_list = []
+#     # Get all repos' closing times 
+#     closing_times_list = []
     
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
+#     # Populate the closing_time_list
+#     for row in rows_list:
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
+#                     f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                     f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
+#             # # Print closing times to get a sense of the data
+#             # # Print and verify the if the actual closing times 
+#             # # of the pull-requests match the ones some closing times    
+#             # print(f"Closing time: (days, seconds) = \
+#             #         {time_diff.days, time_diff.seconds}")
+#             # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
+#             # print()
+#             # time.sleep(0.1)
   
-        except Exception as e:
-            raise Exception(e)
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
+#         except Exception as e:
+#             raise Exception(e)
+#             print(f"Exception: {e}\n"
+#                 f"Repo name: {getattr(row, 'repo_name')}"
+#                 f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}\n"
+#                 f"Closing time of row: {closing_time_of_row}\n")
             
         
-        closing_times_list.append(closing_time_in_seconds)
+#         closing_times_list.append(closing_time_in_seconds)
 
     
-    # Create the histogram of the closing times values 
-    # Transform left-skewed distribution to visualise it
-    closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
+#     # Create the histogram of the closing times values 
+#     # Transform left-skewed distribution to visualise it
+#     closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
     
-    # Get the bin edges
-    num_of_bins_for_the_histogram = 10
-    abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
-                                              bins=num_of_bins_for_the_histogram)
+#     # Get the bin edges
+#     num_of_bins_for_the_histogram = 10
+#     abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
+#                                               bins=num_of_bins_for_the_histogram)
     
-    # Calculate the bin centers from the bin edges
-    bin_centers = []
-    # length(bin_centers) = length(bin_edges) - 1
-    for bin_edge_index in range(len(bin_edges)-1):
-        bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
+#     # Calculate the bin centers from the bin edges
+#     bin_centers = []
+#     # length(bin_centers) = length(bin_edges) - 1
+#     for bin_edge_index in range(len(bin_edges)-1):
+#         bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
     
     
-    # Query repo_1
+#     # Query repo_1
     
-    repo_name_1 = 'firedancer-io/firedancer'
+#     repo_name_1 = 'firedancer-io/firedancer'
     
-    # Prepare the query
-    prepared_query = f"SELECT "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
+#     # Prepare the query
+#     prepared_query = f"SELECT "\
+#         "opening_time, closing_time "\
+#         f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) pull requests
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
-    # Get the closing times of repo 1
-    closing_times_of_repo_1 = []
+#     # Get the closing times of repo 1
+#     closing_times_of_repo_1 = []
     
-    # Get the average closing time of pull-requests for repo 1
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"\
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"\
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}\n")
+#     # Get the average closing time of pull-requests for repo 1
+#     # Populate the closing_time_list
+#     for row in rows_list:
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"\
+#                     f"Pull-request number: {getattr(row, 'pull_request_number')}\n"\
+#                     f"Closing time: {closing_datetime} is earlier than {opening_datetime}\n")
                 
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
+#             # # Print closing times to get a sense of the data
+#             # # Print and verify the if the actual closing times 
+#             # # of the pull-requests match the ones some closing times    
+#             # print(f"Closing time: (days, seconds) = \
+#             #         {time_diff.days, time_diff.seconds}")
+#             # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
+#             # print()
+#             # time.sleep(0.1)
   
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
+#         except Exception as e:
+#             print(f"Exception: {e}\n"
+#                 f"Repo name: {getattr(row, 'repo_name')}\n"
+#                 f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}\n"
+#                 f"Closing time of row: {closing_time_of_row}\n")
             
         
-        closing_times_of_repo_1.append(closing_time_in_seconds)
+#         closing_times_of_repo_1.append(closing_time_in_seconds)
 
     
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_1_no_skew = np.log10(np.average(closing_times_of_repo_1) + 1)
+#     # Get and transform the average closing time of the repo
+#     average_closing_time_of_repo_1_no_skew = np.log10(np.average(closing_times_of_repo_1) + 1)
     
     
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_pull_request_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_pull_request_closing_time_of_repo_1[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
+#     # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
+#     # is the one with the average pull-request closing time overlapping the existing distribution
+#     bin_of_average_pull_request_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
+#     # # Create the dataset for the repo 1 containing only 1 non zero value
+#     for bin_edge_index in range(len(bin_edges)-1):
+#         if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
+#             average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
+#             bin_of_average_pull_request_closing_time_of_repo_1[bin_edge_index] = \
+#                 np.max(abs_frequencies)
+#             # Once the interval in which the average closing time lies, break the loop
+#             break
     
     
-    # Query repo_2
+#     # Query repo_2
     
-    repo_name_2 = 'microsoft/winget-pkgs'
-    # Prepare the query
-    prepared_query = f"SELECT "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"
+#     repo_name_2 = 'microsoft/winget-pkgs'
+#     # Prepare the query
+#     prepared_query = f"SELECT "\
+#         "opening_time, closing_time "\
+#         f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) pull requests
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
-    # Get the closing times of repo 1
-    closing_times_of_repo_2 = []
+#     # Get the closing times of repo 1
+#     closing_times_of_repo_2 = []
     
-    # Get the average closing time of pull-requests for repo 1
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
+#     # Get the average closing time of pull-requests for repo 1
+#     # Populate the closing_time_list
+#     for row in rows_list:
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
+#                     f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                     f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
+#             # # Print closing times to get a sense of the data
+#             # # Print and verify the if the actual closing times 
+#             # # of the pull-requests match the ones some closing times    
+#             # print(f"Closing time: (days, seconds) = \
+#             #         {time_diff.days, time_diff.seconds}")
+#             # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
+#             # print()
+#             # time.sleep(0.1)
   
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}"
-                f"Closing time of row: {closing_time_of_row}\n")
+#         except Exception as e:
+#             print(f"Exception: {e}\n"
+#                 f"Repo name: {getattr(row, 'repo_name')}\n"
+#                 f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}"
+#                 f"Closing time of row: {closing_time_of_row}\n")
             
         
-        closing_times_of_repo_2.append(closing_time_in_seconds)
+#         closing_times_of_repo_2.append(closing_time_in_seconds)
     
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_2_no_skew = np.log10(np.average(closing_times_of_repo_2) + 1)
-    
-    
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_pull_request_closing_time_of_repo_2 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_2_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_2_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_pull_request_closing_time_of_repo_2[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
+#     # Get and transform the average closing time of the repo
+#     average_closing_time_of_repo_2_no_skew = np.log10(np.average(closing_times_of_repo_2) + 1)
     
     
+#     # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
+#     # is the one with the average pull-request closing time overlapping the existing distribution
+#     bin_of_average_pull_request_closing_time_of_repo_2 = np.zeros((len(bin_centers)))
+#     # # Create the dataset for the repo 1 containing only 1 non zero value
+#     for bin_edge_index in range(len(bin_edges)-1):
+#         if average_closing_time_of_repo_2_no_skew >= bin_edges[bin_edge_index] and \
+#             average_closing_time_of_repo_2_no_skew < bin_edges[bin_edge_index+1]:
+#             bin_of_average_pull_request_closing_time_of_repo_2[bin_edge_index] = \
+#                 np.max(abs_frequencies)
+#             # Once the interval in which the average closing time lies, break the loop
+#             break
     
-    # Expose data
-    # Expose bin centers and absolute frequencies for the histogram
-    dict_to_be_exposed["bin_centers"] = bin_centers
-    dict_to_be_exposed["abs_frequencies"] = abs_frequencies.tolist()
-    # # Uncomment to expose all closing times
-    # dict_to_be_exposed["closing_times"] = closing_times_list_no_skew
     
-    # Get the corresponding times of the bins in seconds
-    dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(bin_centers, 10) - 1).tolist()
     
-    # Expose pull-request closing time for repo_1
-    dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_1"] = \
-        bin_of_average_pull_request_closing_time_of_repo_1.tolist()
+#     # Expose data
+#     # Expose bin centers and absolute frequencies for the histogram
+#     dict_to_be_exposed["bin_centers"] = bin_centers
+#     dict_to_be_exposed["abs_frequencies"] = abs_frequencies.tolist()
+#     # # Uncomment to expose all closing times
+#     # dict_to_be_exposed["closing_times"] = closing_times_list_no_skew
     
-    # Expose pull-request closing time for repo_2
-    dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_2"] = \
-        bin_of_average_pull_request_closing_time_of_repo_2.tolist()
+#     # Get the corresponding times of the bins in seconds
+#     dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(bin_centers, 10) - 1).tolist()
+    
+#     # Expose pull-request closing time for repo_1
+#     dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_1"] = \
+#         bin_of_average_pull_request_closing_time_of_repo_1.tolist()
+    
+#     # Expose pull-request closing time for repo_2
+#     dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_2"] = \
+#         bin_of_average_pull_request_closing_time_of_repo_2.tolist()
         
-    # Expose pull-request closing time for repo_1
+#     # Expose pull-request closing time for repo_1
     
-    cluster.shutdown()
-    return jsonify(dict_to_be_exposed)
+#     cluster.shutdown()
+#     return jsonify(dict_to_be_exposed)
 
 
-# Expose pull requests closing times for all repos and the specific selected two repos
-@app.route('/deep_insights_issues/pull_request_closing_times/<path:repo_name_1>/vs/<path:repo_name_2>',
-           methods=['GET'])
-def compare_pull_request_closing_times(repo_name_1, repo_name_2):
-    """
-    Example JSON to be exposed:
+# # Expose pull requests closing times for all repos and the specific selected two repos
+# @app.route('/deep_insights_issues/pull_request_closing_times/<path:repo_name_1>/vs/<path:repo_name_2>',
+#            methods=['GET'])
+# def compare_pull_request_closing_times(repo_name_1, repo_name_2):
+#     """
+#     Example JSON to be exposed:
     
-    """
-    print("Get pull-request closing times from database:\n"
-        f"Repo 1: {repo_name_1}\n"
-        f"Repo 2: {repo_name_2}\n")
+#     """
+#     print("Get pull-request closing times from database:\n"
+#         f"Repo 1: {repo_name_1}\n"
+#         f"Repo 2: {repo_name_2}\n")
     
-    # Query Cassandra
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
+#     # Query Cassandra
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
     
 
-    dict_to_be_exposed = {}
+#     dict_to_be_exposed = {}
     
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
-    f" FROM {keyspace}.pull_request_closing_times;"    
+#     # Prepare the query
+#     prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
+#     f" FROM {keyspace}.pull_request_closing_times;"    
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) pull requests
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
-    # Get all repos' closing times 
+#     # Get all repos' closing times 
     
-    closing_times_list = []
+#     closing_times_list = []
     
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+#     # Populate the closing_time_list
+#     for row in rows_list:
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
+#                     f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                     f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
                 
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
+#             # # Print closing times to get a sense of the data
+#             # # Print and verify the if the actual closing times 
+#             # # of the pull-requests match the ones some closing times    
+#             # print(f"Closing time: (days, seconds) = \
+#             #         {time_diff.days, time_diff.seconds}")
+#             # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
+#             # print()
+#             # time.sleep(0.1)
   
-        except Exception as e:
-            print(f"Exception: {e}"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
+#         except Exception as e:
+#             print(f"Exception: {e}"
+#                 f"Repo name: {getattr(row, 'repo_name')}\n"
+#                 f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}\n"
+#                 f"Closing time of row: {closing_time_of_row}\n")
         
-        closing_times_list.append(closing_time_in_seconds)
+#         closing_times_list.append(closing_time_in_seconds)
     
-    # Create the histogram of the closing times values 
-    # Transform left-skewed distribution to visualise it
-    closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
+#     # Create the histogram of the closing times values 
+#     # Transform left-skewed distribution to visualise it
+#     closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
     
-    # Get the bin edges
-    num_of_bins_for_the_histogram = 10
-    abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
-                                              bins=num_of_bins_for_the_histogram)
+#     # Get the bin edges
+#     num_of_bins_for_the_histogram = 10
+#     abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
+#                                               bins=num_of_bins_for_the_histogram)
     
-    # Calculate the bin centers from the bin edges
-    bin_centers = []
-    # length(bin_centers) = length(bin_edges) - 1
-    for bin_edge_index in range(len(bin_edges)-1):
-        bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
+#     # Calculate the bin centers from the bin edges
+#     bin_centers = []
+#     # length(bin_centers) = length(bin_edges) - 1
+#     for bin_edge_index in range(len(bin_edges)-1):
+#         bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
     
     
-    # Average pull-request closing time of repo 1
+#     # Average pull-request closing time of repo 1
     
-    # Prepare the query
-    prepared_query = f"SELECT "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
+#     # Prepare the query
+#     prepared_query = f"SELECT "\
+#         "opening_time, closing_time "\
+#         f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) pull requests
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
-    # Get the closing times of repo 1
-    closing_times_of_repo_1 = []
+#     # Get the closing times of repo 1
+#     closing_times_of_repo_1 = []
     
-    # Get the average closing time of pull-requests for repo 1
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
+#     # Get the average closing time of pull-requests for repo 1
+#     # Populate the closing_time_list
+#     for row in rows_list:
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
+#                     f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                     f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
+#             # # Print closing times to get a sense of the data
+#             # # Print and verify the if the actual closing times 
+#             # # of the pull-requests match the ones some closing times    
+#             # print(f"Closing time: (days, seconds) = \
+#             #         {time_diff.days, time_diff.seconds}")
+#             # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
+#             # print()
+#             # time.sleep(0.1)
   
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
+#         except Exception as e:
+#             print(f"Exception: {e}\n"
+#                 f"Repo name: {getattr(row, 'repo_name')}\n"
+#                 f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}\n"
+#                 f"Closing time of row: {closing_time_of_row}\n")
             
         
-        closing_times_of_repo_1.append(closing_time_in_seconds)
+#         closing_times_of_repo_1.append(closing_time_in_seconds)
     
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_1_no_skew = np.log10(np.average(closing_times_of_repo_1) + 1)
+#     # Get and transform the average closing time of the repo
+#     average_closing_time_of_repo_1_no_skew = np.log10(np.average(closing_times_of_repo_1) + 1)
     
     
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_pull_request_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_pull_request_closing_time_of_repo_1[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
+#     # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
+#     # is the one with the average pull-request closing time overlapping the existing distribution
+#     bin_of_average_pull_request_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
+#     # # Create the dataset for the repo 1 containing only 1 non zero value
+#     for bin_edge_index in range(len(bin_edges)-1):
+#         if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
+#             average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
+#             bin_of_average_pull_request_closing_time_of_repo_1[bin_edge_index] = \
+#                 np.max(abs_frequencies)
+#             # Once the interval in which the average closing time lies, break the loop
+#             break
         
     
-    # Average pull-request closing time of repo 2
+#     # Average pull-request closing time of repo 2
     
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, pull_request_number, "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
+#     # Prepare the query
+#     prepared_query = f"SELECT repo_name, pull_request_number, "\
+#         "opening_time, closing_time "\
+#         f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) pull requests
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
     
-    # Get the closing times of repo 2
-    closing_times_of_repo_2 = []
+#     # Get the closing times of repo 2
+#     closing_times_of_repo_2 = []
     
-    # Get the average closing time of pull-requests for repo 2
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
+#     # Get the average closing time of pull-requests for repo 2
+#     # Populate the closing_time_list
+#     for row in rows_list:
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
+#                     f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                     f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
+#             # # Print closing times to get a sense of the data
+#             # # Print and verify the if the actual closing times 
+#             # # of the pull-requests match the ones some closing times    
+#             # print(f"Closing time: (days, seconds) = \
+#             #         {time_diff.days, time_diff.seconds}")
+#             # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
+#             # print()
+#             # time.sleep(0.1)
   
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
+#         except Exception as e:
+#             print(f"Exception: {e}\n"
+#                 f"Repo name: {getattr(row, 'repo_name')}\n"
+#                 f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}\n"
+#                 f"Closing time of row: {closing_time_of_row}\n")
             
         
-        closing_times_of_repo_2.append(closing_time_in_seconds)
+#         closing_times_of_repo_2.append(closing_time_in_seconds)
     
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_2_no_skew = np.log10(np.average(closing_times_of_repo_2) + 1)
+#     # Get and transform the average closing time of the repo
+#     average_closing_time_of_repo_2_no_skew = np.log10(np.average(closing_times_of_repo_2) + 1)
     
     
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_pull_request_closing_time_of_repo_2 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_2_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_2_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_pull_request_closing_time_of_repo_2[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
+#     # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
+#     # is the one with the average pull-request closing time overlapping the existing distribution
+#     bin_of_average_pull_request_closing_time_of_repo_2 = np.zeros((len(bin_centers)))
+#     # # Create the dataset for the repo 1 containing only 1 non zero value
+#     for bin_edge_index in range(len(bin_edges)-1):
+#         if average_closing_time_of_repo_2_no_skew >= bin_edges[bin_edge_index] and \
+#             average_closing_time_of_repo_2_no_skew < bin_edges[bin_edge_index+1]:
+#             bin_of_average_pull_request_closing_time_of_repo_2[bin_edge_index] = \
+#                 np.max(abs_frequencies)
+#             # Once the interval in which the average closing time lies, break the loop
+#             break
         
     
-    # Expose data
-    # Expose bin centers and absolute frequencies for the histogram
-    dict_to_be_exposed["bin_centers_log_transformed"] = bin_centers
-    dict_to_be_exposed["abs_frequencies"] = abs_frequencies.tolist()
-    # # Uncomment to expose all closing times
-    # dict_to_be_exposed["closing_times"] = closing_times_list_no_skew
+#     # Expose data
+#     # Expose bin centers and absolute frequencies for the histogram
+#     dict_to_be_exposed["bin_centers_log_transformed"] = bin_centers
+#     dict_to_be_exposed["abs_frequencies"] = abs_frequencies.tolist()
+#     # # Uncomment to expose all closing times
+#     # dict_to_be_exposed["closing_times"] = closing_times_list_no_skew
     
-    # Get the corresponding times of the bins in seconds
-    dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(10, bin_centers) - 1).tolist()
+#     # Get the corresponding times of the bins in seconds
+#     dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(10, bin_centers) - 1).tolist()
     
-    # Expose pull-request closing time for repo_1
-    dict_to_be_exposed["repo_name_1"] = repo_name_1
-    dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_1"] = \
-        bin_of_average_pull_request_closing_time_of_repo_1.tolist()
+#     # Expose pull-request closing time for repo_1
+#     dict_to_be_exposed["repo_name_1"] = repo_name_1
+#     dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_1"] = \
+#         bin_of_average_pull_request_closing_time_of_repo_1.tolist()
     
-    # Expose pull-request closing time for repo_2
-    dict_to_be_exposed["repo_name_2"] = repo_name_2
-    dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_2"] = \
-        bin_of_average_pull_request_closing_time_of_repo_2.tolist()
+#     # Expose pull-request closing time for repo_2
+#     dict_to_be_exposed["repo_name_2"] = repo_name_2
+#     dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_2"] = \
+#         bin_of_average_pull_request_closing_time_of_repo_2.tolist()
     
-    cluster.shutdown()
-    return jsonify(dict_to_be_exposed)
+#     cluster.shutdown()
+#     return jsonify(dict_to_be_exposed)
+
 
 
 # Expose pull requests closing times for all repos and the specific selected two repos
@@ -1514,74 +1516,113 @@ def compare_pull_request_closing_times_only_selected_repos(repo_name_1, repo_nam
     
 
     cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    
-
     
     
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
-    f" FROM {keyspace}.pull_request_closing_times;"    
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+    histogram_keyspace = 'histograms'
+    session = cluster.connect()
+    create_histogram_query = f"CREATE KEYSPACE IF NOT EXISTS {histogram_keyspace} "\
+        "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}" \
+        "AND durable_writes = true;"
+    session.execute(create_histogram_query)
+    # session = cluster.connect(histogram_keyspace)
     
-    # # Get all repos' closing times 
-    # closing_times_list = []
-    # # Populate the closing_time_list
-    # for row in rows_list:
-    #     opening_time_of_row = getattr(row, 'opening_time')
-    #     closing_time_of_row = getattr(row, 'closing_time')
-    #     # Remove rows containing closing time values earlier than opening time values
-    #     try:
-    #         opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-    #         closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-    #         time_diff = closing_datetime - opening_datetime
-    #         closing_time_in_seconds = time_diff.total_seconds()
-    #         if closing_time_in_seconds < 0:
-    #             print(f"Repo name: {getattr(row, 'repo_name')}\n"
-    #                 f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-    #                 f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
-                
-    #         # # Print closing times to get a sense of the data
-    #         # # Print and verify the if the actual closing times 
-    #         # # of the pull-requests match the ones some closing times    
-    #         # print(f"Closing time: (days, seconds) = \
-    #         #         {time_diff.days, time_diff.seconds}")
-    #         # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-    #         # print()
-    #         # time.sleep(0.1)
-  
-    #     except Exception as e:
-    #         print(f"Exception: {e}"
-    #             f"Repo name: {getattr(row, 'repo_name')}\n"
-    #             f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-    #             f"Opening time of row: {opening_time_of_row}\n"
-    #             f"Closing time of row: {closing_time_of_row}\n")
+    histograms_table_name = 'histograms_info'
+    create_histograms_info_table_query = f"CREATE TABLE IF NOT EXISTS {histogram_keyspace}.{histograms_table_name} "\
+        "(histogram_name text, bin_centers list<double>, bin_edges list<double>, "\
+            "abs_frequencies list<double>, PRIMARY KEY (histogram_name));"
+    session.execute(create_histograms_info_table_query)
+    
+    histogram_name = 'pull_requests_closing_times_histogram'
+    get_pull_requests_histogram_info = f"SELECT bin_centers, bin_edges, abs_frequencies "\
+        f"FROM {histogram_keyspace}.{histograms_table_name} WHERE histogram_name = '{histogram_name}';"        
+    row = session.execute(get_pull_requests_histogram_info)
+    row_in_response = row.one()
+    
+    
+    # print(f"Row in response: {row_in_response}")
+    # raise Exception(f"Check if keyspace {histogram_keyspace} and table {histogram_keyspace}.{histograms_table_name} were created and if the row in the response is empty")
+    
+    
+    if row_in_response == None:
         
-    #     closing_times_list.append(closing_time_in_seconds)
+        keyspace = "prod_gharchive"
+        # Calculate the histogram values
+        print(f"Bin centers, edges and absolute values of histogram {histogram_name} are not in table {histogram_keyspace}.{histograms_table_name}.\n"\
+            f"Calculating based on table {keyspace}.pull_requests_closing_times...")
+        
+        prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
+        f" FROM {keyspace}.pull_request_closing_times;"    
+        
+        rows = session.execute(prepared_query)
+        rows_list = rows.all()
+        # Keep only closed (with non None closing times) pull requests
+        rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+        
+        # Get all repos' closing times 
+        closing_times_list = []
+        # Populate the closing_time_list
+        for row in rows_list:
+            opening_time_of_row = getattr(row, 'opening_time')
+            closing_time_of_row = getattr(row, 'closing_time')
+            # Remove rows containing closing time values earlier than opening time values
+            try:
+                opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                time_diff = closing_datetime - opening_datetime
+                closing_time_in_seconds = time_diff.total_seconds()
+                if closing_time_in_seconds < 0:
+                    print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                        f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                        f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+            except Exception as e:
+                print(f"Exception: {e}"
+                    f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                    f"Opening time of row: {opening_time_of_row}\n"
+                    f"Closing time of row: {closing_time_of_row}\n")
+                        
+            closing_times_list.append(closing_time_in_seconds)
     
-    # # Create the histogram of the closing times values 
-    # # Transform left-skewed distribution to visualise it
-    # closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
     
-    # # Get the bin edges
-    # num_of_bins_for_the_histogram = 10
-    # abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
-    #                                           bins=num_of_bins_for_the_histogram)
+        # Create the histogram of the closing times values 
+        # Transform left-skewed distribution to visualise it
+        closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
+        
+        # Get the bin edges
+        num_of_bins_for_the_histogram = 10
+        abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
+                                                bins=num_of_bins_for_the_histogram)
+        
+        # Calculate the bin centers from the bin edges
+        bin_centers = []
+        # length(bin_centers) = length(bin_edges) - 1
+        for bin_edge_index in range(len(bin_edges)-1):
+            bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
+        print(f"Completed calculation of bin centers, bin edges and absolute values of histogram '{histogram_name}'\n"\
+            f"Bin centers: {bin_centers},\n"\
+            f"Bin edges: {bin_edges})\n"\
+            f"Absolute frequencies: {abs_frequencies}")
+        
+        insert_histogram_info = f"INSERT INTO {histogram_keyspace}.{histograms_table_name} "\
+            f"(bin_centers, bin_edges, abs_frequencies) VALUES ({bin_centers}, {bin_edges}, "\
+                f"{abs_frequencies});"
+        session.execute(insert_histogram_info)
+        
+    elif row_in_response != None:
+        bin_centers = getattr(row_in_response, 'bin_centers')
+        bin_edges = getattr(row_in_response, 'bin_edges')
+        abs_frequencies = getattr(row_in_response, 'abs_frequencies')
+        
+        print(f"Bin centers, bin edges and absolute frequencies of histogram {histogram_name} already exist in table {histogram_keyspace}.{histograms_table_name}\n"\
+            f"Bin centers of histogram '{histogram_name}': {bin_centers}\n"\
+            f"Bin edges of histogram '{histogram_name}': {bin_edges}\n"\
+            f"Absolute frequencies in histogram '{histogram_name}': {abs_frequencies}")
     
-    # # Calculate the bin centers from the bin edges
-    # bin_centers = []
-    # # length(bin_centers) = length(bin_edges) - 1
-    # for bin_edge_index in range(len(bin_edges)-1):
-    #     bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
     
     
-    # # Average pull-request closing time of repo 1
+    sys.exit("Check the bin centers, bin edges and absolute frequency values")
     
     # Expose data
     bin_centers = [0.430604200296259, 1.29181260088878, 2.1530210014813, 3.01422940207381, 3.87543780266633, 4.73664620325885, 5.59785460385137, 6.45906300444389, 7.3202714050364, 8.18147980562892]
@@ -1592,13 +1633,16 @@ def compare_pull_request_closing_times_only_selected_repos(repo_name_1, repo_nam
     
     
     
-    
+    # # Average pull-request closing time of repo 1
+
     
     # Prepare the query
     prepared_query = f"SELECT "\
         "opening_time, closing_time "\
         f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
     
+    keyspace = 'prod_gharchive'
+    session = cluster.connect(keyspace)
     rows = session.execute(prepared_query)
     rows_list = rows.all()
     # Keep only closed (with non None closing times) pull requests
@@ -1728,9 +1772,9 @@ def compare_pull_request_closing_times_only_selected_repos(repo_name_1, repo_nam
     
     dict_to_be_exposed = {}
     dict_to_be_exposed["bin_centers_log_transformed"] = bin_centers
+    dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(10, bin_centers) - 1).tolist()
     dict_to_be_exposed["bin_edges_log_transformed"] = bin_edges
     dict_to_be_exposed["abs_frequencies"] = abs_frequencies
-    dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(10, bin_centers) - 1).tolist()
     # # Uncomment to expose all closing times
     # dict_to_be_exposed["closing_times"] = closing_times_list_no_skew
     dict_to_be_exposed["repo_name_1"] = repo_name_1
@@ -1748,436 +1792,436 @@ def compare_pull_request_closing_times_only_selected_repos(repo_name_1, repo_nam
 
 
 
-# Expose number of stars per repo by month for all repos
-@app.route('/deep_insights_issues/issues_closing_times/<path:repo_name_1>/vs/<path:repo_name_2>',
-           methods=['GET'])
-def compare_issues_closing_times(repo_name_1, repo_name_2):
-    """
-    Example JSON to be exposed:
+# # Expose number of stars per repo by month for all repos
+# @app.route('/deep_insights_issues/issues_closing_times/<path:repo_name_1>/vs/<path:repo_name_2>',
+#            methods=['GET'])
+# def compare_issues_closing_times(repo_name_1, repo_name_2):
+#     """
+#     Example JSON to be exposed:
     
-    """
-    print(f"Get issues' closing times from database:\n"
-        f"Repo 1: {repo_name_1}\n"
-        f"Repo 2: {repo_name_2}\n")
+#     """
+#     print(f"Get issues' closing times from database:\n"
+#         f"Repo 1: {repo_name_1}\n"
+#         f"Repo 2: {repo_name_2}\n")
     
-    # Closing times of issues
+#     # Closing times of issues
     
-    # All repos
+#     # All repos
    
-    # Query Cassandra
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
+#     # Query Cassandra
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
+#     session.execute(f'USE {keyspace}')
     
 
     
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, issue_number, opening_time, closing_time "\
-        f"FROM {keyspace}.issue_closing_times;"    
+#     # Prepare the query
+#     prepared_query = f"SELECT repo_name, issue_number, opening_time, closing_time "\
+#         f"FROM {keyspace}.issue_closing_times;"    
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) issues
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) issues
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
     
-    # Get all repos' closing times 
+#     # Get all repos' closing times 
     
-    closing_times_list = []
+#     closing_times_list = []
     
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Issue number: {getattr(row, 'issue_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
+#     # Populate the closing_time_list
+#     for row in rows_list:
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
+#                     f"Issue number: {getattr(row, 'issue_number')}\n"
+#                     f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
   
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}"
-                f"Issue number: {getattr(row, 'issue_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
+#         except Exception as e:
+#             print(f"Exception: {e}\n"
+#                 f"Repo name: {getattr(row, 'repo_name')}"
+#                 f"Issue number: {getattr(row, 'issue_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}\n"
+#                 f"Closing time of row: {closing_time_of_row}\n")
             
         
-        closing_times_list.append(closing_time_in_seconds)
+#         closing_times_list.append(closing_time_in_seconds)
     
-    # Create the histogram of the closing times values 
-    # Transform left-skewed distribution to visualise it
-    closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
+#     # Create the histogram of the closing times values 
+#     # Transform left-skewed distribution to visualise it
+#     closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
     
-    # Get the bin edges
-    num_of_bins_for_the_histogram = 10
-    abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
-                                              bins=num_of_bins_for_the_histogram)
+#     # Get the bin edges
+#     num_of_bins_for_the_histogram = 10
+#     abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
+#                                               bins=num_of_bins_for_the_histogram)
     
-    # Calculate the bin centers from the bin edges
-    bin_centers = []
-    # length(bin_centers) = length(bin_edges) - 1
-    for bin_edge_index in range(len(bin_edges)-1):
-        bin_center = (bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2
-        bin_centers.append(bin_center)    
+#     # Calculate the bin centers from the bin edges
+#     bin_centers = []
+#     # length(bin_centers) = length(bin_edges) - 1
+#     for bin_edge_index in range(len(bin_edges)-1):
+#         bin_center = (bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2
+#         bin_centers.append(bin_center)    
     
     
-    # Average pull-request closing time of repo 1
+#     # Average pull-request closing time of repo 1
     
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, issue_number, "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_1}';"    
+#     # Prepare the query
+#     prepared_query = f"SELECT repo_name, issue_number, "\
+#         "opening_time, closing_time "\
+#         f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_1}';"    
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) issues
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) issues
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
     
-    # Get the closing times of repo 1
-    closing_times_of_repo_1 = []
+#     # Get the closing times of repo 1
+#     closing_times_of_repo_1 = []
     
-    # Get the average closing time of pull-requests for repo 1
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Issue number: {getattr(row, 'issue_number')}\n"
-                    f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+#     # Get the average closing time of pull-requests for repo 1
+#     # Populate the closing_time_list
+#     for row in rows_list:
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
+#                     f"Issue number: {getattr(row, 'issue_number')}\n"
+#                     f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
                 
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
+#             # # Print closing times to get a sense of the data
+#             # # Print and verify the if the actual closing times 
+#             # # of the pull-requests match the ones some closing times    
+#             # print(f"Closing time: (days, seconds) = \
+#             #         {time_diff.days, time_diff.seconds}")
+#             # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
+#             # print()
+#             # time.sleep(0.1)
   
-        except Exception as e:
-            print(f"Exception: {e}\n"\
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Issue number: {getattr(row, 'issue_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
+#         except Exception as e:
+#             print(f"Exception: {e}\n"\
+#                 f"Repo name: {getattr(row, 'repo_name')}\n"
+#                 f"Issue number: {getattr(row, 'issue_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}\n"
+#                 f"Closing time of row: {closing_time_of_row}\n")
 
         
-        closing_times_of_repo_1.append(closing_time_in_seconds)
+#         closing_times_of_repo_1.append(closing_time_in_seconds)
     
     
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_1_no_skew = np.log10(np.average(closing_times_of_repo_1) + 1)
+#     # Get and transform the average closing time of the repo
+#     average_closing_time_of_repo_1_no_skew = np.log10(np.average(closing_times_of_repo_1) + 1)
     
     
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_issue_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_issue_closing_time_of_repo_1[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
+#     # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
+#     # is the one with the average pull-request closing time overlapping the existing distribution
+#     bin_of_average_issue_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
+#     # # Create the dataset for the repo 1 containing only 1 non zero value
+#     for bin_edge_index in range(len(bin_edges)-1):
+#         if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
+#             average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
+#             bin_of_average_issue_closing_time_of_repo_1[bin_edge_index] = \
+#                 np.max(abs_frequencies)
+#             # Once the interval in which the average closing time lies, break the loop
+#             break
     
-    # Average issues closing time of repo 2
+#     # Average issues closing time of repo 2
     
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, issue_number, "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_2}';"    
+#     # Prepare the query
+#     prepared_query = f"SELECT repo_name, issue_number, "\
+#         "opening_time, closing_time "\
+#         f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_2}';"    
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) issues
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) issues
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
     
-    # Get the closing times of repo 2
-    closing_times_of_repo_2 = []
+#     # Get the closing times of repo 2
+#     closing_times_of_repo_2 = []
     
-    # Get the average closing time of pull-requests for repo 2
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Issue number: {getattr(row, 'issue_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
+#     # Get the average closing time of pull-requests for repo 2
+#     # Populate the closing_time_list
+#     for row in rows_list:
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
+#                     f"Issue number: {getattr(row, 'issue_number')}\n"
+#                     f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
+#             # # Print closing times to get a sense of the data
+#             # # Print and verify the if the actual closing times 
+#             # # of the pull-requests match the ones some closing times    
+#             # print(f"Closing time: (days, seconds) = \
+#             #         {time_diff.days, time_diff.seconds}")
+#             # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
+#             # print()
+#             # time.sleep(0.1)
   
-        except Exception as e:
-            print(f"Exception: {e}\n"\
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Issue number: {getattr(row, 'issue_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
+#         except Exception as e:
+#             print(f"Exception: {e}\n"\
+#                 f"Repo name: {getattr(row, 'repo_name')}\n"
+#                 f"Issue number: {getattr(row, 'issue_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}\n"
+#                 f"Closing time of row: {closing_time_of_row}\n")
             
         
-        closing_times_of_repo_2.append(closing_time_in_seconds)
+#         closing_times_of_repo_2.append(closing_time_in_seconds)
     
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_2_no_skew = np.log10(np.average(closing_times_of_repo_2) + 1)
-    
-    
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_issue_closing_time_of_repo_2 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_2_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_2_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_issue_closing_time_of_repo_2[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
+#     # Get and transform the average closing time of the repo
+#     average_closing_time_of_repo_2_no_skew = np.log10(np.average(closing_times_of_repo_2) + 1)
     
     
-    # Expose data
-    dict_to_be_exposed = {}
-    # Expose bin centers and absolute frequencies for the histogram    
-    dict_to_be_exposed["bin_centers_log_transformed"] = bin_centers
-    dict_to_be_exposed["abs_frequencies"] = abs_frequencies.tolist()
+#     # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
+#     # is the one with the average pull-request closing time overlapping the existing distribution
+#     bin_of_average_issue_closing_time_of_repo_2 = np.zeros((len(bin_centers)))
+#     # # Create the dataset for the repo 1 containing only 1 non zero value
+#     for bin_edge_index in range(len(bin_edges)-1):
+#         if average_closing_time_of_repo_2_no_skew >= bin_edges[bin_edge_index] and \
+#             average_closing_time_of_repo_2_no_skew < bin_edges[bin_edge_index+1]:
+#             bin_of_average_issue_closing_time_of_repo_2[bin_edge_index] = \
+#                 np.max(abs_frequencies)
+#             # Once the interval in which the average closing time lies, break the loop
+#             break
     
-    # Get the corresponding times of the bins in seconds
-    dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(10, bin_centers) - 1).tolist()
-    # # Uncomment to expose all closing times
-    # dict_to_be_exposed["closing_times_log_transformed"] = \
-        # sorted(closing_times_list_no_skew.tolist())
     
-    # Expose pull-request closing time for repo_1
-    dict_to_be_exposed["repo_name_1"] = repo_name_1
-    dict_to_be_exposed["bin_of_average_issue_closing_time_of_repo_1"] = \
-        bin_of_average_issue_closing_time_of_repo_1.tolist()
+#     # Expose data
+#     dict_to_be_exposed = {}
+#     # Expose bin centers and absolute frequencies for the histogram    
+#     dict_to_be_exposed["bin_centers_log_transformed"] = bin_centers
+#     dict_to_be_exposed["abs_frequencies"] = abs_frequencies.tolist()
     
-    # Expose pull-request closing time for repo_2
-    dict_to_be_exposed["repo_name_2"] = repo_name_2
-    dict_to_be_exposed["bin_of_average_issue_closing_time_of_repo_2"] = \
-        bin_of_average_issue_closing_time_of_repo_2.tolist()
+#     # Get the corresponding times of the bins in seconds
+#     dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(10, bin_centers) - 1).tolist()
+#     # # Uncomment to expose all closing times
+#     # dict_to_be_exposed["closing_times_log_transformed"] = \
+#         # sorted(closing_times_list_no_skew.tolist())
     
-    # Expose bin edges
-    dict_to_be_exposed["bin_edges_log_transformed"] = bin_edges.tolist()
+#     # Expose pull-request closing time for repo_1
+#     dict_to_be_exposed["repo_name_1"] = repo_name_1
+#     dict_to_be_exposed["bin_of_average_issue_closing_time_of_repo_1"] = \
+#         bin_of_average_issue_closing_time_of_repo_1.tolist()
     
-    cluster.shutdown()
-    return jsonify(dict_to_be_exposed)
+#     # Expose pull-request closing time for repo_2
+#     dict_to_be_exposed["repo_name_2"] = repo_name_2
+#     dict_to_be_exposed["bin_of_average_issue_closing_time_of_repo_2"] = \
+#         bin_of_average_issue_closing_time_of_repo_2.tolist()
+    
+#     # Expose bin edges
+#     dict_to_be_exposed["bin_edges_log_transformed"] = bin_edges.tolist()
+    
+#     cluster.shutdown()
+#     return jsonify(dict_to_be_exposed)
 
 
-def get_only_first_two_not_zero_times(num_of_seconds):
-    """
-    :param num_of_seconds: number of seconds to convert to higher time durations (years, months, etc)
-    :return time_dict_keep_largest_two_non_zero_durations: The first two largest time durations that the seconds are converted into:
+# def get_only_first_two_not_zero_times(num_of_seconds):
+#     """
+#     :param num_of_seconds: number of seconds to convert to higher time durations (years, months, etc)
+#     :return time_dict_keep_largest_two_non_zero_durations: The first two largest time durations that the seconds are converted into:
     
-    Example:
-    For input num_of_seconds = 168039959, we get 
-    output: time_dict_keep_largest_two_non_zero_durations = {'years': 5, 'months': 3}
-    """
-    seconds_in_a_year = 365*24*60*60
-    seconds_in_a_month = 30*24*60*60
-    seconds_in_a_day = 24*60*60
-    seconds_in_an_hour = 60*60
-    seconds_in_a_minute = 60
+#     Example:
+#     For input num_of_seconds = 168039959, we get 
+#     output: time_dict_keep_largest_two_non_zero_durations = {'years': 5, 'months': 3}
+#     """
+#     seconds_in_a_year = 365*24*60*60
+#     seconds_in_a_month = 30*24*60*60
+#     seconds_in_a_day = 24*60*60
+#     seconds_in_an_hour = 60*60
+#     seconds_in_a_minute = 60
 
-    years, remaining_seconds = divmod(num_of_seconds, seconds_in_a_year)
-    months, remaining_seconds = divmod(remaining_seconds, seconds_in_a_month)
-    days, remaining_seconds = divmod(remaining_seconds, seconds_in_a_day)
-    hours, remaining_seconds = divmod(remaining_seconds, seconds_in_an_hour)
-    minutes, remaining_seconds = divmod(remaining_seconds, seconds_in_a_minute)
-    seconds = remaining_seconds
+#     years, remaining_seconds = divmod(num_of_seconds, seconds_in_a_year)
+#     months, remaining_seconds = divmod(remaining_seconds, seconds_in_a_month)
+#     days, remaining_seconds = divmod(remaining_seconds, seconds_in_a_day)
+#     hours, remaining_seconds = divmod(remaining_seconds, seconds_in_an_hour)
+#     minutes, remaining_seconds = divmod(remaining_seconds, seconds_in_a_minute)
+#     seconds = remaining_seconds
 
-    time_dict = {'year(s)': years, 'month(s)': months, 'day(s)':days, \
-        'hour(s)':hours, 'minute(s)':minutes, 'second(s)':seconds}
+#     time_dict = {'year(s)': years, 'month(s)': months, 'day(s)':days, \
+#         'hour(s)':hours, 'minute(s)':minutes, 'second(s)':seconds}
 
-    time_dict_keep_largest_two_non_zero_durations = {}
+#     time_dict_keep_largest_two_non_zero_durations = {}
 
-    # Iterate through the ordered time dictionary
-    for k, v, in time_dict.items():
-        if time_dict[k] != 0:
-            time_dict_keep_largest_two_non_zero_durations[k] = v
-        # Keep only 2 of the values in the 
-        if len(time_dict_keep_largest_two_non_zero_durations.items()) == 2:
-            break
+#     # Iterate through the ordered time dictionary
+#     for k, v, in time_dict.items():
+#         if time_dict[k] != 0:
+#             time_dict_keep_largest_two_non_zero_durations[k] = v
+#         # Keep only 2 of the values in the 
+#         if len(time_dict_keep_largest_two_non_zero_durations.items()) == 2:
+#             break
         
-    return time_dict_keep_largest_two_non_zero_durations
+#     return time_dict_keep_largest_two_non_zero_durations
 
 
-# Expose issues closing times for a spacific repo by label
-@app.route('/deep_insights_issues/issues_closing_times_by_label/<path:repo_name>', 
-           methods=['GET'])
-def get_issues_closing_times_by_label(repo_name):
+# # Expose issues closing times for a spacific repo by label
+# @app.route('/deep_insights_issues/issues_closing_times_by_label/<path:repo_name>', 
+#            methods=['GET'])
+# def get_issues_closing_times_by_label(repo_name):
     
     
-    """
-    Example JSON to be exposed:
-    {
-        "closing_times_per_label": [
-            [
-            "help wanted",
-            168039959.0
-            ],
-            [
-            "triaged: bug",
-            168039959.0
-            ],
-            [
-            "inactive",
-            51647595.0
-            ],
-            [
-            "triaged: question",
-            51647595.0
-            ],
-            [
-            "issue: question",
-            701.0
-            ]
-        ]
-    }
-    """
+#     """
+#     Example JSON to be exposed:
+#     {
+#         "closing_times_per_label": [
+#             [
+#             "help wanted",
+#             168039959.0
+#             ],
+#             [
+#             "triaged: bug",
+#             168039959.0
+#             ],
+#             [
+#             "inactive",
+#             51647595.0
+#             ],
+#             [
+#             "triaged: question",
+#             51647595.0
+#             ],
+#             [
+#             "issue: question",
+#             701.0
+#             ]
+#         ]
+#     }
+#     """
     
-    # Query Cassandra
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
+#     # Query Cassandra
+#     cassandra_container_name = 'cassandra_stelios'
+#     keyspace = 'prod_gharchive'
+#     cluster = Cluster([cassandra_container_name],port=9142)
+#     session = cluster.connect(keyspace)
     
-    repo_unquoted = unquote(repo_name)
-    prepared_query = f""\
-        "SELECT repo_name, issue_number, label, opening_time, closing_time "\
-        f"FROM {keyspace}.issue_closing_times_by_label "\
-        f"WHERE repo_name = '{repo_unquoted}';"
+#     repo_unquoted = unquote(repo_name)
+#     prepared_query = f""\
+#         "SELECT repo_name, issue_number, label, opening_time, closing_time "\
+#         f"FROM {keyspace}.issue_closing_times_by_label "\
+#         f"WHERE repo_name = '{repo_unquoted}';"
     
     
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) issues
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
+#     rows = session.execute(prepared_query)
+#     rows_list = rows.all()
+#     # Keep only closed (with non None closing times) issues
+#     rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
     
         
-    # Map each issue closing time to a list with the corresponding label
+#     # Map each issue closing time to a list with the corresponding label
     
-    closing_times_per_issue_label = {}
-    for row in rows_list:
+#     closing_times_per_issue_label = {}
+#     for row in rows_list:
         
-        issue_label = getattr(row, 'label')
-        # Initialize the list with the closing times of issues of a new label
-        if issue_label not in closing_times_per_issue_label.keys():
-            closing_times_per_issue_label[issue_label] = []
+#         issue_label = getattr(row, 'label')
+#         # Initialize the list with the closing times of issues of a new label
+#         if issue_label not in closing_times_per_issue_label.keys():
+#             closing_times_per_issue_label[issue_label] = []
             
             
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Issue number: {getattr(row, 'issue_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
+#         opening_time_of_row = getattr(row, 'opening_time')
+#         closing_time_of_row = getattr(row, 'closing_time')
+#         # Remove rows containing closing time values earlier than opening time values
+#         try:
+#             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+#             time_diff = closing_datetime - opening_datetime
+#             closing_time_in_seconds = time_diff.total_seconds()
+#             if closing_time_in_seconds < 0:
+#                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
+#                     f"Issue number: {getattr(row, 'issue_number')}\n"
+#                     f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
                 
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
+#             # # Print closing times to get a sense of the data
+#             # # Print and verify the if the actual closing times 
+#             # # of the pull-requests match the ones some closing times    
+#             # print(f"Closing time: (days, seconds) = \
+#             #         {time_diff.days, time_diff.seconds}")
+#             # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
+#             # print()
+#             # time.sleep(0.1)
   
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}"
-                f"Issue number: {getattr(row, 'issue_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}")
+#         except Exception as e:
+#             print(f"Exception: {e}\n"
+#                 f"Repo name: {getattr(row, 'repo_name')}"
+#                 f"Issue number: {getattr(row, 'issue_number')}\n"
+#                 f"Opening time of row: {opening_time_of_row}\n"
+#                 f"Closing time of row: {closing_time_of_row}")
 
         
-        # Add the closing time to the to the list
-        closing_times_per_issue_label[issue_label].append(closing_time_in_seconds)
+#         # Add the closing time to the to the list
+#         closing_times_per_issue_label[issue_label].append(closing_time_in_seconds)
     
     
-    average_closing_time_of_issues_per_label = {}
-    for issue_label in closing_times_per_issue_label.keys():
-        closing_times_list_given_label = closing_times_per_issue_label[issue_label]
-        average_closing_time_of_issues_per_label[issue_label] = \
-            np.average(closing_times_list_given_label)
+#     average_closing_time_of_issues_per_label = {}
+#     for issue_label in closing_times_per_issue_label.keys():
+#         closing_times_list_given_label = closing_times_per_issue_label[issue_label]
+#         average_closing_time_of_issues_per_label[issue_label] = \
+#             np.average(closing_times_list_given_label)
 
 
-    number_of_issues_per_label_dict = {}
-    get_number_of_issues_per_label_query = "SELECT count(*) as number_of_issues_with_this_label, "\
-        f"label FROM {keyspace}.issue_closing_times_by_label WHERE repo_name = '{repo_name}' "\
-        "GROUP BY label;" 
-    number_of_issues_per_label_rows = session.execute(get_number_of_issues_per_label_query)
-    number_of_issues_per_label_rows = number_of_issues_per_label_rows.all()
-    for number_of_issues_for_a_single_label in number_of_issues_per_label_rows:
-        issue_label = getattr(number_of_issues_for_a_single_label, 'label')
-        number_of_issues_for_the_label = getattr(number_of_issues_for_a_single_label, \
-            'number_of_issues_with_this_label')
-        number_of_issues_per_label_dict[issue_label] = number_of_issues_for_the_label
+#     number_of_issues_per_label_dict = {}
+#     get_number_of_issues_per_label_query = "SELECT count(*) as number_of_issues_with_this_label, "\
+#         f"label FROM {keyspace}.issue_closing_times_by_label WHERE repo_name = '{repo_name}' "\
+#         "GROUP BY label;" 
+#     number_of_issues_per_label_rows = session.execute(get_number_of_issues_per_label_query)
+#     number_of_issues_per_label_rows = number_of_issues_per_label_rows.all()
+#     for number_of_issues_for_a_single_label in number_of_issues_per_label_rows:
+#         issue_label = getattr(number_of_issues_for_a_single_label, 'label')
+#         number_of_issues_for_the_label = getattr(number_of_issues_for_a_single_label, \
+#             'number_of_issues_with_this_label')
+#         number_of_issues_per_label_dict[issue_label] = number_of_issues_for_the_label
     
     
-    average_closing_time_of_issues_per_label_list = []
-    for issue_label in average_closing_time_of_issues_per_label.keys():
+#     average_closing_time_of_issues_per_label_list = []
+#     for issue_label in average_closing_time_of_issues_per_label.keys():
         
-        total_num_of_seconds = average_closing_time_of_issues_per_label[issue_label]
+#         total_num_of_seconds = average_closing_time_of_issues_per_label[issue_label]
         
-        time_dict_largest_two_durations = get_only_first_two_not_zero_times(total_num_of_seconds)
+#         time_dict_largest_two_durations = get_only_first_two_not_zero_times(total_num_of_seconds)
         
-        # days_hours_min_secs_tuple = 
-        dict_element = {"issue_label" : issue_label, 
-                "number_of_issues_with_this_label": number_of_issues_per_label_dict[issue_label],
-                "average_closing_time_in_seconds": average_closing_time_of_issues_per_label[issue_label],
-                "average_closing_time_formatted": time_dict_largest_two_durations}
-        average_closing_time_of_issues_per_label_list.append(dict_element)
+#         # days_hours_min_secs_tuple = 
+#         dict_element = {"issue_label" : issue_label, 
+#                 "number_of_issues_with_this_label": number_of_issues_per_label_dict[issue_label],
+#                 "average_closing_time_in_seconds": average_closing_time_of_issues_per_label[issue_label],
+#                 "average_closing_time_formatted": time_dict_largest_two_durations}
+#         average_closing_time_of_issues_per_label_list.append(dict_element)
 
 
-    average_closing_time_of_issues_per_label_list_sorted = \
-        sorted(average_closing_time_of_issues_per_label_list, \
-            key= lambda item: item["number_of_issues_with_this_label"], reverse=True)
+#     average_closing_time_of_issues_per_label_list_sorted = \
+#         sorted(average_closing_time_of_issues_per_label_list, \
+#             key= lambda item: item["number_of_issues_with_this_label"], reverse=True)
     
-    # dict_to_expose = \
-    #     {"closing_times_per_label": average_closing_time_of_issues_per_label_sorted_list}
-    # average_closing_time_of_issues_per_label_sorted_list = 0
-    dict_to_expose = \
-        {"repo_name": repo_name, \
-            "closing_times_per_label": average_closing_time_of_issues_per_label_list_sorted}
+#     # dict_to_expose = \
+#     #     {"closing_times_per_label": average_closing_time_of_issues_per_label_sorted_list}
+#     # average_closing_time_of_issues_per_label_sorted_list = 0
+#     dict_to_expose = \
+#         {"repo_name": repo_name, \
+#             "closing_times_per_label": average_closing_time_of_issues_per_label_list_sorted}
     
-    cluster.shutdown()
-    # Expose the dictionary {label: closing_time in format (days, hours, minutes)}
-    return jsonify(dict_to_expose)
-# endregion
+#     cluster.shutdown()
+#     # Expose the dictionary {label: closing_time in format (days, hours, minutes)}
+#     return jsonify(dict_to_expose)
+# # endregion
     
 
 if __name__ == '__main__':
