@@ -794,50 +794,9 @@ def get_number_of_stars_of_js_repo_by_day():
     return jsonify(dict_to_be_exposed_ordered_by_total_number_of_stars)
     
     
-# TODO: Expose top contributors of js repo
-# @app.route('/javascript_frameworks/top_contributors_of_js_repo/<js_repo>', methods=['GET'])
-# def get_top_js_repo_contributors(js_repo):
-    
-#     """
-#     Example JSON to be exposed:
-    
-#     """
-#     cassandra_container_name = 'cassandra_stelios'
-#     keyspace = 'prod_gharchive'
-#     cluster = Cluster([cassandra_container_name],port=9142)
-#     session = cluster.connect(keyspace)
-#     session.execute(f'USE {keyspace}')
-    
-#     # Top contributors of given js_repo
-#     js_repo_unquoted = unquote(js_repo)
-#     prepared_query = f" "\
-#         f"select * from {keyspace}.top_contributors_of_js_repo "\
-#         f"where repo_name = '{js_repo_unquoted}' ALLOW FILTERING;"\
-#     
-    
-#     # Query to figure out the latest day for which data is available
-#     rows = session.execute(prepared_query)
-#     rows_list = rows.all()
-    
-#     username_dict = {}
-    
-#     # Initialize the dict with zeros
-#     for row_list_index in range(len(rows_list)):
-#         username_of_row = rows_list[row_list_index]["username"]
-#         username_dict[username_of_row] = 0
-    
-    
-#     for row_list_index in range(len(rows_list)):
-#         number_of_contributions_of_row = \
-#             rows_list[row_list_index]["number_of_contributions"]
-#         username_dict[username_of_row] += number_of_contributions_of_row
-    
-    
-#     return jsonify(username_dict)
 
 
-
-# Experiment: Expose top contributors of js repo
+# Expose top contributors of js repo
 @app.route('/javascript_frameworks/top_contributors_of_js_repo/<path:js_repo>', methods=['GET'])
 def get_top_js_repo_contributors_given_js_repo_name(js_repo):
     """
@@ -969,537 +928,17 @@ def get_top_js_repo_contributors_given_js_repo_name(js_repo):
         
     return {"top_contributors_of_js_repo": val_based_sorted_list_of_dicts}
     # return jsonify({val_based_sorted_list_of_dicts})
+
 # endregion
 
 # Screen 4: Deep insights, issues
 # region
-
-# Expose pull requests closing times for all repos
-# Not used
-@app.route('/deep_insights_issues/pull_request_closing_times', methods=['GET'])
-def get_pull_request_closing_times():
-    """
-    Example JSON to be exposed:
-    {
-    "abs_frequencies": [
-        3357,
-        ...
-        613
-    ],
-    "bin_centers": [
-        0.9894769542400601,
-        ...,
-        18.800062130561145
-    ],
-    "bin_of_average_pull_request_closing_time_of_repo_1": [
-        0.0,
-        ...,
-        0.0,
-        16945.0,
-        0.0,
-        ...,
-        0.0
-    ],
-    "bin_of_average_pull_request_closing_time_of_repo_2": [
-        0.0,
-        ...,
-        0.0,
-        16945.0,
-        0.0,
-        ...,
-        0.0
-    ]
-    }
-    """
-    
-    # Query Cassandra
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    
-    # Get month and stars for every repo
-    # for js_repo in js_repos_list:
-    dict_to_be_exposed = {}
-    
-    # # Prepare the query
-    # prepared_query = f" SELECT opening_time, closing_time \
-    #     FROM {keyspace}.pull_request_closing_times;"    
-    
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, pull_request_number, "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times;"    
-    
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
-    
-    # Get all repos' closing times 
-    closing_times_list = []
-    
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
-                
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
-  
-        except Exception as e:
-            raise Exception(e)
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
-            
-        
-        closing_times_list.append(closing_time_in_seconds)
-
-    
-    # Create the histogram of the closing times values 
-    # Transform left-skewed distribution to visualise it
-    closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
-    
-    # Get the bin edges
-    num_of_bins_for_the_histogram = 10
-    abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
-                                              bins=num_of_bins_for_the_histogram)
-    
-    # Calculate the bin centers from the bin edges
-    bin_centers = []
-    # length(bin_centers) = length(bin_edges) - 1
-    for bin_edge_index in range(len(bin_edges)-1):
-        bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
-    
-    
-    # Query repo_1
-    
-    repo_name_1 = 'firedancer-io/firedancer'
-    
-    # Prepare the query
-    prepared_query = f"SELECT "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
-    
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
-    
-    # Get the closing times of repo 1
-    closing_times_of_repo_1 = []
-    
-    # Get the average closing time of pull-requests for repo 1
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"\
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"\
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}\n")
-                
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
-  
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
-            
-        
-        closing_times_of_repo_1.append(closing_time_in_seconds)
-
-    
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_1_no_skew = np.log10(np.average(closing_times_of_repo_1) + 1)
-    
-    
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_pull_request_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_pull_request_closing_time_of_repo_1[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
-    
-    
-    # Query repo_2
-    
-    repo_name_2 = 'microsoft/winget-pkgs'
-    # Prepare the query
-    prepared_query = f"SELECT "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"
-    
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
-    
-    # Get the closing times of repo 1
-    closing_times_of_repo_2 = []
-    
-    # Get the average closing time of pull-requests for repo 1
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
-                
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
-  
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}"
-                f"Closing time of row: {closing_time_of_row}\n")
-            
-        
-        closing_times_of_repo_2.append(closing_time_in_seconds)
-    
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_2_no_skew = np.log10(np.average(closing_times_of_repo_2) + 1)
-    
-    
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_pull_request_closing_time_of_repo_2 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_2_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_2_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_pull_request_closing_time_of_repo_2[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
-    
-    
-    
-    # Expose data
-    # Expose bin centers and absolute frequencies for the histogram
-    dict_to_be_exposed["bin_centers"] = bin_centers
-    dict_to_be_exposed["abs_frequencies"] = abs_frequencies.tolist()
-    # # Uncomment to expose all closing times
-    # dict_to_be_exposed["closing_times"] = closing_times_list_no_skew
-    
-    # Get the corresponding times of the bins in seconds
-    dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(bin_centers, 10) - 1).tolist()
-    
-    # Expose pull-request closing time for repo_1
-    dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_1"] = \
-        bin_of_average_pull_request_closing_time_of_repo_1.tolist()
-    
-    # Expose pull-request closing time for repo_2
-    dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_2"] = \
-        bin_of_average_pull_request_closing_time_of_repo_2.tolist()
-        
-    # Expose pull-request closing time for repo_1
-    
-    cluster.shutdown()
-    return jsonify(dict_to_be_exposed)
 
 
 # Expose pull requests closing times for all repos and the specific selected two repos
 @app.route('/deep_insights_issues/pull_request_closing_times/<path:repo_name_1>/vs/<path:repo_name_2>',
            methods=['GET'])
 def compare_pull_request_closing_times(repo_name_1, repo_name_2):
-    """
-    Example JSON to be exposed:
-    
-    """
-    print("Get pull-request closing times from database:\n"
-        f"Repo 1: {repo_name_1}\n"
-        f"Repo 2: {repo_name_2}\n")
-    
-    # Query Cassandra
-    cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
-    cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    
-
-    dict_to_be_exposed = {}
-    
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
-    f" FROM {keyspace}.pull_request_closing_times;"    
-    
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
-    
-    # Get all repos' closing times 
-    
-    closing_times_list = []
-    
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
-                
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
-  
-        except Exception as e:
-            print(f"Exception: {e}"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
-        
-        closing_times_list.append(closing_time_in_seconds)
-    
-    # Create the histogram of the closing times values 
-    # Transform left-skewed distribution to visualise it
-    closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
-    
-    # Get the bin edges
-    num_of_bins_for_the_histogram = 10
-    abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
-                                              bins=num_of_bins_for_the_histogram)
-    
-    # Calculate the bin centers from the bin edges
-    bin_centers = []
-    # length(bin_centers) = length(bin_edges) - 1
-    for bin_edge_index in range(len(bin_edges)-1):
-        bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
-    
-    
-    # Average pull-request closing time of repo 1
-    
-    # Prepare the query
-    prepared_query = f"SELECT "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
-    
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
-    
-    # Get the closing times of repo 1
-    closing_times_of_repo_1 = []
-    
-    # Get the average closing time of pull-requests for repo 1
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
-                
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
-  
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
-            
-        
-        closing_times_of_repo_1.append(closing_time_in_seconds)
-    
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_1_no_skew = np.log10(np.average(closing_times_of_repo_1) + 1)
-    
-    
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_pull_request_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_pull_request_closing_time_of_repo_1[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
-        
-    
-    # Average pull-request closing time of repo 2
-    
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, pull_request_number, "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
-    
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) pull requests
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
-    
-    # Get the closing times of repo 2
-    closing_times_of_repo_2 = []
-    
-    # Get the average closing time of pull-requests for repo 2
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
-                
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
-  
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
-            
-        
-        closing_times_of_repo_2.append(closing_time_in_seconds)
-    
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_2_no_skew = np.log10(np.average(closing_times_of_repo_2) + 1)
-    
-    
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_pull_request_closing_time_of_repo_2 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_2_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_2_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_pull_request_closing_time_of_repo_2[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
-        
-    
-    # Expose data
-    # Expose bin centers and absolute frequencies for the histogram
-    dict_to_be_exposed["bin_centers_log_transformed"] = bin_centers
-    dict_to_be_exposed["abs_frequencies"] = abs_frequencies.tolist()
-    # # Uncomment to expose all closing times
-    # dict_to_be_exposed["closing_times"] = closing_times_list_no_skew
-    
-    # Get the corresponding times of the bins in seconds
-    dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(10, bin_centers) - 1).tolist()
-    
-    # Expose pull-request closing time for repo_1
-    dict_to_be_exposed["repo_name_1"] = repo_name_1
-    dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_1"] = \
-        bin_of_average_pull_request_closing_time_of_repo_1.tolist()
-    
-    # Expose pull-request closing time for repo_2
-    dict_to_be_exposed["repo_name_2"] = repo_name_2
-    dict_to_be_exposed["bin_of_average_pull_request_closing_time_of_repo_2"] = \
-        bin_of_average_pull_request_closing_time_of_repo_2.tolist()
-    
-    cluster.shutdown()
-    return jsonify(dict_to_be_exposed)
-
-
-
-# Expose pull requests closing times for all repos and the specific selected two repos
-@app.route('/deep_insights_issues/pull_request_closing_times_only_selected_repos/<path:repo_name_1>/vs/<path:repo_name_2>',
-           methods=['GET'])
-def compare_pull_request_closing_times_only_selected_repos(repo_name_1, repo_name_2):
     """
     Example JSON to be exposed:
     
@@ -1547,7 +986,6 @@ def compare_pull_request_closing_times_only_selected_repos(repo_name_1, repo_nam
         
         # Get all repos' closing times 
         closing_times_list = []
-        # Populate the closing_time_list
         for row in rows_list:
             opening_time_of_row = getattr(row, 'opening_time')
             closing_time_of_row = getattr(row, 'closing_time')
@@ -1605,12 +1043,8 @@ def compare_pull_request_closing_times_only_selected_repos(repo_name_1, repo_nam
         bin_edges = getattr(row_in_response, 'bin_edges')
         abs_frequencies = getattr(row_in_response, 'abs_frequencies')
         
-        print(f"Bin centers, bin edges and absolute frequencies of histogram {histogram_name} already exist in table {histogram_keyspace}.{histograms_table_name}\n"\
-            f"Bin centers of histogram '{histogram_name}': {bin_centers}\n"\
-            f"Bin edges of histogram '{histogram_name}': {bin_edges}\n"\
-            f"Absolute frequencies in histogram '{histogram_name}': {abs_frequencies}")
-    
-        
+        print(f"Bin centers, bin edges and absolute frequencies of histogram '{histogram_name}' already exist in table {histogram_keyspace}.{histograms_table_name}\n")
+            
     
     def get_pull_requests_closing_times_of_repo(repo_name=str): 
         keyspace = 'prod_gharchive'
@@ -1649,7 +1083,10 @@ def compare_pull_request_closing_times_only_selected_repos(repo_name_1, repo_nam
             pull_request_closing_times.append(closing_time_in_seconds)
         return pull_request_closing_times
     
-    def get_bin_of_average_pull_request_closing_time_of_repo(pull_request_closing_times_of_repo=list):
+    def get_bin_of_average_pull_request_closing_time_of_repo(pull_request_closing_times_of_repo, bin_centers, bin_edges, abs_frequencies):
+        """
+        Given the bin centers and the edges of all pull request closing times in the database, find the bin center where the average of the issue closing times of a repo lies
+        """
         # Get and transform the average closing time of the repo
         average_closing_time_of_repo_1_no_skew = np.log10(np.average(pull_request_closing_times_of_repo) + 1)
         
@@ -1668,12 +1105,12 @@ def compare_pull_request_closing_times_only_selected_repos(repo_name_1, repo_nam
     
     pull_request_closing_times_of_repo_1 = get_pull_requests_closing_times_of_repo(repo_name_1)
     bin_of_average_pull_request_closing_time_of_repo_1 = \
-        get_bin_of_average_pull_request_closing_time_of_repo(pull_request_closing_times_of_repo_1)
+        get_bin_of_average_pull_request_closing_time_of_repo(pull_request_closing_times_of_repo_1, bin_centers, bin_edges, abs_frequencies)
     
     
     pull_request_closing_times_of_repo_2 = get_pull_requests_closing_times_of_repo(repo_name_2)
     bin_of_average_pull_request_closing_time_of_repo_2 = \
-        get_bin_of_average_pull_request_closing_time_of_repo(pull_request_closing_times_of_repo_2)
+        get_bin_of_average_pull_request_closing_time_of_repo(pull_request_closing_times_of_repo_2, bin_centers, bin_edges, abs_frequencies)
     
     
     dict_to_be_exposed = {}
@@ -1712,233 +1149,194 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
         f"Repo 1: {repo_name_1}\n"
         f"Repo 2: {repo_name_2}\n")
     
-    # Closing times of issues
     
-    # All repos
-   
-    # Query Cassandra
     cassandra_container_name = 'cassandra_stelios'
-    keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
-    session = cluster.connect(keyspace)
-    session.execute(f'USE {keyspace}')
+    session = cluster.connect()
+    histogram_keyspace = 'histograms'
+    create_histogram_query = f"CREATE KEYSPACE IF NOT EXISTS {histogram_keyspace} "\
+        "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}" \
+        "AND durable_writes = true;"
+    session.execute(create_histogram_query)
+    
+    histograms_table_name = 'histograms_info'
+    create_histograms_info_table_query = f"CREATE TABLE IF NOT EXISTS {histogram_keyspace}.{histograms_table_name} "\
+        "(histogram_name text, bin_centers list<double>, bin_edges list<double>, "\
+            "abs_frequencies list<double>, PRIMARY KEY (histogram_name));"
+    session.execute(create_histograms_info_table_query)
+    
+    histogram_name = 'issues_closing_times_histogram'
+    get_pull_requests_histogram_info = f"SELECT bin_centers, bin_edges, abs_frequencies "\
+        f"FROM {histogram_keyspace}.{histograms_table_name} WHERE histogram_name = '{histogram_name}';"        
+    row = session.execute(get_pull_requests_histogram_info)
+    row_in_response = row.one()
+    
     
 
+    if row_in_response == None:
+        keyspace = 'prod_gharchive'
+        
+        # Calculate the histogram values
+        print(f"Bin centers, edges and absolute values of histogram '{histogram_name}' are not in table '{histogram_keyspace}.{histograms_table_name}'.\n"\
+            f"Calculating based on table {keyspace}.pull_requests_closing_times...")
+        
+        
+        prepared_query = f"SELECT repo_name, issue_number, opening_time, closing_time "\
+            f"FROM {keyspace}.issue_closing_times;"    
+        
+        rows = session.execute(prepared_query)
+        rows_list = rows.all()
+        # Keep only closed (with non None closing times) issues
+        rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
+        
+        # Get all repos' closing times 
+        closing_times_list = []
+        for row in rows_list:
+            opening_time_of_row = getattr(row, 'opening_time')
+            closing_time_of_row = getattr(row, 'closing_time')
+            # Remove rows containing closing time values earlier than opening time values
+            try:
+                opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                time_diff = closing_datetime - opening_datetime
+                closing_time_in_seconds = time_diff.total_seconds()
+                if closing_time_in_seconds < 0:
+                    print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                        f"Issue number: {getattr(row, 'issue_number')}\n"
+                        f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
+                    
     
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, issue_number, opening_time, closing_time "\
-        f"FROM {keyspace}.issue_closing_times;"    
-    
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) issues
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
-    
-    # Get all repos' closing times 
-    
-    closing_times_list = []
-    
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
+            except Exception as e:
+                print(f"Exception: {e}\n"
+                    f"Repo name: {getattr(row, 'repo_name')}"
                     f"Issue number: {getattr(row, 'issue_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
+                    f"Opening time of row: {opening_time_of_row}\n"
+                    f"Closing time of row: {closing_time_of_row}\n")
                 
-  
-        except Exception as e:
-            print(f"Exception: {e}\n"
-                f"Repo name: {getattr(row, 'repo_name')}"
-                f"Issue number: {getattr(row, 'issue_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
             
+            closing_times_list.append(closing_time_in_seconds)
+    
+        # Create the histogram of the closing times values 
+        # Transform left-skewed distribution to visualise it
+        closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
         
-        closing_times_list.append(closing_time_in_seconds)
-    
-    # Create the histogram of the closing times values 
-    # Transform left-skewed distribution to visualise it
-    closing_times_list_no_skew = np.log10(np.array(closing_times_list) + 1)
-    
-    # Get the bin edges
-    num_of_bins_for_the_histogram = 10
-    abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
-                                              bins=num_of_bins_for_the_histogram)
-    
-    # Calculate the bin centers from the bin edges
-    bin_centers = []
-    # length(bin_centers) = length(bin_edges) - 1
-    for bin_edge_index in range(len(bin_edges)-1):
-        bin_center = (bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2
-        bin_centers.append(bin_center)    
-    
-    
-    # Average pull-request closing time of repo 1
-    
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, issue_number, "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_1}';"    
-    
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) issues
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
-    
-    # Get the closing times of repo 1
-    closing_times_of_repo_1 = []
-    
-    # Get the average closing time of pull-requests for repo 1
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Issue number: {getattr(row, 'issue_number')}\n"
-                    f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
-                
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
-  
-        except Exception as e:
-            print(f"Exception: {e}\n"\
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Issue number: {getattr(row, 'issue_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
-
+        # Get the bin edges
+        num_of_bins_for_the_histogram = 10
+        abs_frequencies, bin_edges = np.histogram(closing_times_list_no_skew, 
+                                                bins=num_of_bins_for_the_histogram)
         
-        closing_times_of_repo_1.append(closing_time_in_seconds)
+        abs_frequencies = abs_frequencies.tolist()
+        bin_edges = bin_edges.tolist()
+         
+        # Calculate the bin centers from the bin edges
+        bin_centers = []
+        # length(bin_centers) = length(bin_edges) - 1
+        for bin_edge_index in range(len(bin_edges)-1):
+            bin_center = (bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2
+            bin_centers.append(bin_center)    
+        print(f"Completed calculation of bin centers, bin edges and absolute values of histogram '{histogram_name}'\n"\
+            f"Bin centers: {bin_centers},\n"\
+            f"Bin edges: {bin_edges})\n"\
+            f"Absolute frequencies: {abs_frequencies}")
+        
+        insert_histogram_info = f"INSERT INTO {histogram_keyspace}.{histograms_table_name} "\
+            f"(histogram_name, bin_centers, bin_edges, abs_frequencies) VALUES ('{histogram_name}', {bin_centers}, {bin_edges}, "\
+                f"{abs_frequencies});"
+   
+        session.execute(insert_histogram_info)
     
-    
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_1_no_skew = np.log10(np.average(closing_times_of_repo_1) + 1)
-    
-    
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_issue_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_issue_closing_time_of_repo_1[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
-    
-    # Average issues closing time of repo 2
-    
-    # Prepare the query
-    prepared_query = f"SELECT repo_name, issue_number, "\
-        "opening_time, closing_time "\
-        f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_2}';"    
-    
-    rows = session.execute(prepared_query)
-    rows_list = rows.all()
-    # Keep only closed (with non None closing times) issues
-    rows_list = [row for row in rows_list if getattr(row, 'closing_time')!= None]
-    
-    # Get the closing times of repo 2
-    closing_times_of_repo_2 = []
-    
-    # Get the average closing time of pull-requests for repo 2
-    # Populate the closing_time_list
-    for row in rows_list:
-        opening_time_of_row = getattr(row, 'opening_time')
-        closing_time_of_row = getattr(row, 'closing_time')
-        # Remove rows containing closing time values earlier than opening time values
-        try:
-            opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-            time_diff = closing_datetime - opening_datetime
-            closing_time_in_seconds = time_diff.total_seconds()
-            if closing_time_in_seconds < 0:
-                print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                    f"Issue number: {getattr(row, 'issue_number')}\n"
-                    f"Closing time: {closing_datetime} is earlier than {opening_datetime}")
-                
-            # # Print closing times to get a sense of the data
-            # # Print and verify the if the actual closing times 
-            # # of the pull-requests match the ones some closing times    
-            # print(f"Closing time: (days, seconds) = \
-            #         {time_diff.days, time_diff.seconds}")
-            # print(f"Link: github.com/{getattr(row, 'repo_name')}/pull/{getattr(row, 'pull_request_number')}")
-            # print()
-            # time.sleep(0.1)
-  
-        except Exception as e:
-            print(f"Exception: {e}\n"\
-                f"Repo name: {getattr(row, 'repo_name')}\n"
-                f"Issue number: {getattr(row, 'issue_number')}\n"
-                f"Opening time of row: {opening_time_of_row}\n"
-                f"Closing time of row: {closing_time_of_row}\n")
+    elif row_in_response != None:
+        bin_centers = getattr(row_in_response, 'bin_centers')
+        bin_edges = getattr(row_in_response, 'bin_edges')
+        abs_frequencies = getattr(row_in_response, 'abs_frequencies')
+        
+        print(f"Bin centers, bin edges and absolute frequencies of histogram '{histogram_name}' already exist in table {histogram_keyspace}.{histograms_table_name}\n")
             
+    def get_issues_closing_times_of_repo(repo_name=str): 
+        keyspace = 'prod_gharchive'
+        prepared_query = f"SELECT "\
+            "opening_time, closing_time "\
+            f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name}';"    
         
-        closing_times_of_repo_2.append(closing_time_in_seconds)
+        session = cluster.connect(keyspace)
+        rows = session.execute(prepared_query)
+        rows_list = rows.all()
+        # Keep only closed pull requests
+        rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+        
+        
+        issue_closing_times = []
+        for row in rows_list:
+            opening_time_of_row = getattr(row, 'opening_time')
+            closing_time_of_row = getattr(row, 'closing_time')
+            try:
+                opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                time_diff = closing_datetime - opening_datetime
+                closing_time_in_seconds = time_diff.total_seconds()
+                # Remove rows containing closing time values earlier than opening time values
+                if closing_time_in_seconds < 0:
+                    print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                        f"Issue number: {getattr(row, 'issue_number')}\n"
+                        f"Closing time: {closing_datetime} is earlier than {opening_datetime}")    
+            except Exception as e:
+                print(f"Exception: {e}\n"
+                    f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Issue number: {getattr(row, 'issue_number')}\n"
+                    f"Opening time of row: {opening_time_of_row}\n"
+                    f"Closing time of row: {closing_time_of_row}\n")
+            
+            issue_closing_times.append(closing_time_in_seconds)
+        return issue_closing_times
     
-    # Get and transform the average closing time of the repo
-    average_closing_time_of_repo_2_no_skew = np.log10(np.average(closing_times_of_repo_2) + 1)
+    def get_bin_of_average_issue_closing_time_of_repo(issue_closing_times_of_repo, bin_centers, bin_edges, abs_frequencies):
+        """
+        Given the bin centers and the edges of all issues closing times in the database, find the bin center where the average of the issue closing times of a repo lies
+        """
+        # Get and transform the average closing time of the repo
+        average_closing_time_of_repo_1_no_skew = np.log10(np.average(issue_closing_times_of_repo) + 1)
+        
+        # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
+        # is the one with the average pull-request closing time overlapping the existing distribution
+        bin_of_average_pull_request_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
+        # # Create the dataset for the repo 1 containing only 1 non zero value
+        for bin_edge_index in range(len(bin_edges)-1):
+            if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
+                average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
+                bin_of_average_pull_request_closing_time_of_repo_1[bin_edge_index] = \
+                    np.max(abs_frequencies)
+                # Once the interval in which the average closing time lies, break the loop
+                break
+        return bin_of_average_pull_request_closing_time_of_repo_1
+    
+    issue_closing_times_of_repo_1 = get_issues_closing_times_of_repo(repo_name_1)
+    bin_of_average_issue_closing_time_of_repo_1 = \
+        get_bin_of_average_issue_closing_time_of_repo(issue_closing_times_of_repo_1, bin_centers, bin_edges, abs_frequencies)
     
     
-    # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    # is the one with the average pull-request closing time overlapping the existing distribution
-    bin_of_average_issue_closing_time_of_repo_2 = np.zeros((len(bin_centers)))
-    # # Create the dataset for the repo 1 containing only 1 non zero value
-    for bin_edge_index in range(len(bin_edges)-1):
-        if average_closing_time_of_repo_2_no_skew >= bin_edges[bin_edge_index] and \
-            average_closing_time_of_repo_2_no_skew < bin_edges[bin_edge_index+1]:
-            bin_of_average_issue_closing_time_of_repo_2[bin_edge_index] = \
-                np.max(abs_frequencies)
-            # Once the interval in which the average closing time lies, break the loop
-            break
+    issue_closing_times_of_repo_2 = get_issues_closing_times_of_repo(repo_name_2)
+    bin_of_average_issue_closing_time_of_repo_2 = \
+        get_bin_of_average_issue_closing_time_of_repo(issue_closing_times_of_repo_2, bin_centers, bin_edges, abs_frequencies)
+    
+    
     
     
     # Expose data
     dict_to_be_exposed = {}
-    # Expose bin centers and absolute frequencies for the histogram    
     dict_to_be_exposed["bin_centers_log_transformed"] = bin_centers
-    dict_to_be_exposed["abs_frequencies"] = abs_frequencies.tolist()
-    
-    # Get the corresponding times of the bins in seconds
     dict_to_be_exposed["bin_centers_in_seconds"] = (np.power(10, bin_centers) - 1).tolist()
+    dict_to_be_exposed["bin_edges_log_transformed"] = bin_edges
+    dict_to_be_exposed["abs_frequencies"] = abs_frequencies
     # # Uncomment to expose all closing times
     # dict_to_be_exposed["closing_times_log_transformed"] = \
         # sorted(closing_times_list_no_skew.tolist())
-    
-    # Expose pull-request closing time for repo_1
     dict_to_be_exposed["repo_name_1"] = repo_name_1
     dict_to_be_exposed["bin_of_average_issue_closing_time_of_repo_1"] = \
         bin_of_average_issue_closing_time_of_repo_1.tolist()
-    
-    # Expose pull-request closing time for repo_2
     dict_to_be_exposed["repo_name_2"] = repo_name_2
     dict_to_be_exposed["bin_of_average_issue_closing_time_of_repo_2"] = \
         bin_of_average_issue_closing_time_of_repo_2.tolist()
     
-    # Expose bin edges
-    dict_to_be_exposed["bin_edges_log_transformed"] = bin_edges.tolist()
     
     cluster.shutdown()
     return jsonify(dict_to_be_exposed)
