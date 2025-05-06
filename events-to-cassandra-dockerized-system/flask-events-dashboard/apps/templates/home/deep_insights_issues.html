@@ -1062,7 +1062,7 @@
               update_issue_closing_time_by_label_table(repo_selected);
               update_mirror_of_selected_repo_for_issue_closing_times(
                 "closing_time_by_label_repo_mirror", repo_selected)
-              getElementById("preselected_repo_for_issue_closing_times_by_label").    textContent = repo_selected; 
+              getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_selected; 
             }
       })
     </script>
@@ -1071,7 +1071,7 @@
     <script>
       const repo_whose_issue_closing_times_to_get = "Expensify/App";
       update_issue_closing_time_by_label_table(repo_whose_issue_closing_times_to_get);
-      getElementById("preselected_repo_for_issue_closing_times_by_label").    textContent = repo_selected; 
+      document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
     </script>
 
     <!-- Selected repo's top contributing users -->
