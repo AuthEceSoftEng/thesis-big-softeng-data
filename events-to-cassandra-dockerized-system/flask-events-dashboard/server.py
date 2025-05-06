@@ -411,9 +411,9 @@ def get_top_human_contributors_by_day(day):
     
     
     # Top contributors 
-    prepared_query = f" \
-    SELECT username, number_of_contributions FROM {keyspace}.top_human_contributors_by_day \
-        WHERE day = '{day_only}';"
+    prepared_query = f" "\
+        f"SELECT username, number_of_contributions FROM {keyspace}.top_human_contributors_by_day "\
+        f"WHERE day = '{day_only}';"
     
     
     
@@ -470,10 +470,10 @@ def get_top_bot_contributors_by_day(day):
     session = cluster.connect(keyspace)
 
     
-    prepared_query = f" \
-    SELECT username, number_of_contributions FROM {keyspace}.top_bot_contributors_by_day\
-        WHERE day = '{day_only}';\
-    "
+    prepared_query = f""\
+        f"SELECT username, number_of_contributions FROM {keyspace}.top_bot_contributors_by_day"\
+        f"WHERE day = '{day_only}';"
+    
     
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
@@ -509,10 +509,10 @@ def get_number_of_all_pull_requests_by_humans_by_day(day):
     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
     # number_of_accepted_pull_requests
-    prepared_query = f" \
-    SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans \
-        WHERE day = '{day_only}' and were_accepted = True;\
-    "
+    prepared_query = f""\
+        f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans "\
+        f" WHERE day = '{day_only}' and were_accepted = True; "
+    
     cassandra_container_name = 'cassandra_stelios'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
@@ -531,10 +531,10 @@ def get_number_of_all_pull_requests_by_humans_by_day(day):
     
     
     # number_of_rejected_pull_requests
-    prepared_query = f" \
-    SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans \
-        WHERE day = '{day_only}' and were_accepted = False;\
-    "
+    prepared_query = f""\
+        f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_humans "\
+        f" WHERE day = '{day_only}' and were_accepted = False;"
+    
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
     # Only one result (one element in the rows list) is expected
@@ -565,10 +565,10 @@ def get_number_of_all_pull_requests_by_bots_by_day(day):
     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
     # number_of_accepted_pull_requests
-    prepared_query = f" \
-    SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots \
-        WHERE day = '{day_only}' and was_accepted = True;\
-    "
+    prepared_query = f""\
+        f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots "\
+        f"WHERE day = '{day_only}' and was_accepted = True;"
+    
     cassandra_container_name = 'cassandra_stelios'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
@@ -587,10 +587,10 @@ def get_number_of_all_pull_requests_by_bots_by_day(day):
     
     
     # number_of_rejected_pull_requests
-    prepared_query = f" \
-    SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots \
-        WHERE day = '{day_only}' and was_accepted = False;\
-    "
+    prepared_query = f""\
+        f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots "\
+        f"WHERE day = '{day_only}' and was_accepted = False;"
+    
     
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
@@ -652,10 +652,10 @@ def get_number_of_events_for_humans_and_bots_by_day(day):
     number_of_events_per_type = []
     total_number_of_events = 0
     
-    prepared_query = f" \
-    SELECT number_of_events, event_type FROM {keyspace}.number_of_human_events_per_type_by_day \
-        WHERE day = '{day_only}';\
-    "
+    prepared_query = f"" \
+        f"SELECT number_of_events, event_type FROM {keyspace}.number_of_human_events_per_type_by_day "\
+        f"WHERE day = '{day_only}';"
+    
     cassandra_container_name = 'cassandra_stelios'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
@@ -678,10 +678,10 @@ def get_number_of_events_for_humans_and_bots_by_day(day):
     number_of_events_per_type = []
     total_number_of_events = 0
     
-    prepared_query = f" \
-    SELECT number_of_events, event_type FROM {keyspace}.number_of_bot_events_per_type_by_day \
-        WHERE day = '{day_only}';\
-    "
+    prepared_query = f""\
+        f"SELECT number_of_events, event_type FROM {keyspace}.number_of_bot_events_per_type_by_day "\
+        f"WHERE day = '{day_only}';"
+    
     
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
@@ -764,9 +764,9 @@ def get_number_of_stars_of_js_repo_by_day():
         
         total_stars_for_all_days = 0
         # Prepare the query
-        prepared_query = f" SELECT day, number_of_stars \
-            FROM {keyspace}.stars_per_day_on_js_repo \
-            WHERE repo_name = '{js_repo}' ALLOW FILTERING;"    
+        prepared_query = f" SELECT day, number_of_stars "\
+            f"FROM {keyspace}.stars_per_day_on_js_repo "\
+            f"WHERE repo_name = '{js_repo}' ALLOW FILTERING;"    
         rows = session.execute(prepared_query)
         rows_list = rows.all()
         
@@ -814,10 +814,10 @@ def get_number_of_stars_of_js_repo_by_day():
     
 #     # Top contributors of given js_repo
 #     js_repo_unquoted = unquote(js_repo)
-#     prepared_query = f" \
-#         select * from {keyspace}.top_contributors_of_js_repo \
-#         where repo_name = '{js_repo_unquoted}' ALLOW FILTERING;\
-#     "
+#     prepared_query = f" "\
+#         f"select * from {keyspace}.top_contributors_of_js_repo "\
+#         f"where repo_name = '{js_repo_unquoted}' ALLOW FILTERING;"\
+#     
     
 #     # Query to figure out the latest day for which data is available
 #     rows = session.execute(prepared_query)
@@ -868,10 +868,9 @@ def get_top_js_repo_contributors_given_js_repo_name(js_repo):
     
     # Top contributors of given js_repo
     # js_repo_unquoted = unquote(js_repo)
-    prepared_query = f" \
-        select * from {keyspace}.top_contributors_of_js_repo \
-        where repo_name = '{unquoted_js_repo}' ALLOW FILTERING;\
-    "
+    prepared_query = f" "\
+        f"SELECT * FROM {keyspace}.top_contributors_of_js_repo "\
+        f"WHERE repo_name = '{unquoted_js_repo}' ALLOW FILTERING;"\
     
     # Query to figure out the latest day for which data is available
     rows = session.execute(prepared_query)
@@ -1032,9 +1031,9 @@ def get_pull_request_closing_times():
     #     FROM {keyspace}.pull_request_closing_times;"    
     
     # Prepare the query
-    prepared_query = f" SELECT repo_name, pull_request_number, \
-        opening_time, closing_time \
-        FROM {keyspace}.pull_request_closing_times;"    
+    prepared_query = f" SELECT repo_name, pull_request_number, "\
+        "opening_time, closing_time "\
+        f"FROM {keyspace}.pull_request_closing_times;"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1104,9 +1103,9 @@ def get_pull_request_closing_times():
     repo_name_1 = 'firedancer-io/firedancer'
     
     # Prepare the query
-    prepared_query = f" SELECT \
-        opening_time, closing_time \
-        FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
+    prepared_query = f" SELECT "\
+        "opening_time, closing_time "\
+        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1176,9 +1175,9 @@ def get_pull_request_closing_times():
     
     repo_name_2 = 'microsoft/winget-pkgs'
     # Prepare the query
-    prepared_query = f" SELECT \
-        opening_time, closing_time \
-        FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
+    prepared_query = f" SELECT "\
+        "opening_time, closing_time "\
+        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1290,8 +1289,8 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     dict_to_be_exposed = {}
     
     # Prepare the query
-    prepared_query = f" SELECT repo_name, pull_request_number, opening_time, closing_time \
-        FROM {keyspace}.pull_request_closing_times;"    
+    prepared_query = f" SELECT repo_name, pull_request_number, opening_time, closing_time "
+    f" FROM {keyspace}.pull_request_closing_times;"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1357,9 +1356,9 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     # Average pull-request closing time of repo 1
     
     # Prepare the query
-    prepared_query = f" SELECT \
-        opening_time, closing_time \
-        FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
+    prepared_query = f" SELECT "\
+        "opening_time, closing_time "\
+        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_1}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1427,9 +1426,9 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
     # Average pull-request closing time of repo 2
     
     # Prepare the query
-    prepared_query = f" SELECT repo_name, pull_request_number, \
-        opening_time, closing_time \
-        FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
+    prepared_query = f" SELECT repo_name, pull_request_number, "\
+        "opening_time, closing_time "\
+        f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name_2}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1548,8 +1547,8 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     dict_to_be_exposed = {}
     
     # Prepare the query
-    prepared_query = f" SELECT repo_name, issue_number, opening_time, closing_time \
-        FROM {keyspace}.issue_closing_times;"    
+    prepared_query = f" SELECT repo_name, issue_number, opening_time, closing_time "\
+        f"FROM {keyspace}.issue_closing_times;"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1609,9 +1608,9 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     # Average pull-request closing time of repo 1
     
     # Prepare the query
-    prepared_query = f" SELECT repo_name, issue_number, \
-        opening_time, closing_time \
-        FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_1}';"    
+    prepared_query = f" SELECT repo_name, issue_number, "\
+        "opening_time, closing_time "\
+        f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_1}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1679,9 +1678,9 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     # Average issues closing time of repo 2
     
     # Prepare the query
-    prepared_query = f" SELECT repo_name, issue_number, \
-        opening_time, closing_time \
-        FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_2}';"    
+    prepared_query = f" SELECT repo_name, issue_number, "\
+        "opening_time, closing_time "\
+        f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name_2}';"    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
@@ -1852,11 +1851,11 @@ def get_issues_closing_times_by_label(repo_name):
     session = cluster.connect(keyspace)
     
     repo_unquoted = unquote(repo_name)
-    prepared_query = f" \
-        select repo_name, issue_number, label, opening_time, closing_time \
-        from {keyspace}.issue_closing_times_by_label \
-        where repo_name = '{repo_unquoted}';\
-    "
+    prepared_query = f""\
+        "SELECT repo_name, issue_number, label, opening_time, closing_time "\
+        f"FROM {keyspace}.issue_closing_times_by_label "\
+        f"WHERE repo_name = '{repo_unquoted}';"\
+    
     
     rows = session.execute(prepared_query)
     rows_list = rows.all()
