@@ -617,6 +617,14 @@ services:
 
       # taskmanager.rpc.port: 36429
       # taskmanager.data.port: 36430
+    
+    deploy:
+      # mode: replicated-job
+      # replicas: 4
+      resources:
+        limits:
+          cpus: '2.0'   # Limit this container to 4 CPUs
+          memory: 2g
 
     # ports: 
     #   - 36429:36429
