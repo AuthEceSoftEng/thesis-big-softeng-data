@@ -28,18 +28,28 @@ if __name__=='__main__':
     # topic_to_produce_into = 'near-real-time-raw-events'
     # the_whole_file_was_produced_already = produce_from_last_line_of_file(topic_to_produce_into, filepath_of_thinned_file, parsed_files_filepath)
 
-    event_counter = 0
-    max_num_of_events_to_print = 1
-    with EventSource('http://github-firehose.libraries.io/events', timeout=30) as event_source:
-        for event in event_source:
-            try:
-                event_counter += 1
-                print(f"Got event No{event_counter}: {event}")
-                print(f"Type of event: {type(event)}")
+    try:
+        event_counter = 0
+        max_num_of_events_to_print = 1
+        st = time.time()
+        with  EventSource('http://github-firehose.libraries.io/events', timeout=30) as event_source:
+            for event in event_source:
                 
-                if event_counter >= max_num_of_events_to_print:
-                    sys.exit(f"Reached max number of events to print: "\
-                        f"{max_num_of_events_to_print}")
-            except KeyboardInterrupt:
-                sys.exit("Keyboard interrupt")
-            
+                    event_counter += 1
+                    # print(f"Got event No{event_counter}: {event}")
+                    # print(f"Type of event: {type(event)}")
+                    
+                    # print(event_counter)
+                    
+                    
+                    # if event_counter >= max_num_of_events_to_print:
+                    #     sys.exit(f"Reached max number of events to print: "\
+                    #         f"{max_num_of_events_to_print}")
+    except KeyboardInterrupt:
+        et = time.time()
+        print(f"Time elapsed: {round(et - st, 2)} sec\n"\
+            f"Events received: {event_counter}")
+        time.sleep(1)
+        sys.exit("Keyboard interrupt")
+
+    
