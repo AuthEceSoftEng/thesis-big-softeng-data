@@ -1,4 +1,4 @@
-from produce_from_last_line_of_file import produce_from_last_line_of_file, create_topic
+from produce_from_last_line_of_file import produce_from_last_line_of_file
 from datetime import datetime, timedelta
 import requests
 import os
