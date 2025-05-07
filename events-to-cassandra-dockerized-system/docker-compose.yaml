@@ -554,7 +554,7 @@ services:
 
 # Near real time events producer
   python-near-real-time-events-producer:
-    image: python:3.10-script-executing-image
+    image: python:3.10-script-executing-image-with-requests_sse
     container_name: python-near-real-time-events-producer
     volumes: 
       - ./usrlib/near-real-time-producer-firehose.py:/usrlib/near-real-time-producer-firehose.py

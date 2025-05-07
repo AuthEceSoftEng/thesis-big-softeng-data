@@ -25,6 +25,8 @@ docker build -f Dockerfile-pyflink -t pyflink:1.18.1 .
 
 # python-historical-events-producer python-data-exposing-server, python-flask-app
 docker build -f Dockerfile-python -t python:3.10-script-executing-image . 
+# or
+docker build -f Dockerfile-python -t python:3.10-script-executing-image-with-requests_sse . 
 ```
 
 
