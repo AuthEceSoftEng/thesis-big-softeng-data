@@ -117,7 +117,7 @@ cd usrlib
 
 ### Terminal 1: Compose kafka, cassandra, flink, expose server data, run the flask app
 ```sh
-docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-near-real-time events-flask-app event-data-exposing-server 
+docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-near-real-time 
 ```
 
 
@@ -149,6 +149,18 @@ docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python
 ```sh
 docker compose up python-near-real-time-stats-and-popularity-insights-consumer
 ```
+
+### Terminal 7: Expose data to ingest in the UI
+```sh
+docker compose up event-data-exposing-server 
+```
+
+### Terminal 8: Deploy the UI
+```sh
+docker compose up events-flask-app event-data-exposing-server 
+```
+
+
 
 
 
