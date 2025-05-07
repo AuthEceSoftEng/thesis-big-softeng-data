@@ -567,6 +567,9 @@ services:
       - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
       - ./usrlib/github_data_near_real_time:/github_data_near_real_time
     
+      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
+      
+
     command: ['python', 'near-real-time-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
     environment:
       - PYTHONUNBUFFERED=1
