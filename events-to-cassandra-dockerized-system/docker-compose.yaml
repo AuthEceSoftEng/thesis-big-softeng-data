@@ -553,7 +553,7 @@ services:
 # # 2. Near real time events ingestion
 
 # Near real time events producer
-  python-near-real-time-events-producer:
+  python-near-real-time-events-producer-firehose:
     image: python:3.10-script-executing-image-with-requests_sse
     container_name: python-near-real-time-events-producer
     volumes: 
@@ -571,6 +571,31 @@ services:
       - kafka
     networks:
       - data-network
+
+  python-near-real-time-events-producer:
+      image: python:3.10-script-executing-image
+      container_name: python-near-real-time-events-producer
+      volumes: 
+        - ./usrlib/near-real-time-producer.py:/usrlib/near-real-time-producer.py
+        - ./usrlib/thin_data.py:/usrlib/thin_data.py
+        - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
+        - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
+
+        - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
+        - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
+        - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
+        - ./usrlib/github_data_near_real_time:/github_data_near_real_time
+      
+        - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
+        
+
+      command: ['python', 'near-real-time-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
+      environment:
+        - PYTHONUNBUFFERED=1
+      depends_on:
+        - kafka
+      networks:
+        - data-network
 
 
 # Flink taskmanager near-real-time

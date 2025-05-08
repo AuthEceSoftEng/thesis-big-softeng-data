@@ -203,7 +203,11 @@ def extract_statistics_and_create_row(eventString):
     pull_requests = 0
                             
     if event_type == "PushEvent":
-        commits =  eventDict["payload"]["size"]
+        commits = 0
+        # Keep regular events
+        if (commits <= 100) or (commits <= 200
+        and eventDict["payload"]["size"] == eventDict["payload"]["distinct_size"]):
+            commits = eventDict["payload"]["distinct_size"]
     elif event_type == "IssuesEvent" and \
         eventDict["payload"]["action"] == "opened":
         open_issues = 1
