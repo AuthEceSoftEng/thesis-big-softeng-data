@@ -382,7 +382,7 @@
                   },
                   stroke: {
                     width: 1,
-                    colors: ['#000']
+                    colors: ['#ffffff', '#ffffff']
                   },
                   title: {
                     text: 'Events created by humans and bots in December 2024',
@@ -395,14 +395,26 @@
                     },
                   },
                   xaxis: {
-                    categories: ["Percentage of events"],
-                    
+                    categories: [""],
+                    title: {
+                    text: 'Percentage of events',
                     style: {
                       fontSize:  '20px',
                       fontWeight:  'bold',
                       fontFamily:  undefined,
                       color:  '#ffffff'
                     },
+                  },
+                    labels: {
+                      style: {
+                          colors: ['#ffffff', '#ffffff'],
+                          fontSize: '14px',
+                          fontFamily: 'Helvetica, Arial, sans-serif',
+                          fontWeight: 400,
+                          cssClass: 'apexcharts-xaxis-label',
+                      }
+                    }
+                    
                   },
                   tooltip: {
                     y: {
@@ -419,7 +431,9 @@
                     position: 'top',
                     horizontalAlign: 'left',
                     offsetX: 40,
-                    
+                    labels: {
+                      colors: ["#ffffff", "#ffffff" ]
+                    },
                     style: {
                       fontSize:  '20px',
                       fontWeight:  'bold',
