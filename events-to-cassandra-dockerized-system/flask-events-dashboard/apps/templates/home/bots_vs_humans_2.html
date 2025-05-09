@@ -1,0 +1,517 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Tables {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<head>
+  <style>
+    th, td {
+      text-align: center;
+    }
+  </style>
+  <!-- Custom CSS file path relative to the static directory -->
+  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='/home/xeon/Thesis/flask-material-dashboard/apps/static/assets/css/my-custom-css.css') }}"> -->
+
+
+
+  <!-- Change all months based on UI selection -->
+  <script>
+    function listen_to_selected_day(){
+      document.getElementById("day_dropdown_list_selection").addEventListener(
+      "change", function() {
+        const month_from_ui = this.value; 
+        let month_placeholders_elements =  document.getElementsByClassName("day_selection")
+        for (var month_placeholders_index = 0; 
+          month_placeholders_index < month_placeholders_elements.length;
+          month_placeholders_index++){
+            month_placeholders_elements[month_placeholders_index].textContent = month_from_ui
+        }
+      }
+      )
+    }
+  </script>
+
+
+  <!-- Create ranking table -->
+  <script>
+    function create_ranking_table_html_body(element_id_to_assign_hmtl_onto, 
+      data_url, html_head, second_col, third_col
+    ) {
+        /*
+      Creates the table contents (html_body)
+      - second_col: column name of the fetched JSON table to represent 
+      as the second column in the ui table
+      - third_col: column name of the fetched JSON table to represent 
+      as the third column in the ui table
+      
+      - returns the html combining the head and the body of the table
+      */
+
+      var html_body_inside = `<tbody>`
+
+      //  Create the html_body of the table
+      fetch(data_url)
+        .then(response => response.json())
+        .then(data => {
+          // const pull_requests = data[0][0].total_pull_requests;
+          
+          var top_contributors_list = data["top_contributors"]
+          for (let data_index = 0; data_index < top_contributors_list.length; data_index++){
+            html_body_inside = html_body_inside 
+              + `<tr>`
+              + `<td>${data_index+1}</td>`
+              + `<td>${top_contributors_list[data_index][second_col]}</td>`
+              + `<td>${top_contributors_list[data_index][third_col]}</td>`
+              + `</tr>`
+          }
+          html_body_inside = html_body_inside + `</tbody>`;
+          
+          document.getElementById(element_id_to_assign_hmtl_onto).innerHTML = 
+          html_head + html_body_inside;    
+
+        }
+      );
+    }
+  </script>
+
+  <!-- Create top human contributors table -->
+  <script>
+    function update_top_human_contributors_table(day_selected){
+      // Arguments to create the table
+      var table_html_id = "top_human_contributors_table"
+      var html_head = `<thead class="text-warning">
+        <tr>
+          <th>Place</th>
+          <th>Username</th>
+          <th>Number of commits</th>
+        </tr>
+      </thead>`
+      var second_column_name = 'username'
+      var third_column_name = 'number_of_contributions'
+
+      // Get the data URL 
+      let data_url = 'http://localhost:3200/bots_vs_humans/top_contributing_humans_bot_like_committers_removed/' + day_selected;
+      // Create the table
+      create_ranking_table_html_body(table_html_id, data_url, html_head, 
+        second_column_name, third_column_name);
+    }
+    // update_top_human_contributors_table()
+  </script>
+
+  <!-- Create top human contributors table -->
+  <script>
+    function update_top_bot_contributors_table(day_selected){
+      // Arguments to create the table
+      var table_html_id = "top_bot_contributors_table"
+      var html_head = `<thead class="text-warning">
+        <tr>
+          <th>Place</th>
+          <th>Bot name</th>
+          <th>Number of commits</th>
+        </tr>
+      </thead>`
+      var second_column_name = 'username'
+      var third_column_name = 'number_of_contributions'
+
+      // Get the data URL 
+      
+      let data_url = 'http://localhost:3200/bots_vs_humans/top_contributing_bots/' + day_selected;
+      // Create the table
+      create_ranking_table_html_body(table_html_id, data_url, html_head, 
+        second_column_name, third_column_name);
+       
+    }
+  </script>
+
+  <!-- Update pull-requests made by humans -->
+  <script>
+    function update_pull_requests_by_humans(day_selected){
+      data_url = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + day_selected;
+      //  Create the html_body of the table
+      fetch(data_url)
+        .then(response => response.json())
+        .then(data => {          
+          
+          number_of_accepted_pull_requests = data["number_of_accepted_pull_requests"];
+          number_of_rejected_pull_requests = data["number_of_rejected_pull_requests"];
+          
+          // Percentage
+          merge_rate = number_of_accepted_pull_requests
+            /(number_of_accepted_pull_requests + number_of_rejected_pull_requests)*100;
+          
+          merge_rate_two_decimals = merge_rate.toFixed(2)
+          merge_rate_stringified = merge_rate_two_decimals.toString() + '%';
+
+          // Print number of accepted pull-requests and corresponding rate 
+          // if there are accepted pull requests (not null valued) 
+          if (number_of_accepted_pull_requests != null){
+            document.getElementById("number-of-accepted-pull-requests-by-humans").textContent = number_of_accepted_pull_requests;
+            document.getElementById("pull-request-merge-success-by-humans").textContent = 
+              merge_rate_stringified;
+          }
+          
+
+        }
+      );
+      
+    };
+  </script>
+
+  <!-- Update pull-requests made by bots -->
+  <script>
+    function update_pull_requests_by_bots(day_selected){
+      data_url = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + day_selected;
+      //  Create the html_body of the table
+      fetch(data_url)
+        .then(response => response.json())
+        .then(data => {          
+          
+          number_of_accepted_pull_requests = data["number_of_accepted_pull_requests"];
+          number_of_rejected_pull_requests = data["number_of_rejected_pull_requests"];
+          
+          // Percentage
+          merge_rate = number_of_accepted_pull_requests
+            /(number_of_accepted_pull_requests + number_of_rejected_pull_requests)*100;
+          // 
+          merge_rate_two_decimals = merge_rate.toFixed(2)
+          merge_rate_stringified = merge_rate_two_decimals.toString() + '%';
+
+          // Print number of accepted pull-requests and corresponding rate 
+          // if there are accepted pull requests (not null valued) 
+          if (number_of_accepted_pull_requests != null){
+            document.getElementById("number-of-accepted-pull-requests-by-bots").          textContent = number_of_accepted_pull_requests;
+            document.getElementById("pull-request-merge-success-by-bots").textContent = 
+              merge_rate_stringified;
+          }
+          
+        }
+      );
+      
+    };
+  </script>
+
+  <!-- Update number of events made by humans and bots -->
+  <script>
+    function update_number_of_events_by_humans_and_bots(day_selected){
+      data_url = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' 
+        + day_selected;
+      
+      //  Create the html_body of the table
+      fetch(data_url)
+        .then(response => response.json())
+        .then(data => {          
+          
+          // Print total number of human events, bot events and corresponding percentage of human and bot events among total number of events
+          total_number_of_events_by_humans = data["humans"]["total_number_of_events"];
+          total_number_of_events_by_bots = data["bots"]["total_number_of_events"];
+
+          human_events_percentage = total_number_of_events_by_humans
+            /(total_number_of_events_by_humans + total_number_of_events_by_bots)*100;
+          human_events_percentage_two_decimals = human_events_percentage.toFixed(2)
+          human_events_percentage_stringified = 
+            human_events_percentage_two_decimals.toString() + '%';
+          
+          bot_events_percentage = total_number_of_events_by_bots
+            /(total_number_of_events_by_humans + total_number_of_events_by_bots)*100;
+          bot_events_percentage_two_decimals = bot_events_percentage.toFixed(2);
+          bot_events_percentage_stringified = 
+            bot_events_percentage_two_decimals.toString() + '%';
+          
+
+          if (total_number_of_events_by_humans != 0){
+            document.getElementById("number-of-events-by-humans").textContent = 
+              total_number_of_events_by_humans;
+              document.getElementById("human-events-percentage").textContent = 
+            human_events_percentage_stringified;
+          }
+
+          if (total_number_of_events_by_bots != 0){
+            document.getElementById("number-of-events-by-bots").textContent = 
+            total_number_of_events_by_bots;
+            document.getElementById("bot-events-percentage").textContent = 
+            bot_events_percentage_stringified;
+          }
+          
+          
+        }
+      );
+      
+    };
+  </script>
+
+<!-- TODO: Add functions for the events, also change the ids of the respective HTML elements -->
+
+
+
+
+</head>
+
+
+
+
+
+<body>
+  
+  <nav class="navbar navbar-main navbar-expand-lg px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
+    <div class="container-fluid py-1 px-3">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
+          <li class="breadcrumb-item text-sm"><a class="opacity-5 text-dark" href="javascript:;">Github Analyzer</a></li>
+          <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Bots vs humans</li>
+        </ol>
+        <h6 class="font-weight-bolder mb-0">Bots vs humans</h6>
+      </nav>
+      <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
+    </div>
+  </nav>
+
+  <div class="container-fluid py-4">
+    <!-- Select day  -->
+    <div class="row mb-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="card h-100">
+          <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
+            <!-- <h5>Selected day</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
+            <span class="text-dark font-weight-bold ms-sm-2">Select a day of December 2024:</span>
+            
+            <div class="dropdown float-lg-end pe-4">
+              <ul>
+                <select id = "day_dropdown_list_selection" class="drop_down_list_select bg-gradient-success" name="day">
+                  <option >1</option>
+                  <option >2</option>
+                  <option >3</option>
+                  <option >4</option>
+                  <option >5</option>
+                  <option >6</option>
+                  <option >7</option>
+                  <option >8</option>
+                  <option >9</option>
+                  <option >10</option>
+                  <option >11</option>
+                  <option >12</option>
+                  <option >13</option>
+                  <option >14</option>
+                  <option >15</option>
+                  <option >16</option>
+                  <option >17</option>
+                  <option >18</option>
+                  <option >19</option>
+                  <option >20</option>
+                  <option >21</option>
+                  <option >22</option>
+                  <option >23</option>
+                  <option >23</option>
+                  <option >24</option>
+                  <option >25</option>
+                  <option >26</option>
+                  <option >27</option>
+                  <option >28</option>
+                  <option >29</option>
+                  <option >30</option>
+                  <option >31</option>
+                </select>
+              </ul>
+            </div>
+          </div>
+          </div>
+        </div>
+    </div>
+
+    <!-- Humans vs bots title -->
+    <script>
+      listen_to_selected_day();
+      document.getElementById("day_dropdown_list_selection").addEventListener(
+          "change", function() {
+        let day_selected = this.value;
+        update_top_human_contributors_table(day_selected);
+        update_top_bot_contributors_table(day_selected);
+        update_pull_requests_by_humans(day_selected);
+        update_pull_requests_by_bots(day_selected);
+        update_number_of_events_by_humans_and_bots(day_selected);
+      })
+    </script>
+
+    <!-- Initialize the tables for 1st of the month -->
+    <script>
+      const day_preselected = '1';
+      update_top_human_contributors_table(day_preselected);
+      update_top_bot_contributors_table(day_preselected);
+      update_pull_requests_by_humans(day_preselected);
+      update_pull_requests_by_bots(day_preselected);
+      update_number_of_events_by_humans_and_bots(day_preselected);
+    </script>
+
+
+    <!-- Top 3 contributors ranking -->
+    <div class="row mb-5">   
+      <!-- Create the top human contributors and top bot cnotributors table -->
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="card-header card-header-warning">
+            <h4 class="card-title">Top contributing users</h4>
+            <p class="card-category">Based on commits (direct or merged pull-requests) on 
+              <span class="day_selection">1</span>/12/2024
+            </p>
+          </div>
+          <div class="card-body table-responsive">
+            <table id="top_human_contributors_table" class="table table-hover">
+              
+            </table>
+          </div>
+        </div>
+      </div>    
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="card-header card-header-warning">
+            <h4 class="card-title">Top contributing bots</h4>
+            <p class="card-category">Based on commits (direct or merged pull-requests) on 
+              <span class="day_selection">1</span>/12/2024
+            </p>
+          </div>
+          <div class="card-body table-responsive">
+            <table id="top_bot_contributors_table" class="table table-hover">
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Number of accepted pull-requests and merge success rates -->
+    <div class="row mb-5">
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">weekend</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Number of accepted pull-requests</p>
+              <h4 id='number-of-accepted-pull-requests-by-humans' class="mb-0">---</h4>
+            </div>
+          </div>
+  
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">person</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Merge success rate</p>
+              <h4 id="pull-request-merge-success-by-humans" class="mb-0">---</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">person</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Number of accepted pull-requests</p>
+              <h4 id="number-of-accepted-pull-requests-by-bots" class="mb-0">---</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">weekend</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Merge success rate</p>
+              <h4 id="pull-request-merge-success-by-bots" class="mb-0">---</h4>
+             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Number of events, percentage -->
+    <div class="row mb-5">
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">weekend</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Number of events</p>
+              <h4 id="number-of-events-by-humans" class="mb-0">---</h4>
+            </div>
+          </div>
+  
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">person</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Percentage</p>
+              <h4 id="human-events-percentage" class="mb-0">---</h4>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">person</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Number of events</p>
+              <h4 id="number-of-events-by-bots" class="mb-0">---</h4>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">weekend</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Percentage</p>
+              <h4 id="bot-events-percentage" class="mb-0">---</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}
+
+
+
+
+</body>
