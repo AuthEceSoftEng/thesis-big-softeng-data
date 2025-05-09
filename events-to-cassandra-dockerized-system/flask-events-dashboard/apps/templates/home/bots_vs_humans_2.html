@@ -362,12 +362,39 @@
               <script>
 
                 var options = {
+                  title: {
+                    text: 'Github events',
+                    align: 'center',
+                    margin: 50,
+                    style: {
+                      fontSize:  '25px',
+                      fontWeight:  'bold',
+                      fontFamily:  undefined,
+                      color:  '#ffffff'
+                    },
+                  },
+                  legend: {
+                    position: 'top',
+                    horizontalAlign: 'center',
+                    offsetX: 40,
+                    fontSize:  '20px',
+                    
+                    labels: {
+                      colors: ["#ffffff", "#ffffff"],  
+                    },
+        
+                    itemMargin: {
+                        horizontal: 40,
+                        vertical: 0
+                    },
+                  },
                   series: [{
                     name: 'Created by humans',
                     // group: 'percentage',
                     data: [61.41]
                     // data: [1611564]
-                  }, {
+                  }, 
+                  {
                     name: 'Created by bots',
                     // group: 'percentage',
                     data: [38.59]
@@ -381,7 +408,7 @@
                   },
                   chart: {
                     type: 'bar',
-                    height: 350,
+                    height: 400,
                     stacked: true,
                     stackType: '100%'
                   },
@@ -394,24 +421,15 @@
                     width: 1,
                     colors: ['#ffffff']
                   },
-                  title: {
-                    text: 'Events in December 2024',
-                    align: 'center',
-                    style: {
-                      fontSize:  '25px',
-                      fontWeight:  'bold',
-                      fontFamily:  undefined,
-                      color:  '#ffffff'
-                    },
-                  },
+                  
                   xaxis: {
                     categories: [""],
                     title: {
                       text: 'Total number of events: 2624232',
                       style: {
                         fontSize:  '20px',
-                        fontWeight:  'bold',
                         fontFamily:  undefined,
+                        fontWeight: 200,
                         color:  '#ffffff'
                       },
                       margin: 20,
@@ -442,21 +460,7 @@
                     opacity: 1
   
                   },
-                  legend: {
-                    position: 'top',
-                    horizontalAlign: 'center',
-                    offsetX: 40,
-                    fontSize:  '20px',
-                    
-                    labels: {
-                      colors: ["#ffffff", "#ffffff"],  
-                    },
-        
-                    itemMargin: {
-                        horizontal: 40,
-                        vertical: 0
-                    },
-                  }
+                  
                 };
               
                 
@@ -469,13 +473,10 @@
             </div>
 
             <div class="card-body mt-4">
-              <h6 class="mb-0 ">Average closing times of pull-requests in Github</h6>
-              <p class="text-sm ">From github events in December 2024</p>
+              <h4 class="mb-0 ">Number of events</h4>
+              <h5 class="text-sm ">From github activity in December 2024</h5>
+              <!-- <p class="text-sm ">From github activity in December 2024</p> -->
               <hr class="dark horizontal">
-              <div class="d-flex">
-                <i class="material-icons text-sm my-auto me-1">schedule</i>
-                <p class="mb-0 text-sm">December 2024</p>
-              </div>
             </div>
           
           </div>
