@@ -281,8 +281,8 @@ def get_running_job_names():
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-01-23'
-    ending_date_formatted =  '2024-12-02-1' 
+    starting_date_formatted =  '2024-12-25-1'
+    ending_date_formatted =  '2024-12-25-3' 
 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')
@@ -314,7 +314,8 @@ if __name__ == '__main__':
         st = time.time()
         
         gharchive_file_URL = 'https://data.gharchive.org/' + current_date_formatted + '.json.gz'
-        folderpath_to_download_into = '/github_data'
+        # folderpath_to_download_into = '/github_data'
+        folderpath_to_download_into = '/home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/usrlib/github_data'
         
         # Raw events file
         filename = current_date_formatted + '.json.gz'

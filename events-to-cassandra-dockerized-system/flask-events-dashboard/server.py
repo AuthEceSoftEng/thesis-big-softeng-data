@@ -432,6 +432,73 @@ def get_top_human_contributors_by_day(day):
     return jsonify(dict_to_expose)
 
 
+# Expose top contributing humans, cut off humans with large commits (bot like number of commits)
+@app.route('/bots_vs_humans/top_contributing_humans_bot_like_committers_removed/<day>', methods=['GET'])
+def get_top_human_contributors_by_day_bot_like_committers_removed(day):
+    
+    """
+    Example JSON to be exposed:
+    {
+        "day": "2024-03-01",
+        "top_contributors": [
+            {
+            "number_of_contributions": 56991,
+            "username": "censameesss"
+            },
+            {
+            "number_of_contributions": 30007,
+            "username": "RiskyGUY22"
+            },
+            {
+            "number_of_contributions": 21877,
+            "username": "R3CI"
+            }
+        ]
+    }
+    """
+    
+    # day
+    day_datetime_formatted = datetime.strptime(day, "%d")
+    day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
+    
+    cassandra_container_name = 'cassandra_stelios'
+    keyspace = 'prod_gharchive'
+    cluster = Cluster([cassandra_container_name],port=9142)
+    session = cluster.connect(keyspace)
+    
+    
+    # Top contributors 
+    prepared_query = f" "\
+        f"SELECT username, number_of_contributions FROM {keyspace}.top_human_contributors_by_day "\
+        f"WHERE day = '{day_only}';"
+    
+    
+    
+    rows = session.execute(prepared_query)
+    
+    # Sort the rows based on number of contributions
+    dict_to_expose = {'day': day_only, 'top_contributors': []}
+    
+    
+    result = []
+    # Create a JSON-serializable object from the queried data
+    for row in rows:
+        result.append({db_col_name: getattr(row, db_col_name) for db_col_name in row._fields})
+    
+    result_sorted = sorted(result, key=lambda x: x["number_of_contributions"], reverse=True)
+    
+    # Remove committers with too many commits (more than 20 per hour)
+    max_num_of_commits_per_hour = 20
+    result_sorted_bot_like_committers_removed = [committer_dict for committer_dict \
+        in result_sorted if committer_dict["number_of_contributions"] <= max_num_of_commits_per_hour*24]
+    
+    num_of_committers_to_show = 5
+    dict_to_expose["top_contributors"] = result_sorted_bot_like_committers_removed[0:num_of_committers_to_show]    
+    
+    cluster.shutdown()
+    return jsonify(dict_to_expose)
+
+
 # Expose top contributing bots
 @app.route('/bots_vs_humans/top_contributing_bots/<day>', methods=['GET'])
 def get_top_bot_contributors_by_day(day):
