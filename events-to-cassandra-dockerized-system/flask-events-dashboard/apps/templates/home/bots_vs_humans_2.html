@@ -363,12 +363,22 @@
 
                 var options = {
                   series: [{
-                    name: 'Marine Sprite',
+                    name: 'Created by humans',
+                    // group: 'percentage',
                     data: [61.41]
+                    // data: [1611564]
                   }, {
-                    name: 'Striking Calf',
+                    name: 'Created by bots',
+                    // group: 'percentage',
                     data: [38.59]
+                    // data: [1012668]
                   }],
+                  dataLabels: {
+                    enabled: true,
+                    style: {
+                      fontSize: '20px' 
+                    }
+                  },
                   chart: {
                     type: 'bar',
                     height: 350,
@@ -382,13 +392,13 @@
                   },
                   stroke: {
                     width: 1,
-                    colors: ['#ffffff', '#ffffff']
+                    colors: ['#ffffff']
                   },
                   title: {
-                    text: 'Events created by humans and bots in December 2024',
-
+                    text: 'Events in December 2024',
+                    align: 'center',
                     style: {
-                      fontSize:  '20px',
+                      fontSize:  '25px',
                       fontWeight:  'bold',
                       fontFamily:  undefined,
                       color:  '#ffffff'
@@ -397,17 +407,20 @@
                   xaxis: {
                     categories: [""],
                     title: {
-                    text: 'Percentage of events',
-                    style: {
-                      fontSize:  '20px',
-                      fontWeight:  'bold',
-                      fontFamily:  undefined,
-                      color:  '#ffffff'
+                      text: 'Total number of events: 2624232',
+                      style: {
+                        fontSize:  '20px',
+                        fontWeight:  'bold',
+                        fontFamily:  undefined,
+                        color:  '#ffffff'
+                      },
+                      margin: 20,
+                      offsetX: 10,
+                      offsetY: 10,
                     },
-                  },
                     labels: {
                       style: {
-                          colors: ['#ffffff', '#ffffff'],
+                          colors: ['#ffffff', '#ffffff', '#ffffff', '#ffffff'],
                           fontSize: '14px',
                           fontFamily: 'Helvetica, Arial, sans-serif',
                           fontWeight: 400,
@@ -416,10 +429,12 @@
                     }
                     
                   },
+                  
                   tooltip: {
                     y: {
-                      formatter: function (val) {
-                        return val + "%"
+                      formatter: function (number_of_events) {
+                        var percentage_of_total_events = Math.round(number_of_events/100*2624232)
+                        return percentage_of_total_events
                       }
                     }
                   },
@@ -429,20 +444,19 @@
                   },
                   legend: {
                     position: 'top',
-                    horizontalAlign: 'left',
+                    horizontalAlign: 'center',
                     offsetX: 40,
+                    fontSize:  '20px',
+                    
                     labels: {
-                      colors: ["#ffffff", "#ffffff" ]
+                      colors: ["#ffffff", "#ffffff"],  
                     },
-                    style: {
-                      fontSize:  '20px',
-                      fontWeight:  'bold',
-                      fontFamily:  undefined,
-                      color:  '#ffffff'
-                    },
+                    
                   }
                 };
-  
+              
+                
+        
                 var chart = new ApexCharts(document.querySelector("#percentage_of_events_horizontal_stacked_bar_graph"), options);
                 chart.render();
               </script>
