@@ -359,7 +359,7 @@
             <script>
 
               
-              var options = {
+              var options_2 = {
                 title: {
                   text: 'Pull requests',
                   align: 'center',
@@ -461,7 +461,7 @@
 
               };
 
-              var options_2 = {
+              var options_3 = {
                   series: [{
                     name: 'Events by bots',
                     // group: 'percentage',
@@ -551,30 +551,45 @@
               
                 
 
-              var chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_horizontal_stacked_bar_graph"), options);
-              // var chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_horizontal_stacked_bar_graph"), options_2);
+              var chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_horizontal_stacked_bar_graph"), options_2);
+
               
-              // var chartRendered = chart;
               chart_2.render();
 
               function toggleChart(){
                 document.getElementById('toggleChart').addEventListener('click', function() {
                   
-                  console.log("chart_2.w.globals.titleText: " + chart_2.w.globals.titleText);
-                  console.log("chart_2.w.config.title.text: " + chart_2.w.config.title.text);
-                  console.log("options.title.text == " + options.title.text)
+                  
+                  // if (chart_2.w.config.title.text == options_2.title.text) {
+                    
+                  //   JSON.parse(JSON.stringify(options_2))
 
-                  // chart.destroy();
-                  if (chart_2.w.config.title.text == options.title.text) {
-                  // console.log("This is the if body: " + currentChart)
-                    chart_2.updateOptions(options_2);
-                  } else {
-                    chart_2.updateOptions(options);
+                  //   chart_2.updateOptions(options_3).then(() => {
+                  //     console.log("Switched to options 3");
+                  //   });
+
+                  // } else if (chart_2.w.config.title.text == options_3.title.text) {
+                  //   chart_2.updateOptions(options_2).then(() => {
+                  //     console.log("Switched to options 2");
+                  //   });
+                    
+                  // }
+
+                  if (chart_2.w.config.title.text == options_2.title.text) {
+                    
+                    
+
+                    chart_2.updateOptions(JSON.parse(JSON.stringify(options_3))).then(() => {
+                      console.log("Switched to options 3");
+                    });
+
+                  } else if (chart_2.w.config.title.text == options_3.title.text) {
+                    chart_2.updateOptions(JSON.parse(JSON.stringify(options_2))).then(() => {
+                      console.log("Switched to options 2");
+                    });
+                    
                   }
                   
-                  
-                  
-
                 });
               }
               toggleChart();
