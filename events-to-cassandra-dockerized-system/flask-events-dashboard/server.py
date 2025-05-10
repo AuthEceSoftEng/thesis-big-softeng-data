@@ -633,7 +633,7 @@ def get_number_of_all_pull_requests_by_bots_by_day(day):
     # number_of_accepted_pull_requests
     prepared_query = f""\
         f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots  "\
-        f"WHERE day = '{day_only}' and was_accepted = True;"
+        f"WHERE day = '{day_only}' and were_accepted = True;"
     
     
     rows = session.execute(prepared_query)
@@ -651,7 +651,7 @@ def get_number_of_all_pull_requests_by_bots_by_day(day):
     # number_of_rejected_pull_requests
     prepared_query = f""\
         f"SELECT number_of_pull_requests FROM {keyspace}.number_of_pull_requests_by_bots  "\
-        f"WHERE day = '{day_only}' and was_accepted = False;"
+        f"WHERE day = '{day_only}' and were_accepted = False;"
     
     
     # Query to figure out the latest day for which data is available

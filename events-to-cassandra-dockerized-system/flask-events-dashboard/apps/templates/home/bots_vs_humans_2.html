@@ -354,11 +354,14 @@
               </div>
             </div>
     
+            <button id="toggleChart">Toggle Chart</button>
+
             <script>
 
+              
               var options = {
                 title: {
-                  text: 'Github events',
+                  text: 'Pull requests',
                   align: 'center',
                   margin: 50,
                   style: {
@@ -384,15 +387,15 @@
                   },
                 },
                 series: [{
-                  name: 'Created by humans',
+                  name: 'Accepted',
                   // group: 'percentage',
-                  data: [61.41]
+                  data: [78.51, 56.24]
                   // data: [1611564]
                 },
                 {
-                  name: 'Created by bots',
+                  name: 'Rejected',
                   // group: 'percentage',
-                  data: [38.59]
+                  data: [21.49, 44.76]
                   // data: [1012668]
                 }],
                 dataLabels: {
@@ -418,7 +421,7 @@
                 },
 
                 xaxis: {
-                  categories: [""],
+                  categories: ["Humans", "Bots"],
                   title: {
                     text: 'Total number of events: 2624232',
                     style: {
@@ -458,10 +461,125 @@
 
               };
 
+              var options_2 = {
+                  series: [{
+                    name: 'Events by bots',
+                    // group: 'percentage',
+                    data: [61.41]
+                    // data: [1611564]
+                  }, {
+                    name: 'Events by humans',
+                    // group: 'percentage',
+                    data: [38.59]
+                    // data: [1012668]
+                  }],
+                  chart: {
+                    type: 'bar',
+                    height: 350,
+                    stacked: true,
+                    stackType: '100%'
+                  },
+                  plotOptions: {
+                    bar: {
+                      horizontal: true,
+                    },
+                  },
+                  stroke: {
+                    width: 1,
+                    colors: ['#ffffff']
+                  },
+                  title: {
+                    text: 'Events created by humans and bots in December 2024',
+
+                    style: {
+                      fontSize:  '20px',
+                      fontWeight:  'bold',
+                      fontFamily:  undefined,
+                      color:  '#000000'
+                    },
+                  },
+                  xaxis: {
+                    categories: [""],
+                    title: {
+                      text: 'Total number of events: 2624232',
+                      style: {
+                        fontSize:  '12px',
+                        fontWeight:  'bold',
+                        fontFamily:  undefined,
+                        color:  '#000000'
+                      },
+                    },
+                    labels: {
+                      style: {
+                          colors: ['#000000', '#000000'],
+                          fontSize: '14px',
+                          fontFamily: 'Helvetica, Arial, sans-serif',
+                          fontWeight: 400,
+                          cssClass: 'apexcharts-xaxis-label',
+                      }
+                    }
+                    
+                  },
+                  
+                  tooltip: {
+                    y: {
+                      formatter: function (number_of_events) {
+                        var percentage_of_total_events = number_of_events/100*2624232
+                        return percentage_of_total_events + "%"
+                      }
+                    }
+                  },
+                  fill: {
+                    opacity: 1
+  
+                  },
+                  legend: {
+                    position: 'top',
+                    horizontalAlign: 'left',
+                    offsetX: 40,
+                    labels: {
+                      colors: ["#000000", "#000000" ]
+                    },
+                    style: {
+                      fontSize:  '20px',
+                      fontWeight:  'bold',
+                      fontFamily:  undefined,
+                      color:  '#000000'
+                    },
+                  }
+                };
+              
+                
+
+              var chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_horizontal_stacked_bar_graph"), options);
+              // var chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_horizontal_stacked_bar_graph"), options_2);
+              
+              // var chartRendered = chart;
+              chart_2.render();
+
+              function toggleChart(){
+                document.getElementById('toggleChart').addEventListener('click', function() {
+                  
+                  console.log("chart_2.w.globals.titleText: " + chart_2.w.globals.titleText);
+                  console.log("chart_2.w.config.title.text: " + chart_2.w.config.title.text);
+                  console.log("options.title.text == " + options.title.text)
+
+                  // chart.destroy();
+                  if (chart_2.w.config.title.text == options.title.text) {
+                  // console.log("This is the if body: " + currentChart)
+                    chart_2.updateOptions(options_2);
+                  } else {
+                    chart_2.updateOptions(options);
+                  }
+                  
+                  
+                  
+
+                });
+              }
+              toggleChart();
 
 
-              var chart = new ApexCharts(document.querySelector("#percentage_of_pull_requests_horizontal_stacked_bar_graph"), options);
-              chart.render();
             </script>
     
     
