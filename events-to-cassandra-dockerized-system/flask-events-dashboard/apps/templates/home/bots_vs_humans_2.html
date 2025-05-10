@@ -559,33 +559,13 @@
               function toggleChart(){
                 document.getElementById('toggleChart').addEventListener('click', function() {
                   
-                  
-                  // if (chart_2.w.config.title.text == options_2.title.text) {
-                    
-                  //   JSON.parse(JSON.stringify(options_2))
-
-                  //   chart_2.updateOptions(options_3).then(() => {
-                  //     console.log("Switched to options 3");
-                  //   });
-
-                  // } else if (chart_2.w.config.title.text == options_3.title.text) {
-                  //   chart_2.updateOptions(options_2).then(() => {
-                  //     console.log("Switched to options 2");
-                  //   });
-                    
-                  // }
-
                   if (chart_2.w.config.title.text == options_2.title.text) {
-                    
-                    
-
+                    // JSON is used in updateOptions() to toggle multiple times
                     chart_2.updateOptions(JSON.parse(JSON.stringify(options_3))).then(() => {
-                      console.log("Switched to options 3");
                     });
 
                   } else if (chart_2.w.config.title.text == options_3.title.text) {
                     chart_2.updateOptions(JSON.parse(JSON.stringify(options_2))).then(() => {
-                      console.log("Switched to options 2");
                     });
                     
                   }
