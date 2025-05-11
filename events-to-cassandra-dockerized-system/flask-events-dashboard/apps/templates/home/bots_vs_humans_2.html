@@ -378,6 +378,9 @@
                     position: "top",
                     offsetY: 20
                   },
+                  title: {
+                      text: "Pull request rates",
+                  },
                   plotOptions: {
                     bar: {
                       horizontal: false,
@@ -411,9 +414,7 @@
                   yaxis: {
                     /* forceNiceScale: true, */
                     tickAmount: 5,
-                    title: {
-                      text: "Pull request rates",
-                    },
+                    
                     /* max: 100, // or any value greater than 80 */
 
                   },
@@ -432,93 +433,80 @@
 
 
               var options_accepted_rates_absolute = {
-                  series: [{
-                    name: 'Events by bots',
-                    // group: 'percentage',
-                    data: [61.41]
-                    // data: [1611564]
-                  }, {
-                    name: 'Events by humans',
-                    // group: 'percentage',
-                    data: [38.59]
-                    // data: [1012668]
-                  }],
+                  series: [
+                    {
+                      name: "Accepted",
+                      data: [32277, 11199],
+                    },
+                    {
+                      name: "Rejected",
+                      data: [8833, 8713],
+                    },
+                  ],
                   chart: {
-                    type: 'bar',
+                    type: "bar",
                     height: 350,
-                    stacked: true,
-                    stackType: '100%'
+                  },
+                  legend: {
+                    position: "top",
+                    offsetY: 20
+                  },
+                  title: {
+                    text: 'Pull requests',
+                    align: 'center'
                   },
                   plotOptions: {
                     bar: {
-                      horizontal: true,
+                      horizontal: false,
+                      columnWidth: "55%",
+                      borderRadius: 5,
+                      borderRadiusApplication: "end",
+                      dataLabels: {
+                        position: "top", // top, center, bottom
+                      },
+                    },
+                  },
+                  dataLabels: {
+                    enabled: true,
+                    offsetY: -20,
+                    style: {
+                      fontSize: "12px",
+                      colors: ["#304758"],
+                    },
+                    formatter: function (val) {
+                      return val;
                     },
                   },
                   stroke: {
-                    width: 1,
-                    colors: ['#ffffff']
-                  },
-                  title: {
-                    text: 'Events created by humans and bots in December 2024',
-
-                    style: {
-                      fontSize:  '20px',
-                      fontWeight:  'bold',
-                      fontFamily:  undefined,
-                      color:  '#000000'
-                    },
+                    show: true,
+                    width: 2,
+                    colors: ["transparent"],
                   },
                   xaxis: {
-                    categories: [""],
-                    title: {
-                      text: 'Total number of events: 2624232',
-                      style: {
-                        fontSize:  '12px',
-                        fontWeight:  'bold',
-                        fontFamily:  undefined,
-                        color:  '#000000'
-                      },
-                    },
-                    labels: {
-                      style: {
-                          colors: ['#000000', '#000000'],
-                          fontSize: '14px',
-                          fontFamily: 'Helvetica, Arial, sans-serif',
-                          fontWeight: 400,
-                          cssClass: 'apexcharts-xaxis-label',
-                      }
-                    }
-                    
+                    categories: ["Humans", "Bots"],
                   },
-                  
+                  // yaxis: {
+                  //   /* forceNiceScale: true, */
+                  //   tickAmount: 5,
+                  //   title: {
+                  //     text: "Number of pull requests",
+                  //   },
+                  //   /* max: 100, // or any value greater than 80 */
+
+                  // },
+
+                  fill: {
+                    opacity: 1,
+                  },
                   tooltip: {
                     y: {
-                      formatter: function (number_of_events) {
-                        var percentage_of_total_events = number_of_events/100*2624232
-                        return percentage_of_total_events + "%"
-                      }
-                    }
-                  },
-                  fill: {
-                    opacity: 1
-  
-                  },
-                  legend: {
-                    position: 'top',
-                    horizontalAlign: 'left',
-                    offsetX: 40,
-                    labels: {
-                      colors: ["#000000", "#000000" ]
+                      formatter: function (val) {
+                        return val;
+                      },
                     },
-                    style: {
-                      fontSize:  '20px',
-                      fontWeight:  'bold',
-                      fontFamily:  undefined,
-                      color:  '#000000'
-                    },
-                  }
+                  },
                 };
-              
+
                 
 
               var chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_horizontal_stacked_bar_graph"), options_accepted_rates_percentage);
