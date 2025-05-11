@@ -374,13 +374,34 @@
                     type: "bar",
                     height: 350,
                   },
+                
+                  
                   legend: {
-                    position: "top",
-                    offsetY: 20
+                    position: 'top',
+                    horizontalAlign: 'center',
+                    offsetX: 40,
+                    offsetY: 20,
+                    fontSize: '20px',
+                    labels: {
+                      colors: ["#ffffff", "#ffffff"],
+                    },
+                    itemMargin: {
+                      horizontal: 40,
+                      vertical: 0
+                    },
                   },
+
                   title: {
                       text: "Pull request rates",
+                      style: {
+                        fontSize: '25px',
+                        fontWeight: 'bold',
+                        fontFamily: undefined,
+                        color: '#ffffff'
+                      },    
                   },
+
+                  
                   plotOptions: {
                     bar: {
                       horizontal: false,
@@ -412,8 +433,10 @@
                     categories: ["Humans", "Bots"],
                   },
                   yaxis: {
-                    /* forceNiceScale: true, */
                     tickAmount: 5,
+                    title: {
+                      text: "Pull requests accepted percentage",
+                    },
                     
                     /* max: 100, // or any value greater than 80 */
 
@@ -485,15 +508,15 @@
                   xaxis: {
                     categories: ["Humans", "Bots"],
                   },
-                  // yaxis: {
-                  //   /* forceNiceScale: true, */
-                  //   tickAmount: 5,
-                  //   title: {
-                  //     text: "Number of pull requests",
-                  //   },
-                  //   /* max: 100, // or any value greater than 80 */
+                  yaxis: {
+                    /* forceNiceScale: true, */
+                    tickAmount: 5,
+                    title: {
+                      text: "Number of pull requests",
+                    },
+                    /* max: 100, // or any value greater than 80 */
 
-                  // },
+                  },
 
                   fill: {
                     opacity: 1,
