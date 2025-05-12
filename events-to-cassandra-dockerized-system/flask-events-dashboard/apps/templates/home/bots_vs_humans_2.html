@@ -518,6 +518,7 @@
                   align: 'center',
                   margin: 50,
                   style: {
+                    fontSize: "30px",
                     fontWeight: 'bold',
                     fontFamily: undefined,
                     color: '#ffffff'
@@ -542,7 +543,7 @@
                     fontSize: "20px",
                     colors: ['#ffffff']
                   },
-                  formatter_2: function (val) {
+                  formatter: function (val) {
                     return val;
                   },
                 },
@@ -595,7 +596,7 @@
                 },
                 tooltip: {
                   y: {
-                    formatter_2: function (val) {
+                    formatter: function (val) {
                       return val;
                     },
                   },
@@ -613,14 +614,15 @@
                 document.getElementById('toggleChart').addEventListener('click', function() {
                   
                   if (chart_2.w.config.title.text == options_accepted_rates_percentage.title.text) {
-                    // JSON is used in updateOptions() to toggle multiple times
-                    chart_2.updateOptions(JSON.parse(JSON.stringify(options_accepted_rates_absolute))).then(() => {
-                    });
+                    chart_2.destroy();
+                    chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_horizontal_stacked_bar_graph"), options_accepted_rates_absolute);
+                    chart_2.render();
+
 
                   } else if (chart_2.w.config.title.text == options_accepted_rates_absolute.title.text) {
-                    chart_2.updateOptions(JSON.parse(JSON.stringify(options_accepted_rates_percentage))).then(() => {
-                    });
-                    
+                    chart_2.destroy();
+                    chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_horizontal_stacked_bar_graph"), options_accepted_rates_percentage);
+                    chart_2.render();
                   }
                   
                 });
