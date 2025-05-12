@@ -350,7 +350,7 @@
     
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
               <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
-                <div id="percentage_of_pull_requests_horizontal_stacked_bar_graph" style="height: 400px;"></div>
+                <div id="percentage_of_pull_requests_horizontal_stacked_bar_graph" style="height: 500px;"></div>
               </div>
             </div>
     
@@ -358,177 +358,234 @@
 
             <script>
 
-              
+            
               var options_accepted_rates_percentage = {
-                  series: [
-                    {
-                      name: "Accepted",
-                      data: [81, 37],
-                    },
-                    {
-                      name: "Rejected",
-                      data: [20, 62],
-                    },
-                  ],
-                  chart: {
-                    type: "bar",
-                    height: 350,
+                series: [
+                  {
+                    name: "Accepted",
+                    data: [81, 37],
                   },
-                
-                  
-                  legend: {
-                    position: 'top',
-                    horizontalAlign: 'center',
-                    offsetX: 40,
-                    offsetY: 20,
-                    fontSize: '20px',
-                    labels: {
-                      colors: ["#ffffff", "#ffffff"],
-                    },
-                    itemMargin: {
-                      horizontal: 40,
-                      vertical: 0
-                    },
+                  {
+                    name: "Rejected",
+                    data: [20, 62],
                   },
+                ],
+                chart: {
+                  type: "bar",
+                  height: 450,
+                },
 
-                  title: {
-                      text: "Pull request rates",
-                      style: {
-                        fontSize: '25px',
-                        fontWeight: 'bold',
-                        fontFamily: undefined,
-                        color: '#ffffff'
-                      },    
+                legend: {
+                  position: "bottom",
+                  horizontalAlign: "right",
+                  offsetX: 20,
+                  offsetY: 20,
+                  fontSize: "15px",
+                  labels: {
+                    colors: ["#ffffff", "#ffffff"],
                   },
+                  itemMargin: {
+                    horizontal: 20,
+                    vertical: 0,
+                  },
+                },
 
-                  
-                  plotOptions: {
-                    bar: {
-                      horizontal: false,
-                      columnWidth: "55%",
-                      borderRadius: 5,
-                      borderRadiusApplication: "end",
-                      dataLabels: {
-                        position: "top", // top, center, bottom
-                      },
+                title: {
+                  text: "Pull request rates",
+                  align: 'center',
+                  margin: 50,
+                  style: {
+                    fontSize: "30px",
+                    fontWeight: "bold",
+                    fontFamily: undefined,
+                    color: "#ffffff",
+                  },
+                },
+
+                plotOptions: {
+                  bar: {
+                    horizontal: false,
+                    columnWidth: "55%",
+                    borderRadius: 5,
+                    borderRadiusApplication: "end",
+                    dataLabels: {
+                      position: "top", // top, center, bottom
                     },
                   },
-                  dataLabels: {
-                    enabled: true,
-                    offsetY: -20,
+                },
+                dataLabels: {
+                  enabled: true,
+                  offsetY: -20,
+                  style: {
+                    fontSize: "20px",
+                    colors: ["#fff"],
+                  },
+                  formatter: function (val) {
+                    return val + "%"
+                  },
+                },
+                stroke: {
+                  show: true,
+                  width: 2,
+                  colors: ["transparent"],
+                },
+                xaxis: {
+                  categories: ["Humans", "Bots"],
+                  labels: {
                     style: {
-                      fontSize: "12px",
-                      colors: ["#304758"],
+                      fontWeight: 'bold',
+                      fontSize: "20px",
+                      fontFamily: undefined,
+                      colors: ['#ffffff', '#ffffff']
                     },
+                  }
+                },
+                yaxis: {
+                  tickAmount: 5,
+                  title: {
+                    text: "Pull requests accepted percentage",
+                    style: {
+                      fontWeight: 'bold',
+                      fontSize: "20px",
+                      fontFamily: undefined,
+                      color: '#ffffff'
+                    }
+
+                  },
+                  labels: {
+                    style: {
+                      fontWeight: 'bold',
+                      fontFamily: undefined,
+                      colors: ['#ffffff']
+                    }
+                  }
+
+                  /* max: 100, // or any value greater than 80 */
+                },
+
+                fill: {
+                  opacity: 1,
+                },
+                tooltip: {
+                  y: {
                     formatter: function (val) {
-                      return val + "%";
+                      return val + " %"
                     },
                   },
-                  stroke: {
-                    show: true,
-                    width: 2,
-                    colors: ["transparent"],
-                  },
-                  xaxis: {
-                    categories: ["Humans", "Bots"],
-                  },
-                  yaxis: {
-                    tickAmount: 5,
-                    title: {
-                      text: "Pull requests accepted percentage",
-                    },
-                    
-                    /* max: 100, // or any value greater than 80 */
+                },
+              }
 
-                  },
-
-                  fill: {
-                    opacity: 1,
-                  },
-                  tooltip: {
-                    y: {
-                      formatter: function (val) {
-                        return val + " %"
-                      },
-                    },
-                  },
-                }
 
 
               var options_accepted_rates_absolute = {
-                  series: [
-                    {
-                      name: "Accepted",
-                      data: [32277, 11199],
+                series: [
+                  {
+                    name: "Accepted",
+                    data: [32277, 11199],
+                  },
+                  {
+                    name: "Rejected",
+                    data: [8833, 8713],
+                  },
+                ],
+                chart: {
+                  type: "bar",
+                  height: 450,
+                  // background: '#000'
+
+                },
+                legend: {
+                  position: "bottom",
+                  horizontalAlign: "right",
+                  offsetX: 20,
+                  offsetY: 20,
+                  fontSize: "15px",
+                  labels: {
+                    colors: ["#ffffff", "#ffffff"],
+                  },
+                  itemMargin: {
+                    horizontal: 20,
+                    vertical: 0,
+                  },
+                },
+                title: {
+                  text: 'Pull requests',
+                  style: {
+                    fontWeight: 'bold',
+                    fontFamily: undefined,
+                    color: '#ffffff'
+                  },
+                  align: 'center'
+                },
+                plotOptions: {
+                  bar: {
+                    horizontal: false,
+                    columnWidth: "55%",
+                    borderRadius: 5,
+                    borderRadiusApplication: "end",
+                    dataLabels: {
+                      position: "top", // top, center, bottom
                     },
-                    {
-                      name: "Rejected",
-                      data: [8833, 8713],
-                    },
-                  ],
-                  chart: {
-                    type: "bar",
-                    height: 350,
                   },
-                  legend: {
-                    position: "top",
-                    offsetY: 20
+                },
+                dataLabels: {
+                  enabled: true,
+                  offsetY: -20,
+                  style: {
+                    fontWeight: 'bold',
+                    fontFamily: undefined,
+                    color: '#ffffff'
                   },
-                  title: {
-                    text: 'Pull requests',
-                    align: 'center'
+                  formatter: function (val) {
+                    return val;
                   },
-                  plotOptions: {
-                    bar: {
-                      horizontal: false,
-                      columnWidth: "55%",
-                      borderRadius: 5,
-                      borderRadiusApplication: "end",
-                      dataLabels: {
-                        position: "top", // top, center, bottom
-                      },
-                    },
-                  },
-                  dataLabels: {
-                    enabled: true,
-                    offsetY: -20,
+                },
+                stroke: {
+                  show: true,
+                  width: 2,
+                  colors: ["transparent"],
+                },
+                xaxis: {
+                  categories: ["Humans", "Bots"],
+                  labels: {
                     style: {
-                      fontSize: "12px",
-                      colors: ["#304758"],
+                      fontWeight: 'bold',
+                      fontFamily: undefined,
+                      colors: ['#ffffff', '#ffffff']
                     },
+                  }
+
+                },
+                yaxis: {
+                  title: {
+                    text: "Number of pull requests",
+                    style: {
+                      fontWeight: 'bold',
+                      fontFamily: undefined,
+                      color: '#ffffff'
+                    },
+                  },
+                  labels: {
+                    style: {
+                      fontWeight: 'bold',
+                      fontFamily: undefined,
+                      fontSize: "20px",
+                      colors: ['#ffffff']
+                    }
+                  }
+                },
+
+                fill: {
+                  opacity: 1,
+                },
+                tooltip: {
+                  y: {
                     formatter: function (val) {
                       return val;
                     },
                   },
-                  stroke: {
-                    show: true,
-                    width: 2,
-                    colors: ["transparent"],
-                  },
-                  xaxis: {
-                    categories: ["Humans", "Bots"],
-                  },
-                  yaxis: {
-                    /* forceNiceScale: true, */
-                    tickAmount: 5,
-                    title: {
-                      text: "Number of pull requests",
-                    },
-                    /* max: 100, // or any value greater than 80 */
-
-                  },
-
-                  fill: {
-                    opacity: 1,
-                  },
-                  tooltip: {
-                    y: {
-                      formatter: function (val) {
-                        return val;
-                      },
-                    },
-                  },
-                };
+                },
+              };
 
                 
 
