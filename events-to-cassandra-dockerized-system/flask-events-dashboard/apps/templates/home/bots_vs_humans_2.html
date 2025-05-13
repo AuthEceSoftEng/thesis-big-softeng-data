@@ -3,7 +3,13 @@
 {% block title %} Tables {% endblock %} 
 
 <!-- Specific Page CSS goes HERE  -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+<!-- <link rel="stylesheet" href="{{ url_for('static', filename='
+home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-events-dashboard/apps/static/assets/css/toggling_button.css') }}"> -->
+<link rel="stylesheet" href="../../static/assets/css/toggling_button.css">
+
+
+{% endblock stylesheets %}
 
 {% block content %}
 <head>
@@ -15,7 +21,7 @@
   <!-- Custom CSS file path relative to the static directory -->
   <!-- <link rel="stylesheet" href="{{ url_for('static', filename='/home/xeon/Thesis/flask-material-dashboard/apps/static/assets/css/my-custom-css.css') }}"> -->
 
-
+ 
 
   <!-- Change all months based on UI selection -->
   <script>
