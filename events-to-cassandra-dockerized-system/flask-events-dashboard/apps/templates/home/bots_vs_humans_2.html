@@ -275,9 +275,69 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
 
   <div class="container-fluid py-4">
     
-     
-
-
+    <!-- Number of events (simple stats) -->
+    <div class="row mb-5">
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">weekend</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Number of events</p>
+              <h4 id="number-of-events-by-humans" class="mb-0">---</h4>
+            </div>
+          </div>
+  
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">person</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Percentage</p>
+              <h4 id="human-events-percentage" class="mb-0">---</h4>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">person</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Number of events</p>
+              <h4 id="number-of-events-by-bots" class="mb-0">---</h4>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">weekend</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Percentage</p>
+              <h4 id="bot-events-percentage" class="mb-0">---</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- Number of pull-requests (simple stats) -->
     <div class="row mb-5">
       <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
@@ -339,8 +399,119 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
       </div>
     </div>
 
-    <!-- Number of pull-requests (chart) -->
+    <!-- Number of events (chart) and number of pull-requests (chart) -->
     <div class="row mt-5 mb-4">
+      <!-- Number of events (chart) -->
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="chart-container">
+            <script src="/static/assets/js/plugins/chartjs.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+              integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+              crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"
+              integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ=="
+              crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    
+            
+    
+            <!-- Pie chart for the Github events -->
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+                <div id="percentage_of_events_pie_chart" style="height: 500px;"></div>
+              </div>
+            </div>
+            
+            <script>
+
+              function updateNumberOfGithubEventsChart(day_selected) {
+                
+                var options = {
+                  title: {
+                    text: 'Github events',
+                    align: 'center',
+                    margin: 50,
+                    style: {
+                      fontSize: '30px',
+                      fontWeight: 'bold',
+                      fontFamily: undefined,
+                      color: '#ffffff'
+                    },
+                  },
+                  legend: {
+                    position: 'bottom',
+                    horizontalAlign: 'right',
+                    offsetX: 20,
+                    offsetY: 20,
+                    fontSize: '20px',
+                    labels: {
+                      colors: ["#ffffff", "#ffffff"],
+                    },
+
+                    itemMargin: {
+                      horizontal: 20,
+                      vertical: 0
+                    },
+                  },
+                  series: [22410, 77590],
+                  labels: ['Created by humans', 'Created by bots'],
+                  dataLabels: {
+                    enabled: true,
+                    style: {
+                      fontSize: '20px',
+                      colors: ['#ffffff', '#ffffff'],
+                      fontFamily: 'Helvetica, Arial, sans-serif',
+                      fontWeight: 400,
+                      cssClass: 'apexcharts-xaxis-label',
+                      }
+                  },
+                  chart: {
+                    type: 'pie',
+                    height: 450,
+                  },
+                  
+
+                };
+
+                var chart = new ApexCharts(document.querySelector("#percentage_of_events_pie_chart"), options);
+                chart.render();
+
+                const numberOfEventsUrl = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' + day_selected;
+                fetch(numberOfEventsUrl)
+                  .then(response => response.json())
+                  .then(data => {
+                    const total_number_of_events_by_humans = data["humans"]["total_number_of_events"];
+                    const total_number_of_events_by_bots = data["bots"]["total_number_of_events"];
+                    const fetchedNumberOfEvents = {
+                      series: [{
+                          data: [total_number_of_events_by_humans, total_number_of_events_by_bots]
+                        }],
+                      };
+                    chart.updateOptions(fetchedNumberOfEvents);
+                  }) 
+              }
+              
+
+            </script>
+    
+
+          </div>
+    
+          <div class="card-body mt-4">
+            <h4 class="mb-0 ">Number of events</h4>
+            <h5 class="text-sm ">From github activity in December 2024</h5>
+            <hr class="dark horizontal">
+          </div>
+    
+        </div>
+    
+      </div>
+      
+      <!-- Number of pull requests (chart) -->
       <div class="col-lg-6 col-md-12">
         <div class="card">
           <div class="chart-container">
@@ -396,7 +567,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                     horizontalAlign: "right",
                     offsetX: 20,
                     offsetY: 20,
-                    fontSize: "15px",
+                    fontSize: "20px",
                     labels: {
                       colors: ["#ffffff", "#ffffff"],
                     },
@@ -752,192 +923,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
     
       </div>
     
-    
     </div>
-
-     
-
-    <!-- Number of events (simple stats) -->
-    <div class="row mb-5">
-      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-        <div class="card">
-          <div class="card-header p-3 pt-2">
-            <div
-              class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
-              <i class="material-icons opacity-10">weekend</i>
-            </div>
-            <div class="text-end pt-1">
-              <p class="text-sm mb-0 text-capitalize">Number of events</p>
-              <h4 id="number-of-events-by-humans" class="mb-0">---</h4>
-            </div>
-          </div>
-  
-        </div>
-      </div>
-      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-        <div class="card">
-          <div class="card-header p-3 pt-2">
-            <div
-              class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
-              <i class="material-icons opacity-10">person</i>
-            </div>
-            <div class="text-end pt-1">
-              <p class="text-sm mb-0 text-capitalize">Percentage</p>
-              <h4 id="human-events-percentage" class="mb-0">---</h4>
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-        <div class="card">
-          <div class="card-header p-3 pt-2">
-            <div
-              class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
-              <i class="material-icons opacity-10">person</i>
-            </div>
-            <div class="text-end pt-1">
-              <p class="text-sm mb-0 text-capitalize">Number of events</p>
-              <h4 id="number-of-events-by-bots" class="mb-0">---</h4>
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-xl-3 col-sm-6">
-        <div class="card">
-          <div class="card-header p-3 pt-2">
-            <div
-              class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
-              <i class="material-icons opacity-10">weekend</i>
-            </div>
-            <div class="text-end pt-1">
-              <p class="text-sm mb-0 text-capitalize">Percentage</p>
-              <h4 id="bot-events-percentage" class="mb-0">---</h4>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-  
-    <!-- Number of events (chart) -->
-    <div class="row mt-5 mb-4">
-      <div class="col-lg-6 col-md-12">
-        <div class="card">
-          <div class="chart-container">
-            <script src="/static/assets/js/plugins/chartjs.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
-              integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
-              crossorigin="anonymous"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"
-              integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ=="
-              crossorigin="anonymous"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    
-    
-            
-    
-            <!-- Pie chart for the Github events -->
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
-                <div id="percentage_of_events_pie_chart" style="height: 400px;"></div>
-              </div>
-            </div>
-            <script>
-
-              function updateNumberOfGithubEventsChart(day_selected) {
-                
-                var options = {
-                  title: {
-                    text: 'Github events',
-                    align: 'center',
-                    margin: 50,
-                    style: {
-                      fontSize: '25px',
-                      fontWeight: 'bold',
-                      fontFamily: undefined,
-                      color: '#ffffff'
-                    },
-                  },
-                  legend: {
-                    position: 'bottom',
-                    horizontalAlign: 'center',
-                    offsetX: 10,
-                    fontSize: '20px',
-                    labels: {
-                      colors: ["#ffffff", "#ffffff"],
-                    },
-
-                    itemMargin: {
-                      horizontal: 40,
-                      vertical: 0
-                    },
-                  },
-                  series: [22410, 77590],
-                  labels: ['Created by humans', 'Created by bots'],
-                  dataLabels: {
-                    enabled: true,
-                    style: {
-                      fontSize: '20px',
-                      colors: ['#ffffff', '#ffffff'],
-                      fontFamily: 'Helvetica, Arial, sans-serif',
-                      fontWeight: 400,
-                      cssClass: 'apexcharts-xaxis-label',
-                      }
-                  },
-                  chart: {
-                    type: 'pie',
-                    height: 400,
-                  },
-                  
-
-                };
-
-                var chart = new ApexCharts(document.querySelector("#percentage_of_events_pie_chart"), options);
-                chart.render();
-
-                const numberOfEventsUrl = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' + day_selected;
-                fetch(numberOfEventsUrl)
-                  .then(response => response.json())
-                  .then(data => {
-                    const total_number_of_events_by_humans = data["humans"]["total_number_of_events"];
-                    const total_number_of_events_by_bots = data["bots"]["total_number_of_events"];
-                    const fetchedNumberOfEvents = {
-                      series: [{
-                          data: [total_number_of_events_by_humans, total_number_of_events_by_bots]
-                        }],
-                      };
-                    chart.updateOptions(fetchedNumberOfEvents);
-                  }) 
-              }
-              
-
-            </script>
-    
-
-          </div>
-    
-          <div class="card-body mt-4">
-            <h4 class="mb-0 ">Number of events</h4>
-            <h5 class="text-sm ">From github activity in December 2024</h5>
-            <!-- <p class="text-sm ">From github activity in December 2024</p> -->
-            <hr class="dark horizontal">
-          </div>
-    
-        </div>
-    
-      </div>
-    
-    
-    </div>
-
-
-
-
-
 
 
 
