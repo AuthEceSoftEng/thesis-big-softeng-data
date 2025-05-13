@@ -930,18 +930,12 @@
                       humanAcceptedRate = humanData.number_of_accepted_pull_requests
                         /(humanData.number_of_accepted_pull_requests + humanData.number_of_rejected_pull_requests)*100;
                       humanAcceptedRateTwoDecimals = humanAcceptedRate.toFixed(2);
-                      humanRejectedRateTwoDecimals = 100 - humanAcceptedRateTwoDecimals;
+                      humanRejectedRateTwoDecimals = (100 - humanAcceptedRateTwoDecimals).toFixed(2);
 
                       botAcceptedRate = botData.number_of_accepted_pull_requests
                         /(botData.number_of_accepted_pull_requests + botData.number_of_rejected_pull_requests)*100;
                       botAcceptedRateTwoDecimals = botAcceptedRate.toFixed(2);
-                      botRejectedRateTwoDecimals = 100 - botAcceptedRateTwoDecimals;
-
-                      console.log("botAcceptedRateTwoDecimals: " + botAcceptedRateTwoDecimals);
-                      console.log("botRejectedRateTwoDecimals: " + botRejectedRateTwoDecimals);
-
-                      console.log("humanAcceptedRateTwoDecimals: " + humanAcceptedRateTwoDecimals);
-                      console.log("humanRejectedRateTwoDecimals: " + humanRejectedRateTwoDecimals);
+                      botRejectedRateTwoDecimals = (100 - botAcceptedRateTwoDecimals).toFixed(2);
 
 
                       const fetchedPullRequestsRates = {
