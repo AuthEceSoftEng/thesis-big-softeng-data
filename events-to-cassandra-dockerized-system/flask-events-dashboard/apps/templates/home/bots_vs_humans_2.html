@@ -838,12 +838,258 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
             <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     
     
+            
+    
+            <!-- Pie chart for the Github events -->
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+                <div id="percentage_of_events_pie_chart" style="height: 400px;"></div>
+              </div>
+            </div>
+            <script>
+
+              function updateNumberOfGithubEventsChart(day_selected) {
+                
+                var options = {
+                  title: {
+                    text: 'Github events',
+                    align: 'center',
+                    margin: 50,
+                    style: {
+                      fontSize: '25px',
+                      fontWeight: 'bold',
+                      fontFamily: undefined,
+                      color: '#ffffff'
+                    },
+                  },
+                  legend: {
+                    position: 'bottom',
+                    horizontalAlign: 'center',
+                    offsetX: 10,
+                    fontSize: '20px',
+                    labels: {
+                      colors: ["#ffffff", "#ffffff"],
+                    },
+
+                    itemMargin: {
+                      horizontal: 40,
+                      vertical: 0
+                    },
+                  },
+                  series: [22410, 77590],
+                  labels: ['Created by humans', 'Created by bots'],
+                  dataLabels: {
+                    enabled: true,
+                    style: {
+                      fontSize: '20px',
+                      colors: ['#ffffff', '#ffffff'],
+                      fontFamily: 'Helvetica, Arial, sans-serif',
+                      fontWeight: 400,
+                      cssClass: 'apexcharts-xaxis-label',
+                      }
+                  },
+                  chart: {
+                    type: 'pie',
+                    height: 400,
+                  },
+                  
+
+                };
+
+                var chart = new ApexCharts(document.querySelector("#percentage_of_events_pie_chart"), options);
+                chart.render();
+
+                const numberOfEventsUrl = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' + day_selected;
+                fetch(numberOfEventsUrl)
+                  .then(response => response.json())
+                  .then(data => {
+                    const total_number_of_events_by_humans = data["humans"]["total_number_of_events"];
+                    const total_number_of_events_by_bots = data["bots"]["total_number_of_events"];
+                    const fetchedNumberOfEvents = {
+                      series: [{
+                          data: [total_number_of_events_by_humans, total_number_of_events_by_bots]
+                        }],
+                      };
+                    chart.updateOptions(fetchedNumberOfEvents);
+                  }) 
+              }
+              
+
+            </script>
+    
+
+          </div>
+    
+          <div class="card-body mt-4">
+            <h4 class="mb-0 ">Number of events</h4>
+            <h5 class="text-sm ">From github activity in December 2024</h5>
+            <!-- <p class="text-sm ">From github activity in December 2024</p> -->
+            <hr class="dark horizontal">
+          </div>
+    
+        </div>
+    
+      </div>
+    
+    
+    </div>
+
+
+
+
+
+
+
+
+    <!-- Select day  -->
+    <div class="row mb-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="card h-100">
+          <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
+            <!-- <h5>Selected day</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
+            <span class="text-dark font-weight-bold ms-sm-2">Select a day of December 2024:</span>
+            
+            <div class="dropdown float-lg-end pe-4">
+              <ul>
+                <select id = "day_dropdown_list_selection" class="drop_down_list_select bg-gradient-success" name="day">
+                  <option >1</option>
+                  <option >2</option>
+                  <option >3</option>
+                  <option >4</option>
+                  <option >5</option>
+                  <option >6</option>
+                  <option >7</option>
+                  <option >8</option>
+                  <option >9</option>
+                  <option >10</option>
+                  <option >11</option>
+                  <option >12</option>
+                  <option >13</option>
+                  <option >14</option>
+                  <option >15</option>
+                  <option >16</option>
+                  <option >17</option>
+                  <option >18</option>
+                  <option >19</option>
+                  <option >20</option>
+                  <option >21</option>
+                  <option >22</option>
+                  <option >23</option>
+                  <option >23</option>
+                  <option >24</option>
+                  <option >25</option>
+                  <option >26</option>
+                  <option >27</option>
+                  <option >28</option>
+                  <option >29</option>
+                  <option >30</option>
+                  <option >31</option>
+                </select>
+              </ul>
+            </div>
+          </div>
+          </div>
+        </div>
+    </div>
+
+    <!-- Humans vs bots title -->
+    <script>
+      listen_to_selected_day();
+      document.getElementById("day_dropdown_list_selection").addEventListener(
+          "change", function() {
+        let day_selected = this.value;
+        update_top_human_contributors_table(day_selected);
+        update_top_bot_contributors_table(day_selected);
+        update_pull_requests_by_humans(day_selected);
+        update_pull_requests_by_bots(day_selected);
+        update_number_of_events_by_humans_and_bots(day_selected);
+        
+        update_toggling_pull_requests_chart(day_selected);
+        updateNumberOfGithubEventsChart(day_selected);
+
+        
+      })
+    </script>
+
+    <!-- Initialize the tables for 1st of the month -->
+    <script>
+      const day_preselected = '1';
+      update_top_human_contributors_table(day_preselected);
+      update_top_bot_contributors_table(day_preselected);
+      update_pull_requests_by_humans(day_preselected);
+      update_pull_requests_by_bots(day_preselected);
+      update_number_of_events_by_humans_and_bots(day_preselected);
+
+      update_toggling_pull_requests_chart(day_preselected);
+      updateNumberOfGithubEventsChart(day_preselected);
+    </script>
+
+
+    <!-- Top 3 contributors ranking -->
+    <div class="row mb-5">   
+      <!-- Create the top human contributors and top bot cnotributors table -->
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="card-header card-header-warning">
+            <h4 class="card-title">Top contributing users</h4>
+            <p class="card-category">Based on commits (direct or merged pull-requests) on 
+              <span class="day_selection">1</span>/12/2024
+            </p>
+          </div>
+          <div class="card-body table-responsive">
+            <table id="top_human_contributors_table" class="table table-hover">
+              
+            </table>
+          </div>
+        </div>
+      </div>    
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="card-header card-header-warning">
+            <h4 class="card-title">Top contributing bots</h4>
+            <p class="card-category">Based on commits (direct or merged pull-requests) on 
+              <span class="day_selection">1</span>/12/2024
+            </p>
+          </div>
+          <div class="card-body table-responsive">
+            <table id="top_bot_contributors_table" class="table table-hover">
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+
+
+    
+
+
+
+
+
+    
+    
+
+
+
+  </div>
+
+  
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}
+
+<!-- Stacked bar graph kept for reference -->
+<!-- Bar chart instead of pie chart for the Github events
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
               <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
                 <div id="percentage_of_events_horizontal_stacked_bar_graph" style="height: 400px;"></div>
               </div>
             </div>
-    
             <script>
 
               function updateNumberOfGithubEventsChart(day_selected) {
@@ -980,172 +1226,6 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
               
 
             </script>
-    
-    
-          </div>
-    
-          <div class="card-body mt-4">
-            <h4 class="mb-0 ">Number of events</h4>
-            <h5 class="text-sm ">From github activity in December 2024</h5>
-            <!-- <p class="text-sm ">From github activity in December 2024</p> -->
-            <hr class="dark horizontal">
-          </div>
-    
-        </div>
-    
-      </div>
-    
-    
-    </div>
-
-
-
-
-
-
-
-
-    <!-- Select day  -->
-    <div class="row mb-4">
-      <div class="col-lg-4 col-md-6">
-        <div class="card h-100">
-          <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-            <!-- <h5>Selected day</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
-            <span class="text-dark font-weight-bold ms-sm-2">Select a day of December 2024:</span>
-            
-            <div class="dropdown float-lg-end pe-4">
-              <ul>
-                <select id = "day_dropdown_list_selection" class="drop_down_list_select bg-gradient-success" name="day">
-                  <option >1</option>
-                  <option >2</option>
-                  <option >3</option>
-                  <option >4</option>
-                  <option >5</option>
-                  <option >6</option>
-                  <option >7</option>
-                  <option >8</option>
-                  <option >9</option>
-                  <option >10</option>
-                  <option >11</option>
-                  <option >12</option>
-                  <option >13</option>
-                  <option >14</option>
-                  <option >15</option>
-                  <option >16</option>
-                  <option >17</option>
-                  <option >18</option>
-                  <option >19</option>
-                  <option >20</option>
-                  <option >21</option>
-                  <option >22</option>
-                  <option >23</option>
-                  <option >23</option>
-                  <option >24</option>
-                  <option >25</option>
-                  <option >26</option>
-                  <option >27</option>
-                  <option >28</option>
-                  <option >29</option>
-                  <option >30</option>
-                  <option >31</option>
-                </select>
-              </ul>
-            </div>
-          </div>
-          </div>
-        </div>
-    </div>
-
-    <!-- Humans vs bots title -->
-    <script>
-      listen_to_selected_day();
-      document.getElementById("day_dropdown_list_selection").addEventListener(
-          "change", function() {
-        let day_selected = this.value;
-        update_top_human_contributors_table(day_selected);
-        update_top_bot_contributors_table(day_selected);
-        update_pull_requests_by_humans(day_selected);
-        update_pull_requests_by_bots(day_selected);
-        update_number_of_events_by_humans_and_bots(day_selected);
-        
-        update_toggling_pull_requests_chart(day_selected);
-        updateNumberOfGithubEventsChart(day_selected);
-      })
-    </script>
-
-    <!-- Initialize the tables for 1st of the month -->
-    <script>
-      const day_preselected = '1';
-      update_top_human_contributors_table(day_preselected);
-      update_top_bot_contributors_table(day_preselected);
-      update_pull_requests_by_humans(day_preselected);
-      update_pull_requests_by_bots(day_preselected);
-      update_number_of_events_by_humans_and_bots(day_preselected);
-
-      update_toggling_pull_requests_chart(day_preselected);
-      updateNumberOfGithubEventsChart(day_preselected);
-    </script>
-
-
-    <!-- Top 3 contributors ranking -->
-    <div class="row mb-5">   
-      <!-- Create the top human contributors and top bot cnotributors table -->
-      <div class="col-lg-6 col-md-12">
-        <div class="card">
-          <div class="card-header card-header-warning">
-            <h4 class="card-title">Top contributing users</h4>
-            <p class="card-category">Based on commits (direct or merged pull-requests) on 
-              <span class="day_selection">1</span>/12/2024
-            </p>
-          </div>
-          <div class="card-body table-responsive">
-            <table id="top_human_contributors_table" class="table table-hover">
-              
-            </table>
-          </div>
-        </div>
-      </div>    
-      <div class="col-lg-6 col-md-12">
-        <div class="card">
-          <div class="card-header card-header-warning">
-            <h4 class="card-title">Top contributing bots</h4>
-            <p class="card-category">Based on commits (direct or merged pull-requests) on 
-              <span class="day_selection">1</span>/12/2024
-            </p>
-          </div>
-          <div class="card-body table-responsive">
-            <table id="top_bot_contributors_table" class="table table-hover">
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    
-    
-    
-
-
-    
-
-
-
-
-
-    
-    
-
-
-
-  </div>
-
-  
-{% endblock content %}
-
-<!-- Specific Page JS goes HERE  -->
-{% block javascripts %}{% endblock javascripts %}
-
-
-
+            -->
 
 </body>
