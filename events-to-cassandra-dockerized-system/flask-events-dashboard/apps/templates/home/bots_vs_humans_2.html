@@ -270,6 +270,272 @@
 
   <div class="container-fluid py-4">
     
+
+    <!-- Number of events, percentage -->
+    <div class="row mb-5">
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">weekend</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Number of events</p>
+              <h4 id="number-of-events-by-humans" class="mb-0">---</h4>
+            </div>
+          </div>
+  
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">person</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Percentage</p>
+              <h4 id="human-events-percentage" class="mb-0">---</h4>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">person</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Number of events</p>
+              <h4 id="number-of-events-by-bots" class="mb-0">---</h4>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-sm-6">
+        <div class="card">
+          <div class="card-header p-3 pt-2">
+            <div
+              class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
+              <i class="material-icons opacity-10">weekend</i>
+            </div>
+            <div class="text-end pt-1">
+              <p class="text-sm mb-0 text-capitalize">Percentage</p>
+              <h4 id="bot-events-percentage" class="mb-0">---</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+        
+    <!-- Horizontal stacked bars for the number of events by humans and by bots-->
+    <div class="row mt-5 mb-4">
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="chart-container">
+            <script src="/static/assets/js/plugins/chartjs.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+              integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+              crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"
+              integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ=="
+              crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+                <div id="percentage_of_events_horizontal_stacked_bar_graph" style="height: 400px;"></div>
+              </div>
+            </div>
+    
+            <script>
+
+              function updateNumberOfGithubEventsChart(day_selected) {
+                
+                var options = {
+                  title: {
+                    text: 'Github events',
+                    align: 'center',
+                    margin: 50,
+                    style: {
+                      fontSize: '25px',
+                      fontWeight: 'bold',
+                      fontFamily: undefined,
+                      color: '#ffffff'
+                    },
+                  },
+                  legend: {
+                    position: 'top',
+                    horizontalAlign: 'center',
+                    offsetX: 40,
+                    fontSize: '20px',
+
+                    labels: {
+                      colors: ["#ffffff", "#ffffff"],
+                    },
+
+                    itemMargin: {
+                      horizontal: 40,
+                      vertical: 0
+                    },
+                  },
+                  series: [{
+                    name: 'Created by humans',
+                    data: [22410]
+                  },
+                  {
+                    name: 'Created by bots',
+                    data: [77590]
+                  }],
+                  dataLabels: {
+                    enabled: true,
+                    style: {
+                      fontSize: '20px'
+                    },
+                    // The formatter has the percentage of number of events (for humans or bots) as input and not the number of events because the chart is a 100% chart meaning it automatically calculates the rates from the numbers
+                    formatter: function (numberOfEventsRate) {
+                        return numberOfEventsRate.toFixed(2) + '%';
+                    }
+                  },
+                  chart: {
+                    type: 'bar',
+                    height: 400,
+                    stacked: true,
+                    stackType: '100%'
+                  },
+                  plotOptions: {
+                    bar: {
+                      horizontal: true,
+                    },
+                  },
+                  stroke: {
+                    width: 1,
+                    colors: ['#ffffff']
+                  },
+
+                  xaxis: {
+                    categories: [""],
+                    title: {
+                      text: 'Total number of events: ?',
+                      style: {
+                        fontSize: '20px',
+                        fontFamily: undefined,
+                        fontWeight: 200,
+                        color: '#ffffff'
+                      },
+                      margin: 20,
+                      offsetX: 10,
+                      offsetY: 10,
+                    },
+                    labels: {
+                      style: {
+                        colors: ['#ffffff', '#ffffff', '#ffffff', '#ffffff'],
+                        fontSize: '14px',
+                        fontFamily: 'Helvetica, Arial, sans-serif',
+                        fontWeight: 400,
+                        cssClass: 'apexcharts-xaxis-label',
+                      }
+                    }
+
+                  },
+
+                  tooltip: {
+                    y: {
+                      formatter: function (numberOfEvents) {
+                        return numberOfEvents;
+                      }
+                    }
+                  },
+                  fill: {
+                    opacity: 1
+
+                  },
+
+                };
+
+                var chart = new ApexCharts(document.querySelector("#percentage_of_events_horizontal_stacked_bar_graph"), options);
+                chart.render();
+
+                const numberOfEventsUrl = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' + day_selected;
+                fetch(numberOfEventsUrl)
+                  .then(response => response.json())
+                  .then(data => {
+                    const total_number_of_events_by_humans = data["humans"]["total_number_of_events"];
+                    const total_number_of_events_by_bots = data["bots"]["total_number_of_events"];
+                    const fetchedNumberOfEvents = {
+                      series: [{
+                          name: 'Created by humans',
+                          data: [total_number_of_events_by_humans]
+                        },
+                        {
+                          name: 'Created by bots',
+                          data: [total_number_of_events_by_bots]
+                        }],
+                        xaxis: {
+                          // categories: [""],
+                          title: {
+                            text: 'Total number of events: ' + (total_number_of_events_by_humans + total_number_of_events_by_bots),
+                          //   style: {
+                          //     fontSize: '20px',
+                          //     fontFamily: undefined,
+                          //     fontWeight: 200,
+                          //     color: '#ffffff'
+                          //   },
+                          //   margin: 20,
+                          //   offsetX: 10,
+                          //   offsetY: 10,
+                          // },
+                          // labels: {
+                          //   style: {
+                          //     colors: ['#ffffff', '#ffffff', '#ffffff', '#ffffff'],
+                          //     fontSize: '14px',
+                          //     fontFamily: 'Helvetica, Arial, sans-serif',
+                          //     fontWeight: 400,
+                          //     cssClass: 'apexcharts-xaxis-label',
+                          //   }
+                          }
+
+                        }
+                      };
+                    chart.updateOptions(fetchedNumberOfEvents);
+                  }) 
+
+               
+
+              }
+              
+
+            </script>
+    
+    
+          </div>
+    
+          <div class="card-body mt-4">
+            <h4 class="mb-0 ">Number of events</h4>
+            <h5 class="text-sm ">From github activity in December 2024</h5>
+            <!-- <p class="text-sm ">From github activity in December 2024</p> -->
+            <hr class="dark horizontal">
+          </div>
+    
+        </div>
+    
+      </div>
+    
+    
+    </div>
+
+
+
     <!-- Number of accepted pull-requests and merge success rates -->
     <div class="row mb-5">
       <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
@@ -356,274 +622,7 @@
     
             <button id="toggleChart">Toggle Chart</button>
 
-            <!-- <script>
-            
-              var options_accepted_rates_percentage = {
-                  series: [
-                    {
-                      name: "Accepted",
-                      data: [81, 37],
-                    },
-                    {
-                      name: "Rejected",
-                      data: [20, 62],
-                    },
-                  ],
-                  chart: {
-                    type: "bar",
-                    height: 450,
-                    offsetX: 50,
-                    width: "95%", // optional, to make room
-                  },
-                  legend: {
-                    position: "bottom",
-                    horizontalAlign: "right",
-                    offsetX: 20,
-                    offsetY: 20,
-                    fontSize: "15px",
-                    labels: {
-                      colors: ["#ffffff", "#ffffff"],
-                    },
-                    itemMargin: {
-                      horizontal: 20,
-                      vertical: 0,
-                    },
-                  },
-
-                  title: {
-                    text: "Pull request rates",
-                    align: "center",
-                    margin: 50,
-                    style: {
-                      fontSize: "30px",
-                      fontWeight: "bold",
-                      fontFamily: undefined,
-                      color: "#ffffff",
-                    },
-                  },
-
-                  plotOptions: {
-                    bar: {
-                      horizontal: false,
-                      columnWidth: "55%",
-                      borderRadius: 5,
-                      borderRadiusApplication: "end",
-                      dataLabels: {
-                        position: "top", 
-                      },
-                    },
-                  },
-                  dataLabels: {
-                    enabled: true,
-                    offsetY: -30,
-                    style: {
-                      fontSize: "20px",
-                      colors: ["#fff"],
-                    },
-                    formatter: function (val) {
-                      return val + "%"
-                    },
-                  },
-                  stroke: {
-                    show: true,
-                    width: 2,
-                    colors: ["transparent"],
-                  },
-                  xaxis: {
-                    categories: ["Humans", "Bots"],
-                    labels: {
-                      style: {
-                        fontWeight: "bold",
-                        fontSize: "20px",
-                        fontFamily: undefined,
-                        colors: ["#ffffff", "#ffffff"],
-                      },
-                    },
-                  },
-                  yaxis: {
-                    min: 0,
-                    max: 100,
-                    title: {
-                      text: "Pull requests accepted percentage",
-                      style: {
-                        fontWeight: "bold",
-                        fontSize: "20px",
-                        fontFamily: undefined,
-                        color: "#ffffff",
-                      },
-                      offsetX: -10,
-                    },
-                    labels: {
-                      style: {
-                        fontWeight: "bold",
-                        fontFamily: undefined,
-                        colors: ["#ffffff"],
-                      },
-                    },
-                  },
-                  grid: {
-                    padding: {
-                      left: 20,
-                    },
-                  },
-                  fill: {
-                    opacity: 1,
-                  },
-                  tooltip: {
-                    y: {
-                      formatter: function (val) {
-                        return val + " %";
-                      },
-                    },
-                  },
-                }
-
-              var options_accepted_rates_absolute = {
-                series: [
-                  {
-                    name: "Accepted",
-                    data: [32277, 11199],
-                  },
-                  {
-                    name: "Rejected",
-                    data: [8833, 8713],
-                  },
-                ],
-                chart: {
-                  type: "bar",
-                  height: 450,
-                  offsetX: 50,
-                  width: "95%"
-                },
-                legend: {
-                  position: "bottom",
-                  horizontalAlign: "right",
-                  offsetX: 20,
-                  offsetY: 20,
-                  fontSize: "15px",
-                  labels: {
-                    colors: ["#ffffff", "#ffffff"],
-                  },
-                  itemMargin: {
-                    horizontal: 20,
-                    vertical: 0,
-                  },
-                },
-                title: {
-                  text: 'Pull requests',
-                  align: 'center',
-                  margin: 50,
-                  style: {
-                    fontSize: "30px",
-                    fontWeight: 'bold',
-                    fontFamily: undefined,
-                    color: '#ffffff'
-                  },
-                  
-                },
-                plotOptions: {
-                  bar: {
-                    horizontal: false,
-                    columnWidth: "55%",
-                    borderRadius: 5,
-                    borderRadiusApplication: "end",
-                    dataLabels: {
-                      position: "top", 
-                    },
-                  },
-                },
-                dataLabels: {
-                  enabled: true,
-                  offsetY: -30,
-                  style: {
-                    fontSize: "20px",
-                    colors: ['#ffffff']
-                  },
-                  formatter: function (val) {
-                    return val;
-                  },
-                },
-                stroke: {
-                  show: true,
-                  width: 2,
-                  colors: ["transparent"],
-                },
-                xaxis: {
-                  categories: ["Humans", "Bots"],
-                  labels: {
-                    style: {
-                      fontWeight: 'bold',
-                      fontSize: "20px",
-                      fontFamily: undefined,
-                      colors: ['#ffffff', '#ffffff']
-                    },
-                  }
-
-                },
-                yaxis: 
-                  {
-                    min: 0,
-                    title: {
-                      text: "Number of pull requests",
-                      style: {
-                        fontWeight: 'bold',
-                        fontSize: "20px",
-                        fontFamily: undefined,
-                        color: '#ffffff'
-                      },
-                      offsetX: -10,
-                    },
-                    labels: {
-                      style: {
-                        fontWeight: "bold",
-                        fontFamily: undefined,
-                        colors: ["#ffffff"],
-                      },
-                  
-                  },
-                },
-                grid: {
-                    padding: {
-                      left: 20,
-                    },
-                },
-                fill: {
-                  opacity: 1,
-                },
-                tooltip: {
-                  y: {
-                    formatter: function (val) {
-                      return val;
-                    },
-                  },
-                },
-              };
-
-              
-              var chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_chart"), options_accepted_rates_percentage);
-              chart_2.render();
-
-              function toggleChart(){
-                document.getElementById('toggleChart').addEventListener('click', function() {
-                  
-                  if (chart_2.w.config.title.text == options_accepted_rates_percentage.title.text) {
-                    chart_2.destroy();                    
-                    chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_chart"), options_accepted_rates_absolute);
-                    chart_2.render();
-                    
-
-                  } else if (chart_2.w.config.title.text == options_accepted_rates_absolute.title.text) {
-                    chart_2.destroy();
-                    chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_chart"), options_accepted_rates_percentage);
-                    chart_2.render();
-                  }
-                  
-                });
-              }
-              toggleChart();
-
-
-            </script> -->
+        
             <script>
 
               function update_toggling_pull_requests_chart(day_selected) {
@@ -978,221 +977,6 @@
 
 
 
-    <!-- Number of events, percentage -->
-    <div class="row mb-5">
-      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-        <div class="card">
-          <div class="card-header p-3 pt-2">
-            <div
-              class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
-              <i class="material-icons opacity-10">weekend</i>
-            </div>
-            <div class="text-end pt-1">
-              <p class="text-sm mb-0 text-capitalize">Number of events</p>
-              <h4 id="number-of-events-by-humans" class="mb-0">---</h4>
-            </div>
-          </div>
-  
-        </div>
-      </div>
-      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-        <div class="card">
-          <div class="card-header p-3 pt-2">
-            <div
-              class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
-              <i class="material-icons opacity-10">person</i>
-            </div>
-            <div class="text-end pt-1">
-              <p class="text-sm mb-0 text-capitalize">Percentage</p>
-              <h4 id="human-events-percentage" class="mb-0">---</h4>
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-        <div class="card">
-          <div class="card-header p-3 pt-2">
-            <div
-              class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
-              <i class="material-icons opacity-10">person</i>
-            </div>
-            <div class="text-end pt-1">
-              <p class="text-sm mb-0 text-capitalize">Number of events</p>
-              <h4 id="number-of-events-by-bots" class="mb-0">---</h4>
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-xl-3 col-sm-6">
-        <div class="card">
-          <div class="card-header p-3 pt-2">
-            <div
-              class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
-              <i class="material-icons opacity-10">weekend</i>
-            </div>
-            <div class="text-end pt-1">
-              <p class="text-sm mb-0 text-capitalize">Percentage</p>
-              <h4 id="bot-events-percentage" class="mb-0">---</h4>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-        
-    <!-- Horizontal stacked bars for the number of events by humans and by bots-->
-    <div class="row mt-5 mb-4">
-      <div class="col-lg-6 col-md-12">
-        <div class="card">
-          <div class="chart-container">
-            <script src="/static/assets/js/plugins/chartjs.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
-              integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
-              crossorigin="anonymous"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"
-              integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ=="
-              crossorigin="anonymous"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    
-    
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
-                <div id="percentage_of_events_horizontal_stacked_bar_graph" style="height: 400px;"></div>
-              </div>
-            </div>
-    
-            <script>
-
-              var options = {
-                title: {
-                  text: 'Github events',
-                  align: 'center',
-                  margin: 50,
-                  style: {
-                    fontSize: '25px',
-                    fontWeight: 'bold',
-                    fontFamily: undefined,
-                    color: '#ffffff'
-                  },
-                },
-                legend: {
-                  position: 'top',
-                  horizontalAlign: 'center',
-                  offsetX: 40,
-                  fontSize: '20px',
-
-                  labels: {
-                    colors: ["#ffffff", "#ffffff"],
-                  },
-
-                  itemMargin: {
-                    horizontal: 40,
-                    vertical: 0
-                  },
-                },
-                series: [{
-                  name: 'Created by humans',
-                  // group: 'percentage',
-                  data: [61.41]
-                  // data: [1611564]
-                },
-                {
-                  name: 'Created by bots',
-                  // group: 'percentage',
-                  data: [38.59]
-                  // data: [1012668]
-                }],
-                dataLabels: {
-                  enabled: true,
-                  style: {
-                    fontSize: '20px'
-                  }
-                },
-                chart: {
-                  type: 'bar',
-                  height: 400,
-                  stacked: true,
-                  stackType: '100%'
-                },
-                plotOptions: {
-                  bar: {
-                    horizontal: true,
-                  },
-                },
-                stroke: {
-                  width: 1,
-                  colors: ['#ffffff']
-                },
-
-                xaxis: {
-                  categories: [""],
-                  title: {
-                    text: 'Total number of events: 2624232',
-                    style: {
-                      fontSize: '20px',
-                      fontFamily: undefined,
-                      fontWeight: 200,
-                      color: '#ffffff'
-                    },
-                    margin: 20,
-                    offsetX: 10,
-                    offsetY: 10,
-                  },
-                  labels: {
-                    style: {
-                      colors: ['#ffffff', '#ffffff', '#ffffff', '#ffffff'],
-                      fontSize: '14px',
-                      fontFamily: 'Helvetica, Arial, sans-serif',
-                      fontWeight: 400,
-                      cssClass: 'apexcharts-xaxis-label',
-                    }
-                  }
-
-                },
-
-                tooltip: {
-                  y: {
-                    formatter: function (number_of_events) {
-                      var percentage_of_total_events = Math.round(number_of_events / 100 * 2624232)
-                      return percentage_of_total_events
-                    }
-                  }
-                },
-                fill: {
-                  opacity: 1
-
-                },
-
-              };
-
-
-
-              var chart = new ApexCharts(document.querySelector("#percentage_of_events_horizontal_stacked_bar_graph"), options);
-              chart.render();
-            </script>
-    
-    
-          </div>
-    
-          <div class="card-body mt-4">
-            <h4 class="mb-0 ">Number of events</h4>
-            <h5 class="text-sm ">From github activity in December 2024</h5>
-            <!-- <p class="text-sm ">From github activity in December 2024</p> -->
-            <hr class="dark horizontal">
-          </div>
-    
-        </div>
-    
-      </div>
-    
-    
-    </div>
-
-
 
 
 
@@ -1260,6 +1044,7 @@
         update_number_of_events_by_humans_and_bots(day_selected);
         
         update_toggling_pull_requests_chart(day_selected);
+        updateNumberOfGithubEventsChart(day_selected);
       })
     </script>
 
@@ -1273,6 +1058,7 @@
       update_number_of_events_by_humans_and_bots(day_preselected);
 
       update_toggling_pull_requests_chart(day_preselected);
+      updateNumberOfGithubEventsChart(day_preselected);
     </script>
 
 
