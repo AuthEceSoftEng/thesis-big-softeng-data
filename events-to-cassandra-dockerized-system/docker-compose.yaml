@@ -697,3 +697,16 @@ services:
 
 
       
+  plot_histogram_data:
+    image: python:3.10-script-executing-image
+    container_name: plot_histogram_data
+    volumes:
+      # Script getting the histogram data and plotting it
+      - ./usrlib/plot_histogram_data.py:/usrlib/plot_histogram_data.py
+      - ./usrlib/matplotlib_plots:/usrlib/matplotlib_plots
+
+    command: ['python', 'plot_histogram_data.py']
+    environment: 
+    - PYTHONUNBUFFERED=1
+    networks:
+      - data-network
