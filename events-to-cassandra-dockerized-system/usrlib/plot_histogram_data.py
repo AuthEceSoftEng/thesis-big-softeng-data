@@ -29,6 +29,7 @@ row = session.execute(get_pull_requests_histogram_info)
 row_in_response = row.one()
 calculate_the_histogram_values_again = False
 
+
 # Calculate histogram info (bin centers, edges and absolute frequencies) if it was not found in the database (or if you want to recalculate it the process)
 if row_in_response == None or calculate_the_histogram_values_again == True:
         
@@ -163,7 +164,7 @@ bar_heights = abs_frequencies
 ax.bar(x_bar_coordinates, height=bar_heights,  width=0.8, color='skyblue', edgecolor='black', align='center', tick_label=tick_labels)
 plt.xticks(rotation=30)
 
-ax.set_title('Number of pull requests given their closing times')
+ax.set_title(f"Bar graph of '{histogram_name}'")
 ax.set_ylabel('Absolute frequencies')
 ax.set_xlabel('Time (sec)')
 plt.savefig(f'/usrlib/matplotlib_plots/{histogram_name}.png',  bbox_inches='tight')
