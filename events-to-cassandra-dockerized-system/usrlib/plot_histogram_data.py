@@ -1,4 +1,3 @@
-
 from cassandra.cluster import Cluster
 import numpy as np
 from datetime import datetime, timedelta
@@ -6,6 +5,19 @@ import matplotlib.pyplot as plt
 import time 
 import json
 import sys
+
+# Create and save the pull requests or issues histogram
+create_pull_requests_graph = True
+calculate_the_histogram_values_again = False
+
+if create_pull_requests_graph == True:
+    # Pull requests
+    histogram_name = 'pull_requests_closing_times_histogram_custom_edges'    
+    closing_times_table_name = 'pull_request_closing_times'
+else:
+    # Issues
+    histogram_name = 'issues_closing_times_histogram_custom_edges'    
+    closing_times_table_name = 'issue_closing_times'
 
 
 def create_histogram_keyspace(cassandra_host=str, cassandra_port=int, histogram_keyspace=str):
@@ -29,7 +41,7 @@ def create_histograms_table(cassandra_host=str, cassandra_port=int, histogram_ke
         "(histogram_name text, bin_centers list<double>, bin_edges list<double>, "\
             "abs_frequencies list<double>, PRIMARY KEY (histogram_name));"
     session.execute(create_histograms_info_table_query)
-
+    
 
 # Create histograms keyspace and table 
 cassandra_host = 'cassandra_stelios'
@@ -39,17 +51,6 @@ create_histogram_keyspace(cassandra_host, cassandra_port, histograms_keyspace)
 histograms_table_name = 'histograms_info'
 create_histograms_table(cassandra_host, cassandra_port, histograms_keyspace, histograms_table_name)
 
-# Create and save the pull requests or issues histogram
-create_pull_requests_graph = False
-if create_pull_requests_graph == True:
-    # Pull requests
-    histogram_name = 'pull_requests_closing_times_histogram_original'    
-    closing_times_table_name = 'pull_request_closing_times'
-else:
-    # Issues
-    histogram_name = 'issues_closing_times_histogram_original'    
-    closing_times_table_name = 'issue_closing_times'
-        
 # Query histogram info (bin centers, edges and absolute frequencies) for the given histogram name if exists
 query_histogram_info = f"SELECT bin_centers, bin_edges, abs_frequencies "\
     f"FROM {histograms_keyspace}.{histograms_table_name} WHERE histogram_name = '{histogram_name}';"        
@@ -57,7 +58,6 @@ cluster = Cluster([cassandra_host],port=cassandra_port)
 session = cluster.connect()    
 row = session.execute(query_histogram_info)
 row_in_response = row.one()
-calculate_the_histogram_values_again = False
 
 
 # Calculate histogram info (bin centers, edges and absolute frequencies) if its name was not found in the database (or if you want to recalculate it the process)
