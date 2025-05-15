@@ -78,8 +78,6 @@ def seconds_to_period(num_of_seconds):
     
     return time_dict_keep_largest_two_non_zero_durations
 
-# print(seconds_to_period(0))
-# raise Exception
 
 def period_to_string(time_dict_keep_largest_two_non_zero_durations):
     time_periods_to_abbrev_dict = {'year(s)': 'y', 'month(s)': 'm', 'day(s)': 'd', \
@@ -89,30 +87,19 @@ def period_to_string(time_dict_keep_largest_two_non_zero_durations):
     time_dict_formatted_list_stringified = ', '.join(time_dict_formatted_list[0:])
     return time_dict_formatted_list_stringified
 
-# seconds = 10000
-# print(period_to_string(seconds_to_period(seconds)))
-# raise Exception
-
 fig, ax = plt.subplots()
 abs_frequencies, _ = np.histogram(closing_times_list, custom_bin_edges)
-# tick_labels = ['{} - {}'.format(custom_bin_edges[i], custom_bin_edges[i+1]) for i in range(len(abs_frequencies))]
-
-custom_bin_edges_stringified = [period_to_string(seconds_to_period(custom_bin_edges[i])) for i in range(len(custom_bin_edges))]
-# print(f"custom_bin_edges: {custom_bin_edges}")                            
-# print(f"custom_bin_edges_strigified: {custom_bin_edges_stringified}")                            
-                                
+custom_bin_edges_stringified = [period_to_string(seconds_to_period(custom_bin_edges[i])) for i in range(len(custom_bin_edges))]                                
 tick_labels = ['{} - {}'.format(custom_bin_edges_stringified[i], custom_bin_edges_stringified[i+1]) for i in range(len(abs_frequencies))]
 
-
-ax.bar(range(len(abs_frequencies)), abs_frequencies,  width=1, color='skyblue', edgecolor='black', align='center', tick_label=tick_labels)
-
-# plt.xscale('log')
-# ax.set_xticks([0.5+i for i in range(len(abs_frequencies))])
-# ax.set_xticklabels(['{} - {}'.format(custom_bin_edges[i], custom_bin_edges[i+1]) for i in range(len(abs_frequencies))])
+# tick_labels = None # Use of bin_centers as the tick labels
+x_bar_coordinates = range(len(abs_frequencies))
+bar_heights = abs_frequencies
+ax.bar(x_bar_coordinates, height=bar_heights,  width=0.8, color='skyblue', edgecolor='black', align='center', tick_label=tick_labels)
 ax.set_title('Number of pull requests given their closing times')
 ax.set_ylabel('Absolute frequencies')
 ax.set_xlabel('Time (sec)')
-plt.savefig('./usrlib/matplotlib_plots/pull_requests_closing_times_original_data.png')
+plt.savefig('./usrlib/matplotlib_plots/pull_requests_closing_times_original_data_local.png')
 plt.show()
 time.sleep(0.5)
 plt.close()
