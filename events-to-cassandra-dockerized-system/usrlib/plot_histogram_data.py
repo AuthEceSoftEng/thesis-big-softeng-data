@@ -1,10 +1,8 @@
 from cassandra.cluster import Cluster
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 import matplotlib.pyplot as plt
-import time 
-import json
-import sys
+import time
 
 # Create and save the pull requests or issues histogram
 create_pull_requests_graph = True
