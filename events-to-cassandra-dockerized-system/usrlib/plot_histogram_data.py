@@ -40,7 +40,7 @@ histograms_table_name = 'histograms_info'
 create_histograms_table(cassandra_host, cassandra_port, histograms_keyspace, histograms_table_name)
 
 # Create and save the pull requests or issues histogram
-create_pull_requests_graph = True
+create_pull_requests_graph = False
 if create_pull_requests_graph == True:
     # Pull requests
     histogram_name = 'pull_requests_closing_times_histogram_original'    
@@ -70,7 +70,7 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
             f"Calculating based on table {keyspace}.{closing_times_table_name}...")
         
         if create_pull_requests_graph == True:
-            def query_pull_requests_closing_times():
+            def query_pull_requests_closing_times(cassandra_host, cassandra_port):
                 """
                 Queries all pull requests closing times of all repos in table 'prod_gharchive.pull_requests_closing_times' and returns them as a list
                 """
@@ -82,7 +82,7 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
                 session = cluster.connect()    
                 rows = session.execute(prepared_query)
                 rows_list = rows.all()
-                # Keep only closed (with non None closing times) pull requests/issues
+                # Keep only closed (with non None closing times) pull requests
                 rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
                 closing_times_list = []
                 for row in rows_list:
@@ -109,22 +109,21 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
                 
                 return closing_times_list
             
-            closing_times_list = query_pull_requests_closing_times()
+            closing_times_list = query_pull_requests_closing_times(cassandra_host, cassandra_port)
         else:
-            # TODO: Query ISSUES closing times
-            def query_issues_closing_times():
+            def query_issues_closing_times(cassandra_host, cassandra_port):
                 """
-                Queries all pull requests closing times of all repos in table 'prod_gharchive.pull_requests_closing_times' and returns them as a list
+                Queries all issues closing times of all repos in table 'prod_gharchive.issue_closing_times' and returns them as a list
                 """
                 keyspace = "prod_gharchive"
-                prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
-                    f" FROM {keyspace}.pull_request_closing_times;"    
+                prepared_query = f"SELECT repo_name, issue_number, opening_time, closing_time "\
+                    f" FROM {keyspace}.issue_closing_times;"    
                 
                 cluster = Cluster([cassandra_host],port=cassandra_port)
                 session = cluster.connect()    
                 rows = session.execute(prepared_query)
                 rows_list = rows.all()
-                # Keep only closed (with non None closing times) pull requests/issues
+                # Keep only closed (with non None closing times) issues
                 rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
                 closing_times_list = []
                 for row in rows_list:
@@ -138,12 +137,12 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
                         closing_time_in_seconds = time_diff.total_seconds()
                         if closing_time_in_seconds < 0:
                             print(f"Repo name: {getattr(row, 'repo_name')}\n"
-                                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                                f"Issue number: {getattr(row, 'issue_number')}\n"
                                 f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
                     except Exception as e:
                         print(f"Exception: {e}"
                             f"Repo name: {getattr(row, 'repo_name')}\n"
-                            f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                            f"Issue number: {getattr(row, 'issue_number')}\n"
                             f"Opening time of row: {opening_time_of_row}\n"
                             f"Closing time of row: {closing_time_of_row}\n")
                                 
@@ -151,7 +150,7 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
                 
                 return closing_times_list
             
-            closing_times_list = query_issues_closing_times()
+            closing_times_list = query_issues_closing_times(cassandra_host, cassandra_port)
             
         
         
