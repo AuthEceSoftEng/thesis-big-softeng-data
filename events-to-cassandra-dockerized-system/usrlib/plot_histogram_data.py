@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import time 
 import json
 
-# Get the data from cassandra
+# Create keyspace, table and get histogram info (bin centers, edges and absolute frequencies) if it exists in the database
 cassandra_container_name = 'cassandra_stelios'
 cluster = Cluster([cassandra_container_name],port=9142)
 session = cluster.connect()
@@ -22,40 +22,27 @@ create_histograms_info_table_query = f"CREATE TABLE IF NOT EXISTS {histogram_key
         "abs_frequencies list<double>, PRIMARY KEY (histogram_name));"
 session.execute(create_histograms_info_table_query)
 
-# Select to log transform data
-log_transform_data = False
-if log_transform_data == False:
-    histogram_name = 'pull_requests_closing_times_histogram_original'
-elif log_transform_data == True:
-    histogram_name = 'pull_requests_closing_times_histogram_log_transformed'
-else:
-    raise Exception("'log_transform_data' should be set to True or False.")
-
-    
+histogram_name = 'pull_requests_closing_times_histogram_original'    
 get_pull_requests_histogram_info = f"SELECT bin_centers, bin_edges, abs_frequencies "\
     f"FROM {histogram_keyspace}.{histograms_table_name} WHERE histogram_name = '{histogram_name}';"        
 row = session.execute(get_pull_requests_histogram_info)
 row_in_response = row.one()
+calculate_the_histogram_values_again = False
 
-calculate_the_histogram_values_again = True
-
-# Get the data if not already in keyspace 'histograms'
+# Calculate histogram info (bin centers, edges and absolute frequencies) if it was not found in the database (or if you want to recalculate it the process)
 if row_in_response == None or calculate_the_histogram_values_again == True:
         
+        # Query all repos closing times
         keyspace = "prod_gharchive"
-        # Calculate the histogram values
-        print(f"Bin centers, edges and absolute values of histogram '{histogram_name}' are not in table '{histogram_keyspace}.{histograms_table_name}'.\n"\
+        print(f"Bin centers, edges and absolute values of histogram '{histogram_name}' are not in "\
+            f"table '{histogram_keyspace}.{histograms_table_name}'.\n"\
             f"Calculating based on table {keyspace}.pull_requests_closing_times...")
-        
         prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
-        f" FROM {keyspace}.pull_request_closing_times;"    
-        
+            f" FROM {keyspace}.pull_request_closing_times;"    
         rows = session.execute(prepared_query)
         rows_list = rows.all()
-        # Keep only closed (with non None closing times) pull requests
+        # Keep only closed (with non None closing times) pull requests/issues
         rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
-        
-        # Get all repos' closing times 
         closing_times_list = []
         for row in rows_list:
             opening_time_of_row = getattr(row, 'opening_time')
@@ -78,30 +65,25 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
                     f"Closing time of row: {closing_time_of_row}\n")
                         
             closing_times_list.append(closing_time_in_seconds)
-    
-        print("Number of pull requests closing times in database: ", len(closing_times_list))
-    
-    
-        num_of_histogram_bins = 20
-        
-        # Select to original or log scale data to remove skew
-        if log_transform_data == False:
-            closing_times_list_for_histogram = np.array(closing_times_list)
-        elif log_transform_data == True:
-            closing_times_list_for_histogram = np.log10(np.array(closing_times_list) + 1)
-        else:
-            raise Exception("'log_transform_data' should be set to True or False.")
 
         
-        abs_frequencies, bin_edges = np.histogram(closing_times_list_for_histogram, 
-                                                bins=num_of_histogram_bins)
-        
+        # Select the bin edges
+        seconds_in_min = 60
+        seconds_in_hour = 60* seconds_in_min
+        seconds_in_day = 24* seconds_in_hour
+        seconds_in_month = 30* seconds_in_day
+        seconds_in_year = 365* seconds_in_day
+        bin_edges = [0, seconds_in_min, seconds_in_hour, seconds_in_day, seconds_in_month, seconds_in_year, 10*seconds_in_year]
+        bin_edges.append(max(closing_times_list))
+
+        # Calculate absolute frequencies
+        closing_times_list_for_histogram = np.array(closing_times_list)
+        abs_frequencies, _ = np.histogram(closing_times_list_for_histogram, 
+                                                bins=bin_edges)
         abs_frequencies = abs_frequencies.tolist()
-        bin_edges = bin_edges.tolist()
-         
-        # Calculate the bin centers from the bin edges
+        
+        # Calculate bin centers
         bin_centers = []
-        # length(bin_centers) = length(bin_edges) - 1
         for bin_edge_index in range(len(bin_edges)-1):
             bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
         print(f"Completed calculation of bin centers, bin edges and absolute values of histogram '{histogram_name}'\n"\
@@ -109,36 +91,84 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
             f"Bin edges: {bin_edges})\n"\
             f"Absolute frequencies: {abs_frequencies}")
         
-        
+        # Insert bin centers, bin edges and absolute frequencies in cassandra
         insert_histogram_info = f"INSERT INTO {histogram_keyspace}.{histograms_table_name} "\
             f"(histogram_name, bin_centers, bin_edges, abs_frequencies) VALUES ('{histogram_name}', {bin_centers}, {bin_edges}, "\
                 f"{abs_frequencies});"
-   
         session.execute(insert_histogram_info) 
+
 
 elif row_in_response != None:
     bin_centers = getattr(row_in_response, 'bin_centers')
     bin_edges = getattr(row_in_response, 'bin_edges')
     abs_frequencies = getattr(row_in_response, 'abs_frequencies')
-    
     print(f"Bin centers, bin edges and absolute frequencies of histogram '{histogram_name}' already exist in table {histogram_keyspace}.{histograms_table_name}\n")
 
-# with open('/usrlib/matplotlib_plots/closing_times_list.txt', 'w') as file_object:
-#     file_object.write(json.dumps(closing_times_list))
+def seconds_to_period(num_of_seconds):
+    """
+    :param num_of_seconds: number of seconds to convert to higher time durations (years, months, etc)
+    :return time_dict_keep_largest_two_non_zero_durations: The first two largest time durations that the seconds are converted into:
+    
+    Example:
+    For input num_of_seconds = 168039959, we get 
+    output: time_dict_keep_largest_two_non_zero_durations = {'years': 5, 'months': 3}
+    """
+    seconds_in_a_year = 365*24*60*60
+    seconds_in_a_month = 30*24*60*60
+    seconds_in_a_day = 24*60*60
+    seconds_in_an_hour = 60*60
+    seconds_in_a_minute = 60
 
-# Create histogram with various numbers of bins 
-# and see which looks best
+    years, remaining_seconds = divmod(num_of_seconds, seconds_in_a_year)
+    months, remaining_seconds = divmod(remaining_seconds, seconds_in_a_month)
+    days, remaining_seconds = divmod(remaining_seconds, seconds_in_a_day)
+    hours, remaining_seconds = divmod(remaining_seconds, seconds_in_an_hour)
+    minutes, remaining_seconds = divmod(remaining_seconds, seconds_in_a_minute)
+    seconds = remaining_seconds
+
+    time_dict = {'year(s)': years, 'month(s)': months, 'day(s)':days, \
+        'hour(s)':hours, 'minute(s)':minutes, 'second(s)':seconds}
+
+    time_dict_keep_largest_two_non_zero_durations = {}
+
+    # Iterate through the ordered time dictionary
+    for k, v, in time_dict.items():
+        if time_dict[k] != 0:
+            time_dict_keep_largest_two_non_zero_durations[k] = v
+        # Keep only 2 of the values in the time period
+        if len(time_dict_keep_largest_two_non_zero_durations.items()) == 2:
+            break
+    
+    if time_dict_keep_largest_two_non_zero_durations == {}:
+        return {'second(s)': 0}    
+    
+    return time_dict_keep_largest_two_non_zero_durations
+
+def period_to_string(time_dict_keep_largest_two_non_zero_durations):
+    time_periods_to_abbrev_dict = {'year(s)': 'y', 'month(s)': 'm', 'day(s)': 'd', \
+            'hour(s)': 'h', 'minute(s)': 'min', 'second(s)': 'sec'}
+    time_dict_formatted = {time_periods_to_abbrev_dict[k]: v for k, v in time_dict_keep_largest_two_non_zero_durations.items()}
+    time_dict_formatted_list = ['{} {}'.format(v, k) for k, v in time_dict_formatted.items()]
+    time_dict_formatted_list_stringified = ', '.join(time_dict_formatted_list[0:])
+    return time_dict_formatted_list_stringified
 
 
-# number_of_first_bins_to_plot = 10
-# abs_frequencies = abs_frequencies[0:number_of_first_bins_to_plot]
-# bin_edges = bin_edges[0:number_of_first_bins_to_plot+1]
-# print(f"abs_frequencies length: {len(abs_frequencies)}")
-# print(f"bin_edges length: {len(bin_edges)}")
+fig, ax = plt.subplots()
+custom_bin_edges_stringified = [period_to_string(seconds_to_period(bin_edges[i])) for i in range(len(bin_edges))]                                
+tick_labels = ['{} - {}'.format(custom_bin_edges_stringified[i], custom_bin_edges_stringified[i+1]) for i in range(len(abs_frequencies))]
 
-plt.stairs(abs_frequencies, bin_edges)
-plt.savefig(f'/usrlib/matplotlib_plots/{histogram_name}.png')
-time.sleep(3)
+# tick_labels = None # Use of bin_centers as the tick labels
+x_bar_coordinates = range(len(abs_frequencies))
+bar_heights = abs_frequencies
+ax.bar(x_bar_coordinates, height=bar_heights,  width=0.8, color='skyblue', edgecolor='black', align='center', tick_label=tick_labels)
+plt.xticks(rotation=30)
+
+ax.set_title('Number of pull requests given their closing times')
+ax.set_ylabel('Absolute frequencies')
+ax.set_xlabel('Time (sec)')
+plt.savefig(f'/usrlib/matplotlib_plots/{histogram_name}.png',  bbox_inches='tight')
+time.sleep(1)
+
 
 
 
