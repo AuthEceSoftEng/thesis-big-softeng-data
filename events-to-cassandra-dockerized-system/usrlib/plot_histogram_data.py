@@ -39,69 +39,121 @@ create_histogram_keyspace(cassandra_host, cassandra_port, histograms_keyspace)
 histograms_table_name = 'histograms_info'
 create_histograms_table(cassandra_host, cassandra_port, histograms_keyspace, histograms_table_name)
 
-# raise Exception
-
-# Get histogram info (bin centers, edges and absolute frequencies)
+# Create and save the pull requests or issues histogram
+create_pull_requests_graph = True
+if create_pull_requests_graph == True:
+    # Pull requests
+    histogram_name = 'pull_requests_closing_times_histogram_original'    
+    closing_times_table_name = 'pull_request_closing_times'
+else:
+    # Issues
+    histogram_name = 'issues_closing_times_histogram_original'    
+    closing_times_table_name = 'issue_closing_times'
+        
+# Query histogram info (bin centers, edges and absolute frequencies) for the given histogram name if exists
+query_histogram_info = f"SELECT bin_centers, bin_edges, abs_frequencies "\
+    f"FROM {histograms_keyspace}.{histograms_table_name} WHERE histogram_name = '{histogram_name}';"        
 cluster = Cluster([cassandra_host],port=cassandra_port)
 session = cluster.connect()    
-histogram_name = 'pull_requests_closing_times_histogram_original'    
-get_pull_requests_histogram_info = f"SELECT bin_centers, bin_edges, abs_frequencies "\
-    f"FROM {histograms_keyspace}.{histograms_table_name} WHERE histogram_name = '{histogram_name}';"        
-row = session.execute(get_pull_requests_histogram_info)
+row = session.execute(query_histogram_info)
 row_in_response = row.one()
-calculate_the_histogram_values_again = True
+calculate_the_histogram_values_again = False
 
 
-# Calculate histogram info (bin centers, edges and absolute frequencies) if it was not found in the database (or if you want to recalculate it the process)
+# Calculate histogram info (bin centers, edges and absolute frequencies) if its name was not found in the database (or if you want to recalculate it the process)
 if row_in_response == None or calculate_the_histogram_values_again == True:
         
         # Query all repos closing times
         keyspace = "prod_gharchive"
         print(f"Bin centers, edges and absolute values of histogram '{histogram_name}' are not in "\
             f"table '{histograms_keyspace}.{histograms_table_name}'.\n"\
-            f"Calculating based on table {keyspace}.pull_requests_closing_times...")
+            f"Calculating based on table {keyspace}.{closing_times_table_name}...")
         
-        def query_pull_requests_closing_times():
-            """
-            Queries all pull requests closing times of all repos in table 'prod_gharchive.pull_requests_closing_times' and returns them as a list
-            """
-            keyspace = "prod_gharchive"
-            prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
-                f" FROM {keyspace}.pull_request_closing_times;"    
-            rows = session.execute(prepared_query)
-            rows_list = rows.all()
-            # Keep only closed (with non None closing times) pull requests/issues
-            rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
-            closing_times_list = []
-            for row in rows_list:
-                opening_time_of_row = getattr(row, 'opening_time')
-                closing_time_of_row = getattr(row, 'closing_time')
-                # Remove rows containing closing time values earlier than opening time values
-                try:
-                    opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-                    closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-                    time_diff = closing_datetime - opening_datetime
-                    closing_time_in_seconds = time_diff.total_seconds()
-                    if closing_time_in_seconds < 0:
-                        print(f"Repo name: {getattr(row, 'repo_name')}\n"
+        if create_pull_requests_graph == True:
+            def query_pull_requests_closing_times():
+                """
+                Queries all pull requests closing times of all repos in table 'prod_gharchive.pull_requests_closing_times' and returns them as a list
+                """
+                keyspace = "prod_gharchive"
+                prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
+                    f" FROM {keyspace}.pull_request_closing_times;"    
+                
+                cluster = Cluster([cassandra_host],port=cassandra_port)
+                session = cluster.connect()    
+                rows = session.execute(prepared_query)
+                rows_list = rows.all()
+                # Keep only closed (with non None closing times) pull requests/issues
+                rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+                closing_times_list = []
+                for row in rows_list:
+                    opening_time_of_row = getattr(row, 'opening_time')
+                    closing_time_of_row = getattr(row, 'closing_time')
+                    # Remove rows containing closing time values earlier than opening time values
+                    try:
+                        opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                        closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                        time_diff = closing_datetime - opening_datetime
+                        closing_time_in_seconds = time_diff.total_seconds()
+                        if closing_time_in_seconds < 0:
+                            print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                                f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                    except Exception as e:
+                        print(f"Exception: {e}"
+                            f"Repo name: {getattr(row, 'repo_name')}\n"
                             f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                            f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
-                except Exception as e:
-                    print(f"Exception: {e}"
-                        f"Repo name: {getattr(row, 'repo_name')}\n"
-                        f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-                        f"Opening time of row: {opening_time_of_row}\n"
-                        f"Closing time of row: {closing_time_of_row}\n")
-                            
-                closing_times_list.append(closing_time_in_seconds)
+                            f"Opening time of row: {opening_time_of_row}\n"
+                            f"Closing time of row: {closing_time_of_row}\n")
+                                
+                    closing_times_list.append(closing_time_in_seconds)
+                
+                return closing_times_list
             
-            return closing_times_list
+            closing_times_list = query_pull_requests_closing_times()
+        else:
+            # TODO: Query ISSUES closing times
+            def query_issues_closing_times():
+                """
+                Queries all pull requests closing times of all repos in table 'prod_gharchive.pull_requests_closing_times' and returns them as a list
+                """
+                keyspace = "prod_gharchive"
+                prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
+                    f" FROM {keyspace}.pull_request_closing_times;"    
+                
+                cluster = Cluster([cassandra_host],port=cassandra_port)
+                session = cluster.connect()    
+                rows = session.execute(prepared_query)
+                rows_list = rows.all()
+                # Keep only closed (with non None closing times) pull requests/issues
+                rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+                closing_times_list = []
+                for row in rows_list:
+                    opening_time_of_row = getattr(row, 'opening_time')
+                    closing_time_of_row = getattr(row, 'closing_time')
+                    # Remove rows containing closing time values earlier than opening time values
+                    try:
+                        opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                        closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                        time_diff = closing_datetime - opening_datetime
+                        closing_time_in_seconds = time_diff.total_seconds()
+                        if closing_time_in_seconds < 0:
+                            print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                                f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                                f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                    except Exception as e:
+                        print(f"Exception: {e}"
+                            f"Repo name: {getattr(row, 'repo_name')}\n"
+                            f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                            f"Opening time of row: {opening_time_of_row}\n"
+                            f"Closing time of row: {closing_time_of_row}\n")
+                                
+                    closing_times_list.append(closing_time_in_seconds)
+                
+                return closing_times_list
             
-        closing_times_list = query_pull_requests_closing_times()
-        # print(type(closing_times_list))
-        # print(f"Length of pull_requests_closing_times_list: {len(closing_times_list)}")
-        # print(f"First 100 pull request closing times: {closing_times_list[0:100]}")
-        # sys.exit("Completed calculation of closing times list")
+            closing_times_list = query_issues_closing_times()
+            
+        
         
         # Select the bin edges
         seconds_in_min = 60
@@ -110,12 +162,15 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
         seconds_in_month = 30* seconds_in_day
         seconds_in_year = 365* seconds_in_day
         bin_edges = [0, seconds_in_min, seconds_in_hour, seconds_in_day, seconds_in_month, seconds_in_year, 10*seconds_in_year]
-        bin_edges.append(max(closing_times_list))
+        # Far right bin should be the max between: max(bin_edges) and max(closing_times)
+        if max(bin_edges) < max(closing_times_list):
+            bin_edges.append(max(closing_times_list))
 
 
-        def calculate_histogram_info(bin_edges, closing_times_list):
+        def calculate_histogram_info(bin_edges=list, closing_times_list=list):
             """
-            Calculates histogram info (bin centers and absolute_values) and stores it into cassandra table
+            Calculates histogram info (bin centers and absolute_values) given the bin_edges and the closing_times list.
+            The bin edges must be in seconds.
             """
             
             # Calculate absolute frequencies
@@ -133,44 +188,23 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
                 f"Bin edges: {bin_edges})\n"\
                 f"Absolute frequencies: {abs_frequencies}")
             
+            return bin_centers, abs_frequencies
+    
+        bin_centers, abs_frequencies = calculate_histogram_info(bin_edges, closing_times_list)            
+            
+        def store_histogram_info_in_cassandra(cassandra_host, cassandra_port, histograms_keyspace, histograms_table_name, histogram_name, bin_centers, bin_edges, abs_frequencies):
+            
+            cluster = Cluster([cassandra_host],port=cassandra_port)
+            session = cluster.connect()    
             # Insert bin centers, bin edges and absolute frequencies in cassandra
             insert_histogram_info = f"INSERT INTO {histograms_keyspace}.{histograms_table_name} "\
                 f"(histogram_name, bin_centers, bin_edges, abs_frequencies) VALUES ('{histogram_name}', {bin_centers}, {bin_edges}, "\
                     f"{abs_frequencies});"
             session.execute(insert_histogram_info) 
 
+        store_histogram_info_in_cassandra(cassandra_host, cassandra_port, histograms_keyspace, histograms_table_name, histogram_name, bin_centers, bin_edges, abs_frequencies) 
             
-        # Select the bin edges
-        seconds_in_min = 60
-        seconds_in_hour = 60* seconds_in_min
-        seconds_in_day = 24* seconds_in_hour
-        seconds_in_month = 30* seconds_in_day
-        seconds_in_year = 365* seconds_in_day
-        bin_edges = [0, seconds_in_min, seconds_in_hour, seconds_in_day, seconds_in_month, seconds_in_year, 10*seconds_in_year]
-        bin_edges.append(max(closing_times_list))
-
-        # Calculate absolute frequencies
-        closing_times_list_for_histogram = np.array(closing_times_list)
-        abs_frequencies, _ = np.histogram(closing_times_list_for_histogram, 
-                                                bins=bin_edges)
-        abs_frequencies = abs_frequencies.tolist()
         
-        # Calculate bin centers
-        bin_centers = []
-        for bin_edge_index in range(len(bin_edges)-1):
-            bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
-        print(f"Completed calculation of bin centers, bin edges and absolute values of histogram '{histogram_name}'\n"\
-            f"Bin centers: {bin_centers},\n"\
-            f"Bin edges: {bin_edges})\n"\
-            f"Absolute frequencies: {abs_frequencies}")
-        
-        # Insert bin centers, bin edges and absolute frequencies in cassandra
-        insert_histogram_info = f"INSERT INTO {histograms_keyspace}.{histograms_table_name} "\
-            f"(histogram_name, bin_centers, bin_edges, abs_frequencies) VALUES ('{histogram_name}', {bin_centers}, {bin_edges}, "\
-                f"{abs_frequencies});"
-        session.execute(insert_histogram_info) 
-
-
 elif row_in_response != None:
     bin_centers = getattr(row_in_response, 'bin_centers')
     bin_edges = getattr(row_in_response, 'bin_edges')
