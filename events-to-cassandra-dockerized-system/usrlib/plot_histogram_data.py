@@ -6,25 +6,48 @@ import matplotlib.pyplot as plt
 import time 
 import json
 
-# Create keyspace, table and get histogram info (bin centers, edges and absolute frequencies) if it exists in the database
-cassandra_container_name = 'cassandra_stelios'
-cluster = Cluster([cassandra_container_name],port=9142)
-session = cluster.connect()
-histogram_keyspace = 'histograms'
-create_histogram_query = f"CREATE KEYSPACE IF NOT EXISTS {histogram_keyspace} "\
-    "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}" \
-    "AND durable_writes = true;"
-session.execute(create_histogram_query)
 
-histograms_table_name = 'histograms_info'
-create_histograms_info_table_query = f"CREATE TABLE IF NOT EXISTS {histogram_keyspace}.{histograms_table_name} "\
-    "(histogram_name text, bin_centers list<double>, bin_edges list<double>, "\
-        "abs_frequencies list<double>, PRIMARY KEY (histogram_name));"
-session.execute(create_histograms_info_table_query)
 
+def create_histogram_keyspace(cassandra_host=str, cassandra_port=int, histogram_keyspace=str):
+    """
+    Create histogram keyspace if not exists in the database
+    """
+    cluster = Cluster([cassandra_host],port=cassandra_port)
+    session = cluster.connect()
+    histogram_keyspace = histograms_table_name
+    create_histogram_keyspace_query = f"CREATE KEYSPACE IF NOT EXISTS {histogram_keyspace} "\
+        "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}" \
+        "AND durable_writes = true;"
+    session.execute(create_histogram_keyspace_query)
+    
+def create_histograms_table(cassandra_host=str, cassandra_port=int, histogram_keyspace=str, histograms_table_name=str):
+    """
+    Create histogram table if not exists in the database
+    """
+    cluster = Cluster([cassandra_host],port=cassandra_port)
+    session = cluster.connect()
+    create_histograms_info_table_query = f"CREATE TABLE IF NOT EXISTS {histogram_keyspace}.{histograms_table_name} "\
+        "(histogram_name text, bin_centers list<double>, bin_edges list<double>, "\
+            "abs_frequencies list<double>, PRIMARY KEY (histogram_name));"
+    session.execute(create_histograms_info_table_query)
+
+
+# Create histograms keyspace and table 
+cassandra_host = 'cassandra_stelios'
+cassandra_port = 9142
+histograms_keyspace = 'histograms'
+create_histogram_keyspace(cassandra_host, cassandra_port, histograms_keyspace)
+histograms_table_name = 'histograms'
+create_histograms_table(cassandra_host, cassandra_port, histograms_keyspace, histograms_table_name)
+
+# raise Exception
+
+# Get histogram info (bin centers, edges and absolute frequencies)
+cluster = Cluster([cassandra_host],port=cassandra_port)
+session = cluster.connect()    
 histogram_name = 'pull_requests_closing_times_histogram_original'    
 get_pull_requests_histogram_info = f"SELECT bin_centers, bin_edges, abs_frequencies "\
-    f"FROM {histogram_keyspace}.{histograms_table_name} WHERE histogram_name = '{histogram_name}';"        
+    f"FROM {histograms_keyspace}.{histograms_table_name} WHERE histogram_name = '{histogram_name}';"        
 row = session.execute(get_pull_requests_histogram_info)
 row_in_response = row.one()
 calculate_the_histogram_values_again = False
@@ -36,7 +59,7 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
         # Query all repos closing times
         keyspace = "prod_gharchive"
         print(f"Bin centers, edges and absolute values of histogram '{histogram_name}' are not in "\
-            f"table '{histogram_keyspace}.{histograms_table_name}'.\n"\
+            f"table '{histograms_keyspace}.{histograms_table_name}'.\n"\
             f"Calculating based on table {keyspace}.pull_requests_closing_times...")
         prepared_query = f"SELECT repo_name, pull_request_number, opening_time, closing_time "\
             f" FROM {keyspace}.pull_request_closing_times;"    
@@ -93,7 +116,7 @@ if row_in_response == None or calculate_the_histogram_values_again == True:
             f"Absolute frequencies: {abs_frequencies}")
         
         # Insert bin centers, bin edges and absolute frequencies in cassandra
-        insert_histogram_info = f"INSERT INTO {histogram_keyspace}.{histograms_table_name} "\
+        insert_histogram_info = f"INSERT INTO {histograms_keyspace}.{histograms_table_name} "\
             f"(histogram_name, bin_centers, bin_edges, abs_frequencies) VALUES ('{histogram_name}', {bin_centers}, {bin_edges}, "\
                 f"{abs_frequencies});"
         session.execute(insert_histogram_info) 
@@ -103,7 +126,7 @@ elif row_in_response != None:
     bin_centers = getattr(row_in_response, 'bin_centers')
     bin_edges = getattr(row_in_response, 'bin_edges')
     abs_frequencies = getattr(row_in_response, 'abs_frequencies')
-    print(f"Bin centers, bin edges and absolute frequencies of histogram '{histogram_name}' already exist in table {histogram_keyspace}.{histograms_table_name}\n")
+    print(f"Bin centers, bin edges and absolute frequencies of histogram '{histogram_name}' already exist in table {histograms_keyspace}.{histograms_table_name}\n")
 
 def seconds_to_period(num_of_seconds):
     """
