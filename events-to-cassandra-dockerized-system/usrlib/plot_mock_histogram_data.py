@@ -96,6 +96,8 @@ tick_labels = ['{} - {}'.format(custom_bin_edges_stringified[i], custom_bin_edge
 x_bar_coordinates = range(len(abs_frequencies))
 bar_heights = abs_frequencies
 ax.bar(x_bar_coordinates, height=bar_heights,  width=0.8, color='skyblue', edgecolor='black', align='center', tick_label=tick_labels)
+plt.xticks(rotation=30)
+
 ax.set_title('Number of pull requests given their closing times')
 ax.set_ylabel('Absolute frequencies')
 ax.set_xlabel('Time (sec)')
