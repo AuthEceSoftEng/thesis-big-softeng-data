@@ -29,9 +29,6 @@ with open(filepath_with_closing_times, 'r') as closing_times_file:
     lines_in_file = closing_times_file.readlines()
     closing_times_list = json.loads(lines_in_file[0])
  
-
-
-
 seconds_in_min = 60
 seconds_in_hour = 60* seconds_in_min
 seconds_in_day = 24* seconds_in_hour
@@ -40,9 +37,73 @@ seconds_in_year = 365* seconds_in_day
 custom_bin_edges = [0, seconds_in_min, seconds_in_hour, seconds_in_day, seconds_in_month, seconds_in_year, 10*seconds_in_year]
 custom_bin_edges.append(max(closing_times_list))
 
+
+def seconds_to_period(num_of_seconds):
+    """
+    :param num_of_seconds: number of seconds to convert to higher time durations (years, months, etc)
+    :return time_dict_keep_largest_two_non_zero_durations: The first two largest time durations that the seconds are converted into:
+    
+    Example:
+    For input num_of_seconds = 168039959, we get 
+    output: time_dict_keep_largest_two_non_zero_durations = {'years': 5, 'months': 3}
+    """
+    seconds_in_a_year = 365*24*60*60
+    seconds_in_a_month = 30*24*60*60
+    seconds_in_a_day = 24*60*60
+    seconds_in_an_hour = 60*60
+    seconds_in_a_minute = 60
+
+    years, remaining_seconds = divmod(num_of_seconds, seconds_in_a_year)
+    months, remaining_seconds = divmod(remaining_seconds, seconds_in_a_month)
+    days, remaining_seconds = divmod(remaining_seconds, seconds_in_a_day)
+    hours, remaining_seconds = divmod(remaining_seconds, seconds_in_an_hour)
+    minutes, remaining_seconds = divmod(remaining_seconds, seconds_in_a_minute)
+    seconds = remaining_seconds
+
+    time_dict = {'year(s)': years, 'month(s)': months, 'day(s)':days, \
+        'hour(s)':hours, 'minute(s)':minutes, 'second(s)':seconds}
+
+    time_dict_keep_largest_two_non_zero_durations = {}
+
+    # Iterate through the ordered time dictionary
+    for k, v, in time_dict.items():
+        if time_dict[k] != 0:
+            time_dict_keep_largest_two_non_zero_durations[k] = v
+        # Keep only 2 of the values in the time period
+        if len(time_dict_keep_largest_two_non_zero_durations.items()) == 2:
+            break
+    
+    if time_dict_keep_largest_two_non_zero_durations == {}:
+        return {'second(s)': 0}    
+    
+    return time_dict_keep_largest_two_non_zero_durations
+
+# print(seconds_to_period(0))
+# raise Exception
+
+def period_to_string(time_dict_keep_largest_two_non_zero_durations):
+    time_periods_to_abbrev_dict = {'year(s)': 'y', 'month(s)': 'm', 'day(s)': 'd', \
+            'hour(s)': 'h', 'minute(s)': 'min', 'second(s)': 'sec'}
+    time_dict_formatted = {time_periods_to_abbrev_dict[k]: v for k, v in time_dict_keep_largest_two_non_zero_durations.items()}
+    time_dict_formatted_list = ['{} {}'.format(v, k) for k, v in time_dict_formatted.items()]
+    time_dict_formatted_list_stringified = ', '.join(time_dict_formatted_list[0:])
+    return time_dict_formatted_list_stringified
+
+# seconds = 10000
+# print(period_to_string(seconds_to_period(seconds)))
+# raise Exception
+
 fig, ax = plt.subplots()
 abs_frequencies, _ = np.histogram(closing_times_list, custom_bin_edges)
-tick_labels = ['{} - {}'.format(custom_bin_edges[i], custom_bin_edges[i+1]) for i in range(len(abs_frequencies))]
+# tick_labels = ['{} - {}'.format(custom_bin_edges[i], custom_bin_edges[i+1]) for i in range(len(abs_frequencies))]
+
+custom_bin_edges_stringified = [period_to_string(seconds_to_period(custom_bin_edges[i])) for i in range(len(custom_bin_edges))]
+# print(f"custom_bin_edges: {custom_bin_edges}")                            
+# print(f"custom_bin_edges_strigified: {custom_bin_edges_stringified}")                            
+                                
+tick_labels = ['{} - {}'.format(custom_bin_edges_stringified[i], custom_bin_edges_stringified[i+1]) for i in range(len(abs_frequencies))]
+
+
 ax.bar(range(len(abs_frequencies)), abs_frequencies,  width=1, color='skyblue', edgecolor='black', align='center', tick_label=tick_labels)
 
 # plt.xscale('log')
