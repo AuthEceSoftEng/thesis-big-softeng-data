@@ -4,7 +4,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import time 
-
+import json
 
 # Get the data from cassandra
 cassandra_container_name = 'cassandra_stelios'
@@ -23,7 +23,7 @@ create_histograms_info_table_query = f"CREATE TABLE IF NOT EXISTS {histogram_key
 session.execute(create_histograms_info_table_query)
 
 # Select to log transform data
-log_transform_data = True
+log_transform_data = False
 if log_transform_data == False:
     histogram_name = 'pull_requests_closing_times_histogram_original'
 elif log_transform_data == True:
@@ -38,8 +38,6 @@ row = session.execute(get_pull_requests_histogram_info)
 row_in_response = row.one()
 
 calculate_the_histogram_values_again = True
-
-
 
 # Get the data if not already in keyspace 'histograms'
 if row_in_response == None or calculate_the_histogram_values_again == True:
@@ -125,6 +123,8 @@ elif row_in_response != None:
     
     print(f"Bin centers, bin edges and absolute frequencies of histogram '{histogram_name}' already exist in table {histogram_keyspace}.{histograms_table_name}\n")
 
+# with open('/usrlib/matplotlib_plots/closing_times_list.txt', 'w') as file_object:
+#     file_object.write(json.dumps(closing_times_list))
 
 # Create histogram with various numbers of bins 
 # and see which looks best
