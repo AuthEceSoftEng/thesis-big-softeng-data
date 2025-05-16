@@ -98,19 +98,94 @@
               crossorigin="anonymous"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>      
+            <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+            
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
               <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
                 <!-- <div class="chart"> -->
                   <!-- <canvas id="chart-line-tasks" class="chart-canvas" height="300"></canvas> -->
-                  <div id="pull_request_closing_times_histogram_apex" style="height: 500px;"></div>
+                  <div id="pull_requests_closing_times_bar_chart_id" style="height: 500px;"></div>
 
                 <!-- </div> -->
               </div>
             </div>
             
             <script>
+              var pull_requests_closing_times_bar_chart_options = {
+                series: [
+                  {
+                    name: "Accepted",
+                    data: [81, 37],
+                  },
+                  {
+                    name: "Rejected",
+                    data: [20, 62],
+                  },
+                ],
+                chart: {
+                  type: "bar",
+                  height: 350,
+                },
+                legend: {
+                  position: "top",
+                  offsetY: 20
+                },
+                plotOptions: {
+                  bar: {
+                    horizontal: false,
+                    columnWidth: "55%",
+                    borderRadius: 5,
+                    borderRadiusApplication: "end",
+                    dataLabels: {
+                      position: "top", // top, center, bottom
+                    },
+                  },
+                },
+                dataLabels: {
+                  enabled: true,
+                  offsetY: -20,
+                  style: {
+                    fontSize: "12px",
+                    colors: ["#304758"],
+                  },
+                  formatter: function (val) {
+                          return val + "%";
+                        },
+                },
+                stroke: {
+                  show: true,
+                  width: 2,
+                  colors: ["transparent"],
+                },
+                xaxis: {
+                  categories: ["Humans", "Bots"],
+                },
+                yaxis: {
+                  /* forceNiceScale: true, */
+                  tickAmount: 5,
+                  title: {
+                    text: "Pull request rates",
+                  },
+                  /* max: 100, // or any value greater than 80 */
+                  
+                },
               
+                fill: {
+                  opacity: 1,
+                },
+                tooltip: {
+                  y: {
+                    formatter: function (val) {
+                      return  val + " %"
+                    },
+                  },
+                },
+              }
+
+              var pull_requests_closing_times_bar_chart = new ApexCharts(document.querySelector("#pull_requests_closing_times_bar_chart_id"), pull_requests_closing_times_bar_chart_options);
+              pull_requests_closing_times_bar_chart.render();
             </script>
+
 
 
           </div>
@@ -139,20 +214,89 @@
               crossorigin="anonymous"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>      
+            <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
               <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
-                  <div id="issue_closing_times_histogram_apex" style="height: 500px;"></div>
+                  <div id="issues_closing_times_bar_chart_id" style="height: 500px;"></div>
 
               </div>
             </div>
             
             <script>
-
-            </script>
-
-
-            <script>
+              var issues_closing_times_bar_chart_options = {
+                series: [
+                  {
+                    name: "Accepted",
+                    data: [81, 37],
+                  },
+                  {
+                    name: "Rejected",
+                    data: [20, 62],
+                  },
+                ],
+                chart: {
+                  type: "bar",
+                  height: 350,
+                },
+                legend: {
+                  position: "top",
+                  offsetY: 20
+                },
+                plotOptions: {
+                  bar: {
+                    horizontal: false,
+                    columnWidth: "55%",
+                    borderRadius: 5,
+                    borderRadiusApplication: "end",
+                    dataLabels: {
+                      position: "top", // top, center, bottom
+                    },
+                  },
+                },
+                dataLabels: {
+                  enabled: true,
+                  offsetY: -20,
+                  style: {
+                    fontSize: "12px",
+                    colors: ["#304758"],
+                  },
+                  formatter: function (val) {
+                          return val + "%";
+                        },
+                },
+                stroke: {
+                  show: true,
+                  width: 2,
+                  colors: ["transparent"],
+                },
+                xaxis: {
+                  categories: ["Humans", "Bots"],
+                },
+                yaxis: {
+                  /* forceNiceScale: true, */
+                  tickAmount: 5,
+                  title: {
+                    text: "Pull request rates",
+                  },
+                  /* max: 100, // or any value greater than 80 */
+                  
+                },
               
+                fill: {
+                  opacity: 1,
+                },
+                tooltip: {
+                  y: {
+                    formatter: function (val) {
+                      return  val + " %"
+                    },
+                  },
+                },
+              }
+
+              var issues_closing_times_bar_chart = new ApexCharts(document.querySelector("#issues_closing_times_bar_chart_id"), issues_closing_times_bar_chart_options);
+              issues_closing_times_bar_chart.render();
             </script>
 
 
@@ -175,6 +319,11 @@
 
     </div>
     
+
+
+
+
+
 
     <!-- Select repos row with search box-->
     <div class="row mb-4 mt-4">
