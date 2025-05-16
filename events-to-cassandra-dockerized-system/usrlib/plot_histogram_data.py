@@ -271,7 +271,7 @@ plt.xticks(rotation=30)
 
 ax.set_title(f"Bar graph of '{histogram_name}'")
 ax.set_ylabel('Absolute frequencies')
-ax.set_xlabel('Time (sec)')
+ax.set_xlabel('Time')
 plt.savefig(f'/usrlib/matplotlib_plots/{histogram_name}.png',  bbox_inches='tight')
 time.sleep(1)
 
