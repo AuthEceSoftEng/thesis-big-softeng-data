@@ -327,36 +327,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
     </div>
 
     <!-- Humans vs bots title -->
-    <script>
-      listen_to_selected_day();
-      document.getElementById("day_dropdown_list_selection").addEventListener(
-          "change", function() {
-        let day_selected = this.value;
-        update_top_human_contributors_table(day_selected);
-        update_top_bot_contributors_table(day_selected);
-        update_pull_requests_by_humans(day_selected);
-        update_pull_requests_by_bots(day_selected);
-        update_number_of_events_by_humans_and_bots(day_selected);
-        
-        update_toggling_pull_requests_chart(day_selected);
-        updateNumberOfGithubEventsChart(day_selected);
-
-        
-      })
-    </script>
-
-    <!-- Initialize the tables for 1st of the month -->
-    <script>
-      const day_preselected = '1';
-      update_top_human_contributors_table(day_preselected);
-      update_top_bot_contributors_table(day_preselected);
-      update_pull_requests_by_humans(day_preselected);
-      update_pull_requests_by_bots(day_preselected);
-      update_number_of_events_by_humans_and_bots(day_preselected);
-
-      update_toggling_pull_requests_chart(day_preselected);
-      updateNumberOfGithubEventsChart(day_preselected);
-    </script>
+    
 
 
     <!-- Top 3 contributors ranking -->
@@ -542,7 +513,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
             <!-- Pie chart for the Github events -->
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
               <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
-                <div id="percentage_of_events_pie_chart" style="height: 500px;"></div>
+                <div id="percentage_of_events_pie_chart_id" style="height: 500px;"></div>
               </div>
             </div>
             
@@ -550,7 +521,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
 
               function updateNumberOfGithubEventsChart(day_selected) {
                 
-                var options = {
+                var percentage_of_events_pie_chart_options = {
                   title: {
                     text: 'Github events',
                     align: 'center',
@@ -566,7 +537,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                     position: 'bottom',
                     horizontalAlign: 'center',
                     offsetX: 0,
-                    offsetY: 20,
+                    offsetY: 40,
                     fontSize: '20px',                      
                     labels: {
                       colors: ["#ffffff", "#ffffff"],
@@ -596,8 +567,8 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
 
                 };
 
-                var chart = new ApexCharts(document.querySelector("#percentage_of_events_pie_chart"), options);
-                chart.render();
+                var percentage_of_events_pie_chart = new ApexCharts(document.querySelector("#percentage_of_events_pie_chart_id"), percentage_of_events_pie_chart_options);
+                percentage_of_events_pie_chart.render();
 
                 const numberOfEventsUrl = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' + day_selected;
                 fetch(numberOfEventsUrl)
@@ -610,7 +581,10 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                           data: [total_number_of_events_by_humans, total_number_of_events_by_bots]
                         }],
                       };
-                    chart.updateOptions(fetchedNumberOfEvents);
+                    percentage_of_events_pie_chart.destroy();  
+                    percentage_of_events_pie_chart = new ApexCharts(document.querySelector("#percentage_of_events_pie_chart_id"), percentage_of_events_pie_chart_options);
+                    percentage_of_events_pie_chart.updateOptions(fetchedNumberOfEvents);
+                    percentage_of_events_pie_chart.render()
                   }) 
               }
               
@@ -1044,8 +1018,39 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
     
     </div>
 
-
     
+    <!-- Initialize the tables for 1st of the month -->
+    <script>
+      const day_preselected = '1';
+      update_top_human_contributors_table(day_preselected);
+      update_top_bot_contributors_table(day_preselected);
+      update_pull_requests_by_humans(day_preselected);
+      update_pull_requests_by_bots(day_preselected);
+      update_number_of_events_by_humans_and_bots(day_preselected);
+
+      update_toggling_pull_requests_chart(day_preselected);
+      updateNumberOfGithubEventsChart(day_preselected);
+    </script>
+    
+    <!-- Change day based on selection -->
+    <script>
+      listen_to_selected_day();
+      document.getElementById("day_dropdown_list_selection").addEventListener(
+          "change", function() {
+        let day_selected = this.value;
+        update_top_human_contributors_table(day_selected);
+        update_top_bot_contributors_table(day_selected);
+        update_pull_requests_by_humans(day_selected);
+        update_pull_requests_by_bots(day_selected);
+        update_number_of_events_by_humans_and_bots(day_selected);
+        
+        update_toggling_pull_requests_chart(day_selected);
+        updateNumberOfGithubEventsChart(day_selected);
+
+        
+      })
+    </script>
+
 
   </div>
 
