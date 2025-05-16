@@ -24,1074 +24,1686 @@
 
   <div class="container-fluid py-4">
     
-  <!-- Deep Insights issues, comparison of repos  -->
-  <div class="row">
-    <div class="col-lg-5 col-md-12">
-    <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
-      <div class="card">
-        <div class="card-header card-header-warning">
-          <h3 class="card-title">Deep Insights, comparison of repos</h4>
-          <p>Based on Github events on December 2024</p>
-        </div>
-      </div>
-    </div> 
-  </div>
-
-  <!-- Top contributors in 2024 -->
-  <div class="row mt-4">
-    <div class="col-lg-5 col-md-12">
-    <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
-      <div class="card">
-        <div class="card-header card-header-warning">
-          <h4 class="card-title">Closing times of pull-requests and issues </h4>
-        </div>
-      </div>
-    </div> 
-  </div>
-
-  <!-- Select repos row with search box-->
-  <div class="row mb-4 mt-4">
-    <!-- Select repo 1 -->
-    <div class="col-lg-6 col-md-4 mt-4">
-      <div class="card h-100">
-        <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-          <span id="selected_repo_mirror_repo_1" class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
-          
-          <div class="ms-md-auto pe-md-3 d-flex align-items-center">
-            <div id="repo_selection_search_box_repo_1" class="input-group input-group-outline">
-              <label class="form-label">e.g. microsoft/winget-pkgs</label>
-              <input type="text" class="form-control">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <div class="col-lg-6 col-md-12 mt-4">
-      <div class="card h-100">
-        <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-          <span id="selected_repo_mirror_repo_2" class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
-          <div class="ms-md-auto pe-md-3 d-flex align-items-center">
-            <div id="repo_selection_search_box_repo_2" class="input-group input-group-outline">
-              <label  class="form-label">e.g. facebook/react</label>
-              <input type="text" class="form-control">
-
-              
-
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-
-    <!-- Select repo 2-->
-    <!-- <div class="col-lg-6 col-md-12 mt-4">
-      <div class="card">
-        <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-          <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
-          
-          <div class="dropdown float-lg-end pe-4">
-            <ul>
-              <select class="drop_down_list_select bg-gradient-success" name="repo">
-                <option >angular/angular.js</option>
-                <option >vuejs/vue</option>
-                <option >facebook/react</option>
-              </select>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div> -->
-
-
-  </div>
-
-  <!-- Closing times histograms -->
-  <div class="row mt-5">
-    
-    <script>
-      function seconds_to_larger_time_durations(seconds_to_transform){
-
-        const seconds_in_a_year = 365*24*60*60;
-        const seconds_in_a_month = 30*24*60*60;
-        const seconds_in_a_day = 24*60*60;
-        const seconds_in_an_hour = 60*60;
-        const seconds_in_a_minute = 60;
-
-        // Keep two decimals 
-        const seconds_altered_precision = seconds_to_transform.toFixed(2)
-
-        let years = Math.floor(seconds_altered_precision / seconds_in_a_year);
-        let remaining_seconds = seconds_altered_precision % seconds_in_a_year;
-            
-        let months = Math.floor(remaining_seconds/seconds_in_a_month);
-        remaining_seconds = remaining_seconds % seconds_in_a_month;
-
-        let days = Math.floor(remaining_seconds / seconds_in_a_day);
-        remaining_seconds = remaining_seconds % seconds_in_a_day;
-
-        let hours = Math.floor(remaining_seconds / seconds_in_an_hour);
-        remaining_seconds = remaining_seconds % seconds_in_an_hour;
-
-        let minutes = Math.floor(remaining_seconds / seconds_in_a_minute);
-        remaining_seconds = remaining_seconds % seconds_in_a_minute;
-        let seconds = remaining_seconds;
-
-
-        const time_dict = {'y': Math.round(years), 'm': Math.round(months), 'd': Math.round(days), 
-            'h': Math.round(hours), 'min': Math.round(minutes), 's': Math.round(seconds)};
-
-        let time_dict_keep_largest_two_non_zero_durations = {}
-
-        for (const [key, value] of Object.entries(time_dict)){
-            if (value != 0){
-                time_dict_keep_largest_two_non_zero_durations[key] = value;
-            }
-            if (Object.keys(time_dict_keep_largest_two_non_zero_durations).length == 2){
-                break;
-            }
-
-        }
-
-          return time_dict_keep_largest_two_non_zero_durations;
-        }
-
-      function stringify_time_dict(time_dict){
-        let time_dict_stringified = '';
-        for (let [key, value] of  Object.entries(time_dict)){
-            time_dict_stringified = time_dict_stringified + ", " + value + " " + key;
-        }
-        // Remove first two characters from the string
-        time_dict_stringified = time_dict_stringified.slice(2); 
-        return time_dict_stringified    
-        }
-    </script>
-   
-   
-   
-   <!-- Histogram for pull-request closing times-->
-    <div class="col-lg-6 col-md-12">
-      <div class="card">
-        <div class="chart-container">
-          <script src="/static/assets/js/plugins/chartjs.min.js"></script>
-          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
-            integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
-            crossorigin="anonymous"></script>
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>      
-          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-            <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
-              <!-- <div class="chart"> -->
-                <!-- <canvas id="chart-line-tasks" class="chart-canvas" height="300"></canvas> -->
-                <canvas id="pull_request_closing_times_histogram" class="chart-canvas" height="400"></canvas>
-
-              <!-- </div> -->
-            </div>
-          </div>
-          
-          <script>
-            // Stacked bar chart bins
-            var pull_request_closing_times_histogram_ctx = 
-                document.getElementById("pull_request_closing_times_histogram").getContext("2d");
-            const hist_distribution_color = '#405bd4'
-            const hist_distribution_color_2 = '#ab0004'
-
-            var pull_request_closing_times_histogram = new Chart(pull_request_closing_times_histogram_ctx, {
-              type: "bar",
-              data: {
-                datasets: [
-                //   {
-                //   label: "Pull_request_closing_times_of_specific_repo",
-                //   tension: 0,
-                //   order: 2,
-                //   pointRadius: 5,
-                //   // pointBackgroundColor: "rgba(255, 255, 255, .8)",
-                //   pointBackgroundColor: '#dfdb12',
-                //   pointBorderColor: "transparent",
-                //   borderColor: "#dfdb12",
-                //   borderWidth: 4,
-                //   backgroundColor: "transparent",
-                //   // backgroundColor: "#c00000",
-                //   fill: true,
-                //   // data: [50, 40, 300, 220, 100, 250, 400, 230, 50, 20],
-                //   data: [
-                //   {x: 2.9684308627201803, y: 20945},  
-                //   // {x: 3, y: 20945},
-                //   ],
-                //   // maxBarThickness: 100
-                //   borderWidth: 1,
-                //   barPercentage: 1,
-                //   categoryPercentage: 0.1
-
-                // }
-                ]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    display: true,
-                    maxHeight: 1000,
-                    labels: {
-                      color: '#ffffff',
-                      font: {
-                        size: 20
-                      }
-                    } 
-                  },
-                  title: {
-                      display: false,
-                      text: 'Histogram title'
-                  }
-                },
-                interaction: {
-                  intersect: false,
-                  mode: 'index',
-                },
-                scales: {
-                  y: {
-                    grid: {
-                      drawBorder: false,
-                      display: true,
-                      drawOnChartArea: true,
-                      drawTicks: false,
-                      borderDash: [5, 5],
-                      color: 'rgba(255, 255, 255, .2)'
-                    },
-                    ticks: {
-                      display: true,
-                      padding: 10,
-                      color: '#f8f9fa',
-                      font: {
-                        size: 14,
-                        // size: 20,
-                        weight: 300,
-                        family: "Roboto",
-                        style: 'normal',
-                        lineHeight: 2
-                      },
-                      max: 4,
-                      autoSkip: false
-
-                    },
-                    title: {
-                      display: true,
-                      text: 'Number of repos',
-                      font: {
-                        size: 20,
-                        weight: 'bold',
-                        family: "Roboto",
-                        style: 'normal',
-                        lineHeight: 2
-                      }
-                    }
-                  },
-                  x: {
-                    type: 'category',
-                    stacked: true,
-                    // position: 'bottom',
-                    labels: ['', '', '', '', '', '', '', '', '', ''],
-                    offset: true,
-                    grid: {
-                      drawBorder: false,
-                      display: false,
-                      drawOnChartArea: false,
-                      drawTicks: false,
-                      borderDash: [5, 5]
-                    },
-                    ticks: {
-                      display: true,
-                      color: '#f8f9fa',
-                      padding: 10,
-                      stepsize: 3,
-                      font: {
-                        size: 14,
-                        weight: 300,
-                        family: "Roboto",
-                        style: 'normal',
-                        lineHeight: 2
-                      }
-                    },
-                    title: {
-                      display: true,
-                      text: 'Pull-requests closing times (log scale)',
-                      font: {
-                        size: 20,
-                        weight: 'bold',
-                        family: "Roboto",
-                        style: 'normal',
-                        lineHeight: 2
-                      }
-                    }
-                  }
-                },
-              },
-            });
-
-            // function getRandomColor() {
-            //     return `#${Math.floor(Math.random()*16777215).toString(16)}`;
-            // }
-
-            // const hist_distribution_color = '#405bd4'
-
-            const hist_distribution_color_3 = '#dfdb12'
-
-            function create_pull_request_closing_times_histogram(repo_name_1, repo_name_2){
-              const data_url = 
-                'http://localhost:3200/deep_insights_issues/pull_request_closing_times/' + repo_name_1
-                + '/vs/' + repo_name_2;
-              
-
-              //  Create the html_body of the table
-              fetch(data_url)
-                .then(response => response.json())
-                .then(data => {          
-
-                  // const binCenters = data["bin_centers_log_transformed"];
-                  const binCenters = data["bin_centers_in_seconds"];
-                  const absFrequencies = data["abs_frequencies"];
-                  const chartData = binCenters.map((center, index) => ({
-                    x: center,
-                    y: absFrequencies[index]
-                  }));
-
-                  const pull_requests_histogram_dataset = {
-                    label: "All repos",
-                    // labels: data["bin_centers"],
-                    tension: 0,
-                    // borderWidth: 0,
-                    pointRadius: 5,
-                    pointBackgroundColor: hist_distribution_color,
-                    // pointBorderColor: "transparent",
-                    pointBorderColor: hist_distribution_color,
-                    borderColor: hist_distribution_color,
-                    borderWidth: 4,
-                    backgroundColor: "transparent",
-                    fill: true,
-                    data: chartData,
-                    borderWidth: 1,
-                    barPercentage: 1,
-                    categoryPercentage: 1
-                  };
-                  
-                  // const repo_name_1 = data["repo_name_1"]
-                  const frequencies_of_bins_repo_1 = 
-                      data["bin_of_average_pull_request_closing_time_of_repo_1"];
-                  const repo1Data = binCenters.map((center, index) => ({
-                    x: center,
-                    y: frequencies_of_bins_repo_1[index]
-                  }));
-
-                  const average_pull_request_times_dataset_repo_1 = {
-                    label: "Repo 1: " + repo_name_1,
-                    // labels: data["bin_centers"],
-                    tension: 0,
-                    // borderWidth: 0,
-                    pointRadius: 5,
-                    pointBackgroundColor: hist_distribution_color_3,
-                    // pointBorderColor: "transparent",
-                    pointBorderColor: hist_distribution_color_3,
-                    borderColor: hist_distribution_color_3,
-                    borderWidth: 4,
-                    backgroundColor: "transparent",
-                    fill: true,
-                    data: repo1Data,
-                    borderWidth: 1,
-                    barPercentage: 1,
-                    categoryPercentage: 0.1
-                  };
-
-                  const frequencies_of_bins_repo_2 = 
-                      data["bin_of_average_pull_request_closing_time_of_repo_2"];
-                  const repo2Data = binCenters.map((center, index) => ({
-                    x: center,
-                    y: frequencies_of_bins_repo_2[index]
-                  }));
-                  
-                  
-                  // const repo_name_2 = data["repo_name_2"]
-                  
-                  const average_pull_request_times_dataset_repo_2 = {
-                    label: "Repo 2: " + repo_name_2,
-                    // labels: data["bin_centers"],
-                    tension: 0,
-                    // borderWidth: 0,
-                    pointRadius: 5,
-                    pointBackgroundColor: hist_distribution_color_2,
-                    // pointBorderColor: "transparent",
-                    pointBorderColor: hist_distribution_color_2,
-                    borderColor: hist_distribution_color_2,
-                    borderWidth: 4,
-                    backgroundColor: "transparent",
-                    fill: true,
-                    data: repo2Data,
-                    borderWidth: 1,
-                    barPercentage: 1,
-                    categoryPercentage: 0.1
-                  };
-
-
-                  // console.log("Bin centers: ", data["bin_centers_log_transformed"])
-                  // console.log("Absolute frequencies: ", data["abs_frequencies"])
-                  // console.log("Repo 1 bins: ", data["bin_of_average_pull_request_closing_time_of_repo_1"])
-                  // console.log("Repo 2 bins: ", data["bin_of_average_pull_request_closing_time_of_repo_2"])
-
-                  // Update 
-                  pull_request_closing_times_histogram.data.
-                      datasets.push(pull_requests_histogram_dataset);
-                  pull_request_closing_times_histogram.data.
-                      datasets.push(average_pull_request_times_dataset_repo_1);
-                  pull_request_closing_times_histogram.data.
-                      datasets.push(average_pull_request_times_dataset_repo_2);
-                  
-                      
-                      
-
-                  
-                  let time_durations_labels = [];
-                  let time_duration_dict;
-                  
-                  for (let i = 0; i < binCenters.length; i++){
-                    time_duration_dict = seconds_to_larger_time_durations(binCenters[i]);
-                    time_durations_labels[i] = stringify_time_dict(time_duration_dict);
-                  }
-
-                  console.log("Pull request closing times labels: " + time_durations_labels);
-
-                  // Remove existing x values
-                  pull_request_closing_times_histogram.options.scales.x.labels.splice(0, time_durations_labels.length);
-                  // Add new values
-                  pull_request_closing_times_histogram.options.scales.x.labels = time_durations_labels;
-
-
-                  
-
-                  pull_request_closing_times_histogram.update();  
-                } 
-              );
-                
-            };
-            // const repo_name_arg_1 = "firedancer-io/firedancer";
-            // // const repo_name_arg_2 = "microsoft/winget-pkgs";
-            // const repo_name_arg_2 = "kernitus/BukkitOldCombatMechanics";
-            // create_pull_request_closing_times_histogram(repo_name_arg_1, repo_name_arg_2);
-
-            // initialize_create_pull_request_closing_times_histogram_upon_page_render("microsoft/winget-pkgs", 
-            //     "facebook/react")
-            create_pull_request_closing_times_histogram("UTSAVS26/PyVerse", 
-                "eosnetworkfoundation/silkworm")
-          </script>
-
-
-        </div>
-        <div class="card-body mt-4">
-          <h6 class="mb-0 ">Average closing times of pull-requests in Github</h6>
-          <p class="text-sm ">From github events in December 2024</p>
-          <hr class="dark horizontal">
-          <div class="d-flex">
-            <i class="material-icons text-sm my-auto me-1">schedule</i>
-            <p class="mb-0 text-sm">December 2024</p>
-          </div>
-        </div>
-      </div>
+    <!-- Closing times histograms 2 -->
+    <div class="row mt-5">
       
-    </div>
-  
+      <script>
+        function seconds_to_larger_time_durations(seconds_to_transform){
 
-    <!-- Histogram for issues closing times-->
-    <div class="col-lg-6 col-md-12">
-      <div class="card">
-        <div class="chart-container">
-          <script src="/static/assets/js/plugins/chartjs.min.js"></script>
-          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
-            integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
-            crossorigin="anonymous"></script>
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>      
-          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-            <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
-                <canvas id="issue_closing_times_histogram" class="chart-canvas" height="400"></canvas>
-            </div>
-          </div>
-          
-          <script>
+          const seconds_in_a_year = 365*24*60*60;
+          const seconds_in_a_month = 30*24*60*60;
+          const seconds_in_a_day = 24*60*60;
+          const seconds_in_an_hour = 60*60;
+          const seconds_in_a_minute = 60;
+
+          // Keep two decimals 
+          const seconds_altered_precision = seconds_to_transform.toFixed(2)
+
+          let years = Math.floor(seconds_altered_precision / seconds_in_a_year);
+          let remaining_seconds = seconds_altered_precision % seconds_in_a_year;
               
+          let months = Math.floor(remaining_seconds/seconds_in_a_month);
+          remaining_seconds = remaining_seconds % seconds_in_a_month;
+
+          let days = Math.floor(remaining_seconds / seconds_in_a_day);
+          remaining_seconds = remaining_seconds % seconds_in_a_day;
+
+          let hours = Math.floor(remaining_seconds / seconds_in_an_hour);
+          remaining_seconds = remaining_seconds % seconds_in_an_hour;
+
+          let minutes = Math.floor(remaining_seconds / seconds_in_a_minute);
+          remaining_seconds = remaining_seconds % seconds_in_a_minute;
+          let seconds = remaining_seconds;
 
 
-            let repo_1_selected = null;
-            let repo_2_selected = null; 
-            
-            function update_label(label_to_mirror, repo_selected){
-              var selected_repo_mirror = document.getElementById(label_to_mirror);
-              selected_repo_mirror.textContent = "Selected repo: '" + repo_selected + "'";                  
-            }
+          const time_dict = {'y': Math.round(years), 'm': Math.round(months), 'd': Math.round(days), 
+              'h': Math.round(hours), 'min': Math.round(minutes), 's': Math.round(seconds)};
 
-            
-            
+          let time_dict_keep_largest_two_non_zero_durations = {}
 
-            document.querySelector("#repo_selection_search_box_repo_1 input").addEventListener(
-                "keydown", function() {
-                  if (event.key == "Enter") {
-                    repo_1_selected = this.value;
-                    update_label("selected_repo_mirror_repo_1", repo_1_selected);
-                    check_and_create_pull_request_closing_times_histogram();
-                    check_and_create_issue_closing_times_histogram();
-                  }
-              
-            })
-            document.querySelector("#repo_selection_search_box_repo_2 input").addEventListener(
-                "keydown", function() {
-                  if (event.key == "Enter") {
-                    repo_2_selected = this.value;
-                    update_label("selected_repo_mirror_repo_2", repo_2_selected);
-                    check_and_create_pull_request_closing_times_histogram();
-                    check_and_create_issue_closing_times_histogram();
-                  }
-              
-            })
-
-            // const repo_name_arg_1 = "firedancer-io/firedancer";
-            // const repo_name_arg_2 = "microsoft/winget-pkgs";
-
-            function check_and_create_pull_request_closing_times_histogram() {
-                
-              if (repo_1_selected && repo_2_selected) {
-
-                  console.log("Creating pull-requests closing times histogram including repos:")
-                  console.log(repo_1_selected);
-                  console.log(repo_2_selected);  
-                  create_pull_request_closing_times_histogram(repo_1_selected, repo_2_selected);
+          for (const [key, value] of Object.entries(time_dict)){
+              if (value != 0){
+                  time_dict_keep_largest_two_non_zero_durations[key] = value;
               }
-            }
-
-            // function initialize_create_pull_request_closing_times_histogram_upon_page_render() {
-            //   let repo_1_preselected = 'UTSAVS26/PyVerse';
-            //   let repo_2_preselected = 'eosnetworkfoundation/silkworm';
-
-            //   // let repo_1_preselected = 'microsoft/winget-pkgs';
-            //   // let repo_2_preselected = 'facebook/react';
-
-            //   document.addEventListener("DOMContentLoaded", () => {
-            //     create_pull_request_closing_times_histogram(repo_1_preselected, repo_2_preselected);
-            //   });
-            // }
-
-
-            function check_and_create_issue_closing_times_histogram() {
-                if (repo_1_selected && repo_2_selected) {
-                  // Remove existing datasets from the graph
-                  pull_request_closing_times_histogram.data.datasets.splice(0, 
-                      pull_request_closing_times_histogram.data.datasets.length);
-                
-                  // Remove existing datasets from the graph
-                  issue_closing_times_histogram.data.datasets.splice(0, 
-                    issue_closing_times_histogram.data.datasets.length);
-                
-
-                  console.log("Creating issue closing times histogram including repos:")
-                  console.log(repo_1_selected);
-                  console.log(repo_2_selected);  
-                  create_issue_closing_times_histogram(repo_1_selected, repo_2_selected);
-                }
+              if (Object.keys(time_dict_keep_largest_two_non_zero_durations).length == 2){
+                  break;
               }
-            // check_and_create_pull_request_closing_times_histogram();
-              
-          </script>
 
-
-          <script>
-            // Stacked bar chart bins
-            var issue_closing_times_histogram_ctx = 
-                document.getElementById("issue_closing_times_histogram").getContext("2d");
-            
-            var issue_closing_times_histogram = new Chart(issue_closing_times_histogram_ctx, {
-              type: "bar",
-              data: {
-                datasets: [
-                //   {
-                //   label: "Pull_request_closing_times_of_specific_repo",
-                //   tension: 0,
-                //   order: 2,
-                //   pointRadius: 5,
-                //   // pointBackgroundColor: "rgba(255, 255, 255, .8)",
-                //   pointBackgroundColor: '#dfdb12',
-                //   pointBorderColor: "transparent",
-                //   borderColor: "#dfdb12",
-                //   borderWidth: 4,
-                //   backgroundColor: "transparent",
-                //   // backgroundColor: "#c00000",
-                //   fill: true,
-                //   // data: [50, 40, 300, 220, 100, 250, 400, 230, 50, 20],
-                //   data: [
-                //   {x: 2.9684308627201803, y: 20945},  
-                //   // {x: 3, y: 20945},
-                //   ],
-                //   // maxBarThickness: 100
-                //   borderWidth: 1,
-                //   barPercentage: 1,
-                //   categoryPercentage: 0.1
-
-                // }
-                ]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    display: true,
-                    maxHeight: 1000,
-                    labels: {
-                      color: '#ffffff',
-                      font: {
-                        size: 20
-                      },
-                      // padding: 10
-                    },
-                  },
-                  title: {
-                      display: false,
-                      text: 'Histogram title'
-                  }
-                },
-                interaction: {
-                  intersect: false,
-                  mode: 'index',
-                },
-                scales: {
-                  y: {
-                    grid: {
-                      drawBorder: false,
-                      display: true,
-                      drawOnChartArea: true,
-                      drawTicks: false,
-                      borderDash: [5, 5],
-                      color: 'rgba(255, 255, 255, .2)'
-                    },
-                    ticks: {
-                      display: true,
-                      padding: 10,
-                      color: '#f8f9fa',
-                      font: {
-                        size: 14,
-                        // size: 20,
-                        weight: 300,
-                        family: "Roboto",
-                        style: 'normal',
-                        lineHeight: 2
-                      },
-                      max: 4,
-                      autoSkip: false
-
-                    },
-                    title: {
-                      display: true,
-                      padding: 10,
-                      text: 'Number of repos',
-                      font: {
-                        size: 20,
-                        weight: 'bold',
-                        family: "Roboto",
-                        style: 'normal',
-                        lineHeight: 2
-                      }
-                    }
-                  },
-                  x5: {
-                    position: 'bottom',
-                    // type: 'linear',
-
-                    min: 0,
-                    type: 'category',
-                    labels: ['', '', '', '', '', '', '', '', '', '', ''],
-                    stacked: true,
-                    // position: 'bottom',
-                    offset: true,
-                    grid: {
-                      drawBorder: false,
-                      display: false,
-                      drawOnChartArea: false,
-                      drawTicks: false,
-                      borderDash: [5, 5]
-                    },
-                    ticks: {
-                      beginAtZero: true,
-                      display: true,
-                      color: '#f8f9fa',
-                      padding: 10,
-                      // stepsize: 3,
-                      font: {
-                        size: 14,
-                        weight: 300,
-                        family: "Roboto",
-                        style: 'normal',
-                        lineHeight: 2
-                      },
-                      min: 0,
-                      max: 10,
-                      stepsize: 1
-                    },
-                    title: {
-                      display: true,
-                      text: 'Issue closing times (log scale)',
-                      font: {
-                        // size: 14,
-                        size: 20,
-                        weight: 'bold',
-                        family: "Roboto",
-                        style: 'normal',
-                        lineHeight: 2,
-                        color: '#f8f9fa',
-                      },
-                    }
-                  },
-                  },
-              }});
-
-            
-            function create_issue_closing_times_histogram(repo_name_1, repo_name_2){
-              const data_url = 
-                'http://localhost:3200/deep_insights_issues/issues_closing_times/' + repo_name_1
-                + '/vs/' + repo_name_2;
-              
-              
-              //  Create the html_body of the table
-              fetch(data_url)
-                .then(response => response.json())
-                .then(data => {          
-
-                  const binCenters = data["bin_centers_in_seconds"];
-                  const absFrequencies = data["abs_frequencies"];
-                  const chartData = binCenters.map((center, index) => ({
-                    x: center,
-                    y: absFrequencies[index]
-                  }));
-
-                  const issues_histogram_dataset = {
-                    label: "All repos",
-                    // labels: data["bin_centers"],
-                    tension: 0,
-                    // borderWidth: 0,
-                    pointRadius: 5,
-                    pointBackgroundColor: hist_distribution_color,
-                    // pointBorderColor: "transparent",
-                    pointBorderColor: hist_distribution_color,
-                    borderColor: hist_distribution_color,
-                    borderWidth: 4,
-                    backgroundColor: "transparent",
-                    fill: true,
-                    data: chartData,
-                    borderWidth: 1,
-                    barPercentage: 1,
-                    categoryPercentage: 1
-                  };
-                  
-                  // const repo_name_1 = data["repo_name_1"]
-                  const frequencies_of_bins_repo_1 = 
-                      data["bin_of_average_issue_closing_time_of_repo_1"];
-                  const repo1Data = binCenters.map((center, index) => ({
-                    x: center,
-                    y: frequencies_of_bins_repo_1[index]
-                  }));
-
-                  const average_issue_times_dataset_repo_1 = {
-                    label: "Repo 1: " + repo_name_1,
-                    // labels: data["bin_centers"],
-                    tension: 0,
-                    // borderWidth: 0,
-                    pointRadius: 5,
-                    pointBackgroundColor: hist_distribution_color_3,
-                    // pointBorderColor: "transparent",
-                    pointBorderColor: hist_distribution_color_3,
-                    borderColor: hist_distribution_color_3,
-                    borderWidth: 4,
-                    backgroundColor: "transparent",
-                    fill: true,
-                    data: repo1Data,
-                    borderWidth: 1,
-                    barPercentage: 1,
-                    categoryPercentage: 0.1
-                  };
-
-                  const frequencies_of_bins_repo_2 = 
-                      data["bin_of_average_issue_closing_time_of_repo_2"];
-                  const repo2Data = binCenters.map((center, index) => ({
-                    x: center,
-                    y: frequencies_of_bins_repo_2[index]
-                  }));
-                  
-                  
-                  // const repo_name_2 = data["repo_name_2"]
-                  
-                  const average_issue_times_dataset_repo_2 = {
-                    label: "Repo 2: " + repo_name_2,
-                    // labels: data["bin_centers"],
-                    tension: 0,
-                    // borderWidth: 0,
-                    pointRadius: 5,
-                    pointBackgroundColor: hist_distribution_color_2,
-                    // pointBorderColor: "transparent",
-                    pointBorderColor: hist_distribution_color_2,
-                    borderColor: hist_distribution_color_2,
-                    borderWidth: 4,
-                    backgroundColor: "transparent",
-                    fill: true,
-                    data: repo2Data,
-                    borderWidth: 1,
-                    barPercentage: 1,
-                    categoryPercentage: 0.1
-                  };
-
-
-                  // console.log("Bin centers: ", data["bin_centers_log_transformed"])
-                  // console.log("Absolute frequencies: ", data["abs_frequencies"])
-                  // console.log("Repo 1 bins: ", data["bin_of_average_issue_closing_time_of_repo_1"])
-                  // console.log("Repo 2 bins: ", data["bin_of_average_issue_closing_time_of_repo_2"])
-
-                  // Update 
-                  issue_closing_times_histogram.data.
-                      datasets.push(issues_histogram_dataset);
-                  issue_closing_times_histogram.data.
-                      datasets.push(average_issue_times_dataset_repo_1);
-                  issue_closing_times_histogram.data.
-                      datasets.push(average_issue_times_dataset_repo_2);
-                  
-
-
-                  
-
-                  // // Remove existing x values
-                  // issue_closing_times_histogram.options.scales.x5.labels.splice(0, binCenters.length);
-                  // // Add new values
-                  // issue_closing_times_histogram.options.scales.x5.labels = binCenters;
-
-
-                  
-                  // e.g. 2 year(s), 4 month(s)
-                  // TODO: Turn the seconds into larger duration strings to have as labels on the bins
-                  // Create labels
-                  let time_durations_labels = [];
-                  let time_duration_dict;
-                  
-                  for (let i = 0; i < binCenters.length; i++){
-                    time_duration_dict = seconds_to_larger_time_durations(binCenters[i]);
-                    time_durations_labels[i] = stringify_time_dict(time_duration_dict);
-                  }
-
-                  console.log("Issue closing times labels: " + time_durations_labels);
-
-
-                  // Remove existing x values
-                  issue_closing_times_histogram.options.scales.x5.labels.splice(0, time_durations_labels.length);
-                  // Add new values
-                  issue_closing_times_histogram.options.scales.x5.labels = time_durations_labels;
-
-
-                  issue_closing_times_histogram.update();  
-                } 
-              );
-                
-            };
-            
-            // const repo_name_arg_1 = "firedancer-io/firedancer";
-            // const repo_name_arg_2 = "microsoft/winget-pkgs";
-            // const repo_name_arg_2 = "kernitus/BukkitOldCombatMechanics";
-            create_issue_closing_times_histogram("UTSAVS26/PyVerse", 
-                "eosnetworkfoundation/silkworm");
-          </script>
-
-
-        </div>
-        <div class="card-body mt-4">
-          <h6 class="mb-0 ">Average closing times of issues in Github</h6>
-          <p class="text-sm ">From github events in December 2024</p>
-          <hr class="dark horizontal">
-          <div class="d-flex">
-            <i class="material-icons text-sm my-auto me-1">schedule</i>
-            <p class="mb-0 text-sm">December 2024</p>
-          </div>
-        </div>
-      </div>
-      
-    </div>
-
-    
-
-
-  </div>
-
-
-  <!-- Select repo, get the closing times of issues per label -->
-
-  <!-- Top contributors in 2024 -->
-  <div class="row mt-4">
-    <div class="col-lg-5 col-md-12">
-    <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
-      <div class="card">
-        <div class="card-header card-header-warning">
-          <h4 class="card-title">Issues analysis</h4>
-        </div>
-      </div>
-    </div> 
-  </div>
-
-  <!-- Select repo and show its top contributors -->
-  
-  <div class="row mb-4">
-    <!-- Select repo  -->  
-    <div class="col-lg-4 col-md-6 mt-4"  style="flex: 0 0 auto; max-height: 100px">
-      <div class="card h-100">
-        <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-          <!-- <h5>Selected month</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
-          <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
-          
-          <div class="ms-md-auto pe-md-3 d-flex align-items-center">
-            <div id="select_repo_to_get_issue_closing_times_per_labels" 
-                  class="input-group input-group-outline">
-              <label class="form-label">e.g. openssl/openssl</label>
-              <input type="text" class="form-control">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  
-
-    <script>
-      function create_ranking_table_of_closing_issues_per_label_html_body(element_id_to_assign_hmtl_onto, 
-        data_url, html_head, second_col, third_col, fourth_col
-      ) {
-        /*
-        Creates the table contents (html_body)
-        second_col: represents the 'winners' e.g most starred repos
-        third_col: represents the winners' performances e.g 459 stars 
-        
-        returns the html combining the head and the body of the table
-        */
-
-        var html_body_inside = `<tbody>`
-
-        //  Create the html_body of the table
-        fetch(data_url)
-          .then(response => response.json())
-          .then(data => {
-            
-            let days = null;
-            let hours = null;
-            let minutes = null;
-            let seconds = null;
-            let days_hours_mins_secs = null;
-            
-            const closing_times_per_label = data["closing_times_per_label"]
-            for (let data_index = 0; data_index < closing_times_per_label.length; data_index++){
-            
-
-              var largest_two_durations = 
-                  closing_times_per_label[data_index]['average_closing_time_formatted']
-              
-              var largest_two_durations_formatted = ''
-              
-              for (const [key, value] of Object.entries(
-                      largest_two_durations))
-                largest_two_durations_formatted = 
-                    largest_two_durations_formatted + value + ' ' + key + ', '
-
-              largest_two_durations_formatted = largest_two_durations_formatted.slice(',', -2)
-              
-
-
-              html_body_inside = html_body_inside 
-                + `<tr>`
-                + `<td>${data_index+1}</td>`
-                + `<td>${closing_times_per_label[data_index][second_col]}</td>`
-                + `<td>${closing_times_per_label[data_index][third_col]}</td>`
-                + `<td>${largest_two_durations_formatted}</td>`
-                + `</tr>`
-            }
-            html_body_inside = html_body_inside + `</tbody>`;
-            
-            document.getElementById(element_id_to_assign_hmtl_onto).innerHTML = 
-              html_head + html_body_inside;    
-            // console.log(data)
           }
-          );
 
-      }
+            return time_dict_keep_largest_two_non_zero_durations;
+          }
 
-      function update_issue_closing_time_by_label_table(repo_selected){
-        // Arguments to create the table
-        var table_html_id = "issue_closing_times_by_label"
-        // Get the data URL 
-        let data_url = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' 
-                            + repo_selected;
-        var html_head = `<thead class="text-warning">
-                          <tr>
-                            <th>Place</th>
-                            <th>Issue label</th>
-                            <th>Count</th>
-                            <th>Average issue closing times</th>
-                          </tr>
-                        </thead>`
-        var second_column_name = 'issue_label'
-        var third_column_name = 'number_of_issues_with_this_label'
-        var fourth_column_name = 'average_closing_time_formatted'
+        function stringify_time_dict(time_dict){
+          let time_dict_stringified = '';
+          for (let [key, value] of  Object.entries(time_dict)){
+              time_dict_stringified = time_dict_stringified + ", " + value + " " + key;
+          }
+          // Remove first two characters from the string
+          time_dict_stringified = time_dict_stringified.slice(2); 
+          return time_dict_stringified    
+          }
+      </script>
+    
+    
+    
+      <!-- Histogram 2 for pull-request closing times-->
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="chart-container">
+            <script src="/static/assets/js/plugins/chartjs.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+              integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+              crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>      
+            <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
-        // Create the table
-        create_ranking_table_of_closing_issues_per_label_html_body(table_html_id, data_url, html_head, 
-          second_column_name, third_column_name, fourth_column_name);
-        
-      }
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+                  <canvas id="pull_request_closing_times_histogram_apex" class="chart-canvas" height="400"></canvas>
+              </div>
+            </div>
+            
+            <script>
+              var options = {
+                series: [
+                  {
+                    name: "Accepted",
+                    data: [81, 37],
+                  },
+                  {
+                    name: "Rejected",
+                    data: [20, 62],
+                  },
+                ],
+                chart: {
+                  type: "bar",
+                  height: 350,
+                },
+                legend: {
+                  position: "top",
+                  offsetY: 20
+                },
+                plotOptions: {
+                  bar: {
+                    horizontal: false,
+                    columnWidth: "55%",
+                    borderRadius: 5,
+                    borderRadiusApplication: "end",
+                    dataLabels: {
+                      position: "top", // top, center, bottom
+                    },
+                  },
+                },
+                dataLabels: {
+                  enabled: true,
+                  offsetY: -20,
+                  style: {
+                    fontSize: "12px",
+                    colors: ["#304758"],
+                  },
+                  formatter: function (val) {
+                          return val + "%";
+                        },
+                },
+                stroke: {
+                  show: true,
+                  width: 2,
+                  colors: ["transparent"],
+                },
+                xaxis: {
+                  categories: ["Humans", "Bots"],
+                },
+                yaxis: {
+                  /* forceNiceScale: true, */
+                  tickAmount: 5,
+                  title: {
+                    text: "Pull request rates",
+                  },
+                  /* max: 100, // or any value greater than 80 */
+                  
+                },
+              
+                fill: {
+                  opacity: 1,
+                },
+                tooltip: {
+                  y: {
+                    formatter: function (val) {
+                      return  val + " %"
+                    },
+                  },
+                },
+              }
+              var chart_2 = new ApexCharts(document.querySelector("#pull_request_closing_times_histogram_apex"), options);
+              chart_2.render();
+            </script>
 
-      function update_mirror_of_selected_repo_for_issue_closing_times(label_to_mirror, repo_selected){
-                  var selected_repo_mirror = document.getElementById(label_to_mirror);
-                  selected_repo_mirror.textContent = "of selected repo: '" + repo_selected + "'";                  
-                }
+          </div>
 
-      let repo_selected = null;
-      document.querySelector("#select_repo_to_get_issue_closing_times_per_labels input").addEventListener(
-          "keydown", function() {
-            if (event.key == "Enter") {
-              repo_selected = this.value;
-              console.log(repo_selected)
-              update_issue_closing_time_by_label_table(repo_selected);
-              update_mirror_of_selected_repo_for_issue_closing_times(
-                "closing_time_by_label_repo_mirror", repo_selected)
-              getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_selected; 
-            }
-      })
-    </script>
 
-    <!-- Preselect a repo to show upon render of the page -->
-    <script>
-      const repo_whose_issue_closing_times_to_get = "Expensify/App";
-      update_issue_closing_time_by_label_table(repo_whose_issue_closing_times_to_get);
-      document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
-    </script>
 
-    <!-- Selected repo's top contributing users -->
-    <div class="col-lg-6 col-md-12 mt-4">
-      <div class="card h-100">
-        <div class="card-header card-header-warning">
-          <h5 class="card-title">Average issue closing times by label</h5>
-          <p id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">- - -</span></p>
+          <div class="card-body mt-4">
+            <h6 class="mb-0 ">Average closing times of pull-requests in Github</h6>
+            <p class="text-sm ">From github events in December 2024</p>
+            <hr class="dark horizontal">
+            <div class="d-flex">
+              <i class="material-icons text-sm my-auto me-1">schedule</i>
+              <p class="mb-0 text-sm">December 2024</p>
+            </div>
+          </div>
         </div>
-        <div class="card-body table-responsive">
-          <table id="issue_closing_times_by_label" class="table table-hover">
-          </table>
+        
+      </div>
+    
+
+      <!-- Histogram 2 for issues closing times-->
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="chart-container">
+            <script src="/static/assets/js/plugins/chartjs.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+              integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+              crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>      
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+                  <canvas id="issue_closing_times_histogram" class="chart-canvas" height="400"></canvas>
+              </div>
+            </div>
+            
+            <!-- <script>
+                
+
+
+              let repo_1_selected = null;
+              let repo_2_selected = null; 
+              
+              function update_label(label_to_mirror, repo_selected){
+                var selected_repo_mirror = document.getElementById(label_to_mirror);
+                selected_repo_mirror.textContent = "Selected repo: '" + repo_selected + "'";                  
+              }
+
+              
+              
+
+              document.querySelector("#repo_selection_search_box_repo_1 input").addEventListener(
+                  "keydown", function() {
+                    if (event.key == "Enter") {
+                      repo_1_selected = this.value;
+                      update_label("selected_repo_mirror_repo_1", repo_1_selected);
+                      check_and_create_pull_request_closing_times_histogram();
+                      check_and_create_issue_closing_times_histogram();
+                    }
+                
+              })
+              document.querySelector("#repo_selection_search_box_repo_2 input").addEventListener(
+                  "keydown", function() {
+                    if (event.key == "Enter") {
+                      repo_2_selected = this.value;
+                      update_label("selected_repo_mirror_repo_2", repo_2_selected);
+                      check_and_create_pull_request_closing_times_histogram();
+                      check_and_create_issue_closing_times_histogram();
+                    }
+                
+              })
+
+              // const repo_name_arg_1 = "firedancer-io/firedancer";
+              // const repo_name_arg_2 = "microsoft/winget-pkgs";
+
+              function check_and_create_pull_request_closing_times_histogram() {
+                  
+                if (repo_1_selected && repo_2_selected) {
+
+                    console.log("Creating pull-requests closing times histogram including repos:")
+                    console.log(repo_1_selected);
+                    console.log(repo_2_selected);  
+                    create_pull_request_closing_times_histogram(repo_1_selected, repo_2_selected);
+                }
+              }
+
+              // function initialize_create_pull_request_closing_times_histogram_upon_page_render() {
+              //   let repo_1_preselected = 'UTSAVS26/PyVerse';
+              //   let repo_2_preselected = 'eosnetworkfoundation/silkworm';
+
+              //   // let repo_1_preselected = 'microsoft/winget-pkgs';
+              //   // let repo_2_preselected = 'facebook/react';
+
+              //   document.addEventListener("DOMContentLoaded", () => {
+              //     create_pull_request_closing_times_histogram(repo_1_preselected, repo_2_preselected);
+              //   });
+              // }
+
+
+              function check_and_create_issue_closing_times_histogram() {
+                  if (repo_1_selected && repo_2_selected) {
+                    // Remove existing datasets from the graph
+                    pull_request_closing_times_histogram.data.datasets.splice(0, 
+                        pull_request_closing_times_histogram.data.datasets.length);
+                  
+                    // Remove existing datasets from the graph
+                    issue_closing_times_histogram.data.datasets.splice(0, 
+                      issue_closing_times_histogram.data.datasets.length);
+                  
+
+                    console.log("Creating issue closing times histogram including repos:")
+                    console.log(repo_1_selected);
+                    console.log(repo_2_selected);  
+                    create_issue_closing_times_histogram(repo_1_selected, repo_2_selected);
+                  }
+                }
+              // check_and_create_pull_request_closing_times_histogram();
+                
+            </script> -->
+
+
+            <script>
+              // Stacked bar chart bins
+              var issue_closing_times_histogram_ctx = 
+                  document.getElementById("issue_closing_times_histogram").getContext("2d");
+              
+              var issue_closing_times_histogram = new Chart(issue_closing_times_histogram_ctx, {
+                type: "bar",
+                data: {
+                  datasets: [
+                  //   {
+                  //   label: "Pull_request_closing_times_of_specific_repo",
+                  //   tension: 0,
+                  //   order: 2,
+                  //   pointRadius: 5,
+                  //   // pointBackgroundColor: "rgba(255, 255, 255, .8)",
+                  //   pointBackgroundColor: '#dfdb12',
+                  //   pointBorderColor: "transparent",
+                  //   borderColor: "#dfdb12",
+                  //   borderWidth: 4,
+                  //   backgroundColor: "transparent",
+                  //   // backgroundColor: "#c00000",
+                  //   fill: true,
+                  //   // data: [50, 40, 300, 220, 100, 250, 400, 230, 50, 20],
+                  //   data: [
+                  //   {x: 2.9684308627201803, y: 20945},  
+                  //   // {x: 3, y: 20945},
+                  //   ],
+                  //   // maxBarThickness: 100
+                  //   borderWidth: 1,
+                  //   barPercentage: 1,
+                  //   categoryPercentage: 0.1
+
+                  // }
+                  ]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      maxHeight: 1000,
+                      labels: {
+                        color: '#ffffff',
+                        font: {
+                          size: 20
+                        },
+                        // padding: 10
+                      },
+                    },
+                    title: {
+                        display: false,
+                        text: 'Histogram title'
+                    }
+                  },
+                  interaction: {
+                    intersect: false,
+                    mode: 'index',
+                  },
+                  scales: {
+                    y: {
+                      grid: {
+                        drawBorder: false,
+                        display: true,
+                        drawOnChartArea: true,
+                        drawTicks: false,
+                        borderDash: [5, 5],
+                        color: 'rgba(255, 255, 255, .2)'
+                      },
+                      ticks: {
+                        display: true,
+                        padding: 10,
+                        color: '#f8f9fa',
+                        font: {
+                          size: 14,
+                          // size: 20,
+                          weight: 300,
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        },
+                        max: 4,
+                        autoSkip: false
+
+                      },
+                      title: {
+                        display: true,
+                        padding: 10,
+                        text: 'Number of repos',
+                        font: {
+                          size: 20,
+                          weight: 'bold',
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        }
+                      }
+                    },
+                    x5: {
+                      position: 'bottom',
+                      // type: 'linear',
+
+                      min: 0,
+                      type: 'category',
+                      labels: ['', '', '', '', '', '', '', '', '', '', ''],
+                      stacked: true,
+                      // position: 'bottom',
+                      offset: true,
+                      grid: {
+                        drawBorder: false,
+                        display: false,
+                        drawOnChartArea: false,
+                        drawTicks: false,
+                        borderDash: [5, 5]
+                      },
+                      ticks: {
+                        beginAtZero: true,
+                        display: true,
+                        color: '#f8f9fa',
+                        padding: 10,
+                        // stepsize: 3,
+                        font: {
+                          size: 14,
+                          weight: 300,
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        },
+                        min: 0,
+                        max: 10,
+                        stepsize: 1
+                      },
+                      title: {
+                        display: true,
+                        text: 'Issue closing times (log scale)',
+                        font: {
+                          // size: 14,
+                          size: 20,
+                          weight: 'bold',
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2,
+                          color: '#f8f9fa',
+                        },
+                      }
+                    },
+                    },
+                }});
+
+              
+              function create_issue_closing_times_histogram(repo_name_1, repo_name_2){
+                const data_url = 
+                  'http://localhost:3200/deep_insights_issues/issues_closing_times/' + repo_name_1
+                  + '/vs/' + repo_name_2;
+                
+                
+                //  Create the html_body of the table
+                fetch(data_url)
+                  .then(response => response.json())
+                  .then(data => {          
+
+                    const binCenters = data["bin_centers_in_seconds"];
+                    const absFrequencies = data["abs_frequencies"];
+                    const chartData = binCenters.map((center, index) => ({
+                      x: center,
+                      y: absFrequencies[index]
+                    }));
+
+                    const issues_histogram_dataset = {
+                      label: "All repos",
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color,
+                      borderColor: hist_distribution_color,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: chartData,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 1
+                    };
+                    
+                    // const repo_name_1 = data["repo_name_1"]
+                    const frequencies_of_bins_repo_1 = 
+                        data["bin_of_average_issue_closing_time_of_repo_1"];
+                    const repo1Data = binCenters.map((center, index) => ({
+                      x: center,
+                      y: frequencies_of_bins_repo_1[index]
+                    }));
+
+                    const average_issue_times_dataset_repo_1 = {
+                      label: "Repo 1: " + repo_name_1,
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color_3,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color_3,
+                      borderColor: hist_distribution_color_3,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: repo1Data,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 0.1
+                    };
+
+                    const frequencies_of_bins_repo_2 = 
+                        data["bin_of_average_issue_closing_time_of_repo_2"];
+                    const repo2Data = binCenters.map((center, index) => ({
+                      x: center,
+                      y: frequencies_of_bins_repo_2[index]
+                    }));
+                    
+                    
+                    // const repo_name_2 = data["repo_name_2"]
+                    
+                    const average_issue_times_dataset_repo_2 = {
+                      label: "Repo 2: " + repo_name_2,
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color_2,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color_2,
+                      borderColor: hist_distribution_color_2,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: repo2Data,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 0.1
+                    };
+
+
+                    // console.log("Bin centers: ", data["bin_centers_log_transformed"])
+                    // console.log("Absolute frequencies: ", data["abs_frequencies"])
+                    // console.log("Repo 1 bins: ", data["bin_of_average_issue_closing_time_of_repo_1"])
+                    // console.log("Repo 2 bins: ", data["bin_of_average_issue_closing_time_of_repo_2"])
+
+                    // Update 
+                    issue_closing_times_histogram.data.
+                        datasets.push(issues_histogram_dataset);
+                    issue_closing_times_histogram.data.
+                        datasets.push(average_issue_times_dataset_repo_1);
+                    issue_closing_times_histogram.data.
+                        datasets.push(average_issue_times_dataset_repo_2);
+                    
+
+
+                    
+
+                    // // Remove existing x values
+                    // issue_closing_times_histogram.options.scales.x5.labels.splice(0, binCenters.length);
+                    // // Add new values
+                    // issue_closing_times_histogram.options.scales.x5.labels = binCenters;
+
+
+                    
+                    // e.g. 2 year(s), 4 month(s)
+                    // TODO: Turn the seconds into larger duration strings to have as labels on the bins
+                    // Create labels
+                    let time_durations_labels = [];
+                    let time_duration_dict;
+                    
+                    for (let i = 0; i < binCenters.length; i++){
+                      time_duration_dict = seconds_to_larger_time_durations(binCenters[i]);
+                      time_durations_labels[i] = stringify_time_dict(time_duration_dict);
+                    }
+
+                    console.log("Issue closing times labels: " + time_durations_labels);
+
+
+                    // Remove existing x values
+                    issue_closing_times_histogram.options.scales.x5.labels.splice(0, time_durations_labels.length);
+                    // Add new values
+                    issue_closing_times_histogram.options.scales.x5.labels = time_durations_labels;
+
+
+                    issue_closing_times_histogram.update();  
+                  } 
+                );
+                  
+              };
+              
+              // const repo_name_arg_1 = "firedancer-io/firedancer";
+              // const repo_name_arg_2 = "microsoft/winget-pkgs";
+              // const repo_name_arg_2 = "kernitus/BukkitOldCombatMechanics";
+              create_issue_closing_times_histogram("UTSAVS26/PyVerse", 
+                  "eosnetworkfoundation/silkworm");
+            </script>
+
+
+          </div>
+          <div class="card-body mt-4">
+            <h6 class="mb-0 ">Average closing times of issues in Github</h6>
+            <p class="text-sm ">From github events in December 2024</p>
+            <hr class="dark horizontal">
+            <div class="d-flex">
+              <i class="material-icons text-sm my-auto me-1">schedule</i>
+              <p class="mb-0 text-sm">December 2024</p>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+
+      
+
+
+    </div>
+
+    
+
+
+
+    <!-- Select repos row with search box-->
+    <div class="row mb-4 mt-4">
+      <!-- Select repo 1 -->
+      <div class="col-lg-6 col-md-4 mt-4">
+        <div class="card h-100">
+          <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
+            <span id="selected_repo_mirror_repo_1" class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+            
+            <div class="ms-md-auto pe-md-3 d-flex align-items-center">
+              <div id="repo_selection_search_box_repo_1" class="input-group input-group-outline">
+                <label class="form-label">e.g. microsoft/winget-pkgs</label>
+                <input type="text" class="form-control">
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+
+      <div class="col-lg-6 col-md-12 mt-4">
+        <div class="card h-100">
+          <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
+            <span id="selected_repo_mirror_repo_2" class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+            <div class="ms-md-auto pe-md-3 d-flex align-items-center">
+              <div id="repo_selection_search_box_repo_2" class="input-group input-group-outline">
+                <label  class="form-label">e.g. facebook/react</label>
+                <input type="text" class="form-control">
+
+                
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Select repo 2-->
+      <!-- <div class="col-lg-6 col-md-12 mt-4">
+        <div class="card">
+          <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
+            <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+            
+            <div class="dropdown float-lg-end pe-4">
+              <ul>
+                <select class="drop_down_list_select bg-gradient-success" name="repo">
+                  <option >angular/angular.js</option>
+                  <option >vuejs/vue</option>
+                  <option >facebook/react</option>
+                </select>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div> -->
+
+
     </div>
 
 
+    <!-- Closing times histograms -->
+    <div class="row mt-5">
+      
+      <script>
+        function seconds_to_larger_time_durations(seconds_to_transform){
+
+          const seconds_in_a_year = 365*24*60*60;
+          const seconds_in_a_month = 30*24*60*60;
+          const seconds_in_a_day = 24*60*60;
+          const seconds_in_an_hour = 60*60;
+          const seconds_in_a_minute = 60;
+
+          // Keep two decimals 
+          const seconds_altered_precision = seconds_to_transform.toFixed(2)
+
+          let years = Math.floor(seconds_altered_precision / seconds_in_a_year);
+          let remaining_seconds = seconds_altered_precision % seconds_in_a_year;
+              
+          let months = Math.floor(remaining_seconds/seconds_in_a_month);
+          remaining_seconds = remaining_seconds % seconds_in_a_month;
+
+          let days = Math.floor(remaining_seconds / seconds_in_a_day);
+          remaining_seconds = remaining_seconds % seconds_in_a_day;
+
+          let hours = Math.floor(remaining_seconds / seconds_in_an_hour);
+          remaining_seconds = remaining_seconds % seconds_in_an_hour;
+
+          let minutes = Math.floor(remaining_seconds / seconds_in_a_minute);
+          remaining_seconds = remaining_seconds % seconds_in_a_minute;
+          let seconds = remaining_seconds;
+
+
+          const time_dict = {'y': Math.round(years), 'm': Math.round(months), 'd': Math.round(days), 
+              'h': Math.round(hours), 'min': Math.round(minutes), 's': Math.round(seconds)};
+
+          let time_dict_keep_largest_two_non_zero_durations = {}
+
+          for (const [key, value] of Object.entries(time_dict)){
+              if (value != 0){
+                  time_dict_keep_largest_two_non_zero_durations[key] = value;
+              }
+              if (Object.keys(time_dict_keep_largest_two_non_zero_durations).length == 2){
+                  break;
+              }
+
+          }
+
+            return time_dict_keep_largest_two_non_zero_durations;
+          }
+
+        function stringify_time_dict(time_dict){
+          let time_dict_stringified = '';
+          for (let [key, value] of  Object.entries(time_dict)){
+              time_dict_stringified = time_dict_stringified + ", " + value + " " + key;
+          }
+          // Remove first two characters from the string
+          time_dict_stringified = time_dict_stringified.slice(2); 
+          return time_dict_stringified    
+          }
+      </script>
+    
+    
+    
+    <!-- Histogram for pull-request closing times-->
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="chart-container">
+            <script src="/static/assets/js/plugins/chartjs.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+              integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+              crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>      
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+                <!-- <div class="chart"> -->
+                  <!-- <canvas id="chart-line-tasks" class="chart-canvas" height="300"></canvas> -->
+                  <canvas id="pull_request_closing_times_histogram" class="chart-canvas" height="400"></canvas>
+
+                <!-- </div> -->
+              </div>
+            </div>
+            
+            <script>
+              // Stacked bar chart bins
+              var pull_request_closing_times_histogram_ctx = 
+                  document.getElementById("pull_request_closing_times_histogram").getContext("2d");
+              const hist_distribution_color = '#405bd4'
+              const hist_distribution_color_2 = '#ab0004'
+
+              var pull_request_closing_times_histogram = new Chart(pull_request_closing_times_histogram_ctx, {
+                type: "bar",
+                data: {
+                  datasets: [
+                  //   {
+                  //   label: "Pull_request_closing_times_of_specific_repo",
+                  //   tension: 0,
+                  //   order: 2,
+                  //   pointRadius: 5,
+                  //   // pointBackgroundColor: "rgba(255, 255, 255, .8)",
+                  //   pointBackgroundColor: '#dfdb12',
+                  //   pointBorderColor: "transparent",
+                  //   borderColor: "#dfdb12",
+                  //   borderWidth: 4,
+                  //   backgroundColor: "transparent",
+                  //   // backgroundColor: "#c00000",
+                  //   fill: true,
+                  //   // data: [50, 40, 300, 220, 100, 250, 400, 230, 50, 20],
+                  //   data: [
+                  //   {x: 2.9684308627201803, y: 20945},  
+                  //   // {x: 3, y: 20945},
+                  //   ],
+                  //   // maxBarThickness: 100
+                  //   borderWidth: 1,
+                  //   barPercentage: 1,
+                  //   categoryPercentage: 0.1
+
+                  // }
+                  ]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      maxHeight: 1000,
+                      labels: {
+                        color: '#ffffff',
+                        font: {
+                          size: 20
+                        }
+                      } 
+                    },
+                    title: {
+                        display: false,
+                        text: 'Histogram title'
+                    }
+                  },
+                  interaction: {
+                    intersect: false,
+                    mode: 'index',
+                  },
+                  scales: {
+                    y: {
+                      grid: {
+                        drawBorder: false,
+                        display: true,
+                        drawOnChartArea: true,
+                        drawTicks: false,
+                        borderDash: [5, 5],
+                        color: 'rgba(255, 255, 255, .2)'
+                      },
+                      ticks: {
+                        display: true,
+                        padding: 10,
+                        color: '#f8f9fa',
+                        font: {
+                          size: 14,
+                          // size: 20,
+                          weight: 300,
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        },
+                        max: 4,
+                        autoSkip: false
+
+                      },
+                      title: {
+                        display: true,
+                        text: 'Number of repos',
+                        font: {
+                          size: 20,
+                          weight: 'bold',
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        }
+                      }
+                    },
+                    x: {
+                      type: 'category',
+                      stacked: true,
+                      // position: 'bottom',
+                      labels: ['', '', '', '', '', '', '', '', '', ''],
+                      offset: true,
+                      grid: {
+                        drawBorder: false,
+                        display: false,
+                        drawOnChartArea: false,
+                        drawTicks: false,
+                        borderDash: [5, 5]
+                      },
+                      ticks: {
+                        display: true,
+                        color: '#f8f9fa',
+                        padding: 10,
+                        stepsize: 3,
+                        font: {
+                          size: 14,
+                          weight: 300,
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        }
+                      },
+                      title: {
+                        display: true,
+                        text: 'Pull-requests closing times (log scale)',
+                        font: {
+                          size: 20,
+                          weight: 'bold',
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        }
+                      }
+                    }
+                  },
+                },
+              });
+
+              // function getRandomColor() {
+              //     return `#${Math.floor(Math.random()*16777215).toString(16)}`;
+              // }
+
+              // const hist_distribution_color = '#405bd4'
+
+              const hist_distribution_color_3 = '#dfdb12'
+
+              function create_pull_request_closing_times_histogram(repo_name_1, repo_name_2){
+                const data_url = 
+                  'http://localhost:3200/deep_insights_issues/pull_request_closing_times/' + repo_name_1
+                  + '/vs/' + repo_name_2;
+                
+
+                //  Create the html_body of the table
+                fetch(data_url)
+                  .then(response => response.json())
+                  .then(data => {          
+
+                    // const binCenters = data["bin_centers_log_transformed"];
+                    const binCenters = data["bin_centers_in_seconds"];
+                    const absFrequencies = data["abs_frequencies"];
+                    const chartData = binCenters.map((center, index) => ({
+                      x: center,
+                      y: absFrequencies[index]
+                    }));
+
+                    const pull_requests_histogram_dataset = {
+                      label: "All repos",
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color,
+                      borderColor: hist_distribution_color,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: chartData,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 1
+                    };
+                    
+                    // const repo_name_1 = data["repo_name_1"]
+                    const frequencies_of_bins_repo_1 = 
+                        data["bin_of_average_pull_request_closing_time_of_repo_1"];
+                    const repo1Data = binCenters.map((center, index) => ({
+                      x: center,
+                      y: frequencies_of_bins_repo_1[index]
+                    }));
+
+                    const average_pull_request_times_dataset_repo_1 = {
+                      label: "Repo 1: " + repo_name_1,
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color_3,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color_3,
+                      borderColor: hist_distribution_color_3,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: repo1Data,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 0.1
+                    };
+
+                    const frequencies_of_bins_repo_2 = 
+                        data["bin_of_average_pull_request_closing_time_of_repo_2"];
+                    const repo2Data = binCenters.map((center, index) => ({
+                      x: center,
+                      y: frequencies_of_bins_repo_2[index]
+                    }));
+                    
+                    
+                    // const repo_name_2 = data["repo_name_2"]
+                    
+                    const average_pull_request_times_dataset_repo_2 = {
+                      label: "Repo 2: " + repo_name_2,
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color_2,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color_2,
+                      borderColor: hist_distribution_color_2,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: repo2Data,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 0.1
+                    };
+
+
+                    // console.log("Bin centers: ", data["bin_centers_log_transformed"])
+                    // console.log("Absolute frequencies: ", data["abs_frequencies"])
+                    // console.log("Repo 1 bins: ", data["bin_of_average_pull_request_closing_time_of_repo_1"])
+                    // console.log("Repo 2 bins: ", data["bin_of_average_pull_request_closing_time_of_repo_2"])
+
+                    // Update 
+                    pull_request_closing_times_histogram.data.
+                        datasets.push(pull_requests_histogram_dataset);
+                    pull_request_closing_times_histogram.data.
+                        datasets.push(average_pull_request_times_dataset_repo_1);
+                    pull_request_closing_times_histogram.data.
+                        datasets.push(average_pull_request_times_dataset_repo_2);
+                    
+                        
+                        
+
+                    
+                    let time_durations_labels = [];
+                    let time_duration_dict;
+                    
+                    for (let i = 0; i < binCenters.length; i++){
+                      time_duration_dict = seconds_to_larger_time_durations(binCenters[i]);
+                      time_durations_labels[i] = stringify_time_dict(time_duration_dict);
+                    }
+
+                    console.log("Pull request closing times labels: " + time_durations_labels);
+
+                    // Remove existing x values
+                    pull_request_closing_times_histogram.options.scales.x.labels.splice(0, time_durations_labels.length);
+                    // Add new values
+                    pull_request_closing_times_histogram.options.scales.x.labels = time_durations_labels;
+
+
+                    
+
+                    pull_request_closing_times_histogram.update();  
+                  } 
+                );
+                  
+              };
+              // const repo_name_arg_1 = "firedancer-io/firedancer";
+              // // const repo_name_arg_2 = "microsoft/winget-pkgs";
+              // const repo_name_arg_2 = "kernitus/BukkitOldCombatMechanics";
+              // create_pull_request_closing_times_histogram(repo_name_arg_1, repo_name_arg_2);
+
+              // initialize_create_pull_request_closing_times_histogram_upon_page_render("microsoft/winget-pkgs", 
+              //     "facebook/react")
+              create_pull_request_closing_times_histogram("UTSAVS26/PyVerse", 
+                  "eosnetworkfoundation/silkworm")
+            </script>
+
+
+          </div>
+          <div class="card-body mt-4">
+            <h6 class="mb-0 ">Average closing times of pull-requests in Github</h6>
+            <p class="text-sm ">From github events in December 2024</p>
+            <hr class="dark horizontal">
+            <div class="d-flex">
+              <i class="material-icons text-sm my-auto me-1">schedule</i>
+              <p class="mb-0 text-sm">December 2024</p>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    
+
+      <!-- Histogram for issues closing times-->
+      <div class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="chart-container">
+            <script src="/static/assets/js/plugins/chartjs.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+              integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+              crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>      
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+                  <canvas id="issue_closing_times_histogram" class="chart-canvas" height="400"></canvas>
+              </div>
+            </div>
+            
+            <script>
+                
+
+
+              let repo_1_selected = null;
+              let repo_2_selected = null; 
+              
+              function update_label(label_to_mirror, repo_selected){
+                var selected_repo_mirror = document.getElementById(label_to_mirror);
+                selected_repo_mirror.textContent = "Selected repo: '" + repo_selected + "'";                  
+              }
+
+              
+              
+
+              document.querySelector("#repo_selection_search_box_repo_1 input").addEventListener(
+                  "keydown", function() {
+                    if (event.key == "Enter") {
+                      repo_1_selected = this.value;
+                      update_label("selected_repo_mirror_repo_1", repo_1_selected);
+                      check_and_create_pull_request_closing_times_histogram();
+                      check_and_create_issue_closing_times_histogram();
+                    }
+                
+              })
+              document.querySelector("#repo_selection_search_box_repo_2 input").addEventListener(
+                  "keydown", function() {
+                    if (event.key == "Enter") {
+                      repo_2_selected = this.value;
+                      update_label("selected_repo_mirror_repo_2", repo_2_selected);
+                      check_and_create_pull_request_closing_times_histogram();
+                      check_and_create_issue_closing_times_histogram();
+                    }
+                
+              })
+
+              // const repo_name_arg_1 = "firedancer-io/firedancer";
+              // const repo_name_arg_2 = "microsoft/winget-pkgs";
+
+              function check_and_create_pull_request_closing_times_histogram() {
+                  
+                if (repo_1_selected && repo_2_selected) {
+
+                    console.log("Creating pull-requests closing times histogram including repos:")
+                    console.log(repo_1_selected);
+                    console.log(repo_2_selected);  
+                    create_pull_request_closing_times_histogram(repo_1_selected, repo_2_selected);
+                }
+              }
+
+              // function initialize_create_pull_request_closing_times_histogram_upon_page_render() {
+              //   let repo_1_preselected = 'UTSAVS26/PyVerse';
+              //   let repo_2_preselected = 'eosnetworkfoundation/silkworm';
+
+              //   // let repo_1_preselected = 'microsoft/winget-pkgs';
+              //   // let repo_2_preselected = 'facebook/react';
+
+              //   document.addEventListener("DOMContentLoaded", () => {
+              //     create_pull_request_closing_times_histogram(repo_1_preselected, repo_2_preselected);
+              //   });
+              // }
+
+
+              function check_and_create_issue_closing_times_histogram() {
+                  if (repo_1_selected && repo_2_selected) {
+                    // Remove existing datasets from the graph
+                    pull_request_closing_times_histogram.data.datasets.splice(0, 
+                        pull_request_closing_times_histogram.data.datasets.length);
+                  
+                    // Remove existing datasets from the graph
+                    issue_closing_times_histogram.data.datasets.splice(0, 
+                      issue_closing_times_histogram.data.datasets.length);
+                  
+
+                    console.log("Creating issue closing times histogram including repos:")
+                    console.log(repo_1_selected);
+                    console.log(repo_2_selected);  
+                    create_issue_closing_times_histogram(repo_1_selected, repo_2_selected);
+                  }
+                }
+              // check_and_create_pull_request_closing_times_histogram();
+                
+            </script>
+
+
+            <script>
+              // Stacked bar chart bins
+              var issue_closing_times_histogram_ctx = 
+                  document.getElementById("issue_closing_times_histogram").getContext("2d");
+              
+              var issue_closing_times_histogram = new Chart(issue_closing_times_histogram_ctx, {
+                type: "bar",
+                data: {
+                  datasets: [
+                  //   {
+                  //   label: "Pull_request_closing_times_of_specific_repo",
+                  //   tension: 0,
+                  //   order: 2,
+                  //   pointRadius: 5,
+                  //   // pointBackgroundColor: "rgba(255, 255, 255, .8)",
+                  //   pointBackgroundColor: '#dfdb12',
+                  //   pointBorderColor: "transparent",
+                  //   borderColor: "#dfdb12",
+                  //   borderWidth: 4,
+                  //   backgroundColor: "transparent",
+                  //   // backgroundColor: "#c00000",
+                  //   fill: true,
+                  //   // data: [50, 40, 300, 220, 100, 250, 400, 230, 50, 20],
+                  //   data: [
+                  //   {x: 2.9684308627201803, y: 20945},  
+                  //   // {x: 3, y: 20945},
+                  //   ],
+                  //   // maxBarThickness: 100
+                  //   borderWidth: 1,
+                  //   barPercentage: 1,
+                  //   categoryPercentage: 0.1
+
+                  // }
+                  ]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      maxHeight: 1000,
+                      labels: {
+                        color: '#ffffff',
+                        font: {
+                          size: 20
+                        },
+                        // padding: 10
+                      },
+                    },
+                    title: {
+                        display: false,
+                        text: 'Histogram title'
+                    }
+                  },
+                  interaction: {
+                    intersect: false,
+                    mode: 'index',
+                  },
+                  scales: {
+                    y: {
+                      grid: {
+                        drawBorder: false,
+                        display: true,
+                        drawOnChartArea: true,
+                        drawTicks: false,
+                        borderDash: [5, 5],
+                        color: 'rgba(255, 255, 255, .2)'
+                      },
+                      ticks: {
+                        display: true,
+                        padding: 10,
+                        color: '#f8f9fa',
+                        font: {
+                          size: 14,
+                          // size: 20,
+                          weight: 300,
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        },
+                        max: 4,
+                        autoSkip: false
+
+                      },
+                      title: {
+                        display: true,
+                        padding: 10,
+                        text: 'Number of repos',
+                        font: {
+                          size: 20,
+                          weight: 'bold',
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        }
+                      }
+                    },
+                    x5: {
+                      position: 'bottom',
+                      // type: 'linear',
+
+                      min: 0,
+                      type: 'category',
+                      labels: ['', '', '', '', '', '', '', '', '', '', ''],
+                      stacked: true,
+                      // position: 'bottom',
+                      offset: true,
+                      grid: {
+                        drawBorder: false,
+                        display: false,
+                        drawOnChartArea: false,
+                        drawTicks: false,
+                        borderDash: [5, 5]
+                      },
+                      ticks: {
+                        beginAtZero: true,
+                        display: true,
+                        color: '#f8f9fa',
+                        padding: 10,
+                        // stepsize: 3,
+                        font: {
+                          size: 14,
+                          weight: 300,
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        },
+                        min: 0,
+                        max: 10,
+                        stepsize: 1
+                      },
+                      title: {
+                        display: true,
+                        text: 'Issue closing times (log scale)',
+                        font: {
+                          // size: 14,
+                          size: 20,
+                          weight: 'bold',
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2,
+                          color: '#f8f9fa',
+                        },
+                      }
+                    },
+                    },
+                }});
+
+              
+              function create_issue_closing_times_histogram(repo_name_1, repo_name_2){
+                const data_url = 
+                  'http://localhost:3200/deep_insights_issues/issues_closing_times/' + repo_name_1
+                  + '/vs/' + repo_name_2;
+                
+                
+                //  Create the html_body of the table
+                fetch(data_url)
+                  .then(response => response.json())
+                  .then(data => {          
+
+                    const binCenters = data["bin_centers_in_seconds"];
+                    const absFrequencies = data["abs_frequencies"];
+                    const chartData = binCenters.map((center, index) => ({
+                      x: center,
+                      y: absFrequencies[index]
+                    }));
+
+                    const issues_histogram_dataset = {
+                      label: "All repos",
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color,
+                      borderColor: hist_distribution_color,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: chartData,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 1
+                    };
+                    
+                    // const repo_name_1 = data["repo_name_1"]
+                    const frequencies_of_bins_repo_1 = 
+                        data["bin_of_average_issue_closing_time_of_repo_1"];
+                    const repo1Data = binCenters.map((center, index) => ({
+                      x: center,
+                      y: frequencies_of_bins_repo_1[index]
+                    }));
+
+                    const average_issue_times_dataset_repo_1 = {
+                      label: "Repo 1: " + repo_name_1,
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color_3,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color_3,
+                      borderColor: hist_distribution_color_3,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: repo1Data,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 0.1
+                    };
+
+                    const frequencies_of_bins_repo_2 = 
+                        data["bin_of_average_issue_closing_time_of_repo_2"];
+                    const repo2Data = binCenters.map((center, index) => ({
+                      x: center,
+                      y: frequencies_of_bins_repo_2[index]
+                    }));
+                    
+                    
+                    // const repo_name_2 = data["repo_name_2"]
+                    
+                    const average_issue_times_dataset_repo_2 = {
+                      label: "Repo 2: " + repo_name_2,
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color_2,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color_2,
+                      borderColor: hist_distribution_color_2,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: repo2Data,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 0.1
+                    };
+
+
+                    // console.log("Bin centers: ", data["bin_centers_log_transformed"])
+                    // console.log("Absolute frequencies: ", data["abs_frequencies"])
+                    // console.log("Repo 1 bins: ", data["bin_of_average_issue_closing_time_of_repo_1"])
+                    // console.log("Repo 2 bins: ", data["bin_of_average_issue_closing_time_of_repo_2"])
+
+                    // Update 
+                    issue_closing_times_histogram.data.
+                        datasets.push(issues_histogram_dataset);
+                    issue_closing_times_histogram.data.
+                        datasets.push(average_issue_times_dataset_repo_1);
+                    issue_closing_times_histogram.data.
+                        datasets.push(average_issue_times_dataset_repo_2);
+                    
+
+
+                    
+
+                    // // Remove existing x values
+                    // issue_closing_times_histogram.options.scales.x5.labels.splice(0, binCenters.length);
+                    // // Add new values
+                    // issue_closing_times_histogram.options.scales.x5.labels = binCenters;
+
+
+                    
+                    // e.g. 2 year(s), 4 month(s)
+                    // TODO: Turn the seconds into larger duration strings to have as labels on the bins
+                    // Create labels
+                    let time_durations_labels = [];
+                    let time_duration_dict;
+                    
+                    for (let i = 0; i < binCenters.length; i++){
+                      time_duration_dict = seconds_to_larger_time_durations(binCenters[i]);
+                      time_durations_labels[i] = stringify_time_dict(time_duration_dict);
+                    }
+
+                    console.log("Issue closing times labels: " + time_durations_labels);
+
+
+                    // Remove existing x values
+                    issue_closing_times_histogram.options.scales.x5.labels.splice(0, time_durations_labels.length);
+                    // Add new values
+                    issue_closing_times_histogram.options.scales.x5.labels = time_durations_labels;
+
+
+                    issue_closing_times_histogram.update();  
+                  } 
+                );
+                  
+              };
+              
+              // const repo_name_arg_1 = "firedancer-io/firedancer";
+              // const repo_name_arg_2 = "microsoft/winget-pkgs";
+              // const repo_name_arg_2 = "kernitus/BukkitOldCombatMechanics";
+              create_issue_closing_times_histogram("UTSAVS26/PyVerse", 
+                  "eosnetworkfoundation/silkworm");
+            </script>
+
+
+          </div>
+          <div class="card-body mt-4">
+            <h6 class="mb-0 ">Average closing times of issues in Github</h6>
+            <p class="text-sm ">From github events in December 2024</p>
+            <hr class="dark horizontal">
+            <div class="d-flex">
+              <i class="material-icons text-sm my-auto me-1">schedule</i>
+              <p class="mb-0 text-sm">December 2024</p>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+
+      
+
+
+    </div>
+
+
+
+
+
+
+
+    <!-- Deep Insights issues, comparison of repos  -->
+    <div class="row">
+      <div class="col-lg-5 col-md-12">
+      <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
+        <div class="card">
+          <div class="card-header card-header-warning">
+            <h3 class="card-title">Deep Insights, comparison of repos</h4>
+            <p>Based on Github events on December 2024</p>
+          </div>
+        </div>
+      </div> 
+    </div>
+
+    <!-- Closing times of pull-requests and issues -->
+    <div class="row mt-4">
+      <div class="col-lg-5 col-md-12">
+      <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
+        <div class="card">
+          <div class="card-header card-header-warning">
+            <h4 class="card-title">Closing times of pull-requests and issues </h4>
+          </div>
+        </div>
+      </div> 
+    </div>
+
+
+
+    <!-- Select repo, get the closing times of issues per label -->
+
+    <!-- Top contributors in 2024 -->
+    <div class="row mt-4">
+      <div class="col-lg-5 col-md-12">
+      <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
+        <div class="card">
+          <div class="card-header card-header-warning">
+            <h4 class="card-title">Issues analysis</h4>
+          </div>
+        </div>
+      </div> 
+    </div>
+
+    <!-- Select repo and show its top contributors -->
+    
+    <div class="row mb-4">
+      <!-- Select repo  -->  
+      <div class="col-lg-4 col-md-6 mt-4"  style="flex: 0 0 auto; max-height: 100px">
+        <div class="card h-100">
+          <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
+            <!-- <h5>Selected month</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
+            <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+            
+            <div class="ms-md-auto pe-md-3 d-flex align-items-center">
+              <div id="select_repo_to_get_issue_closing_times_per_labels" 
+                    class="input-group input-group-outline">
+                <label class="form-label">e.g. openssl/openssl</label>
+                <input type="text" class="form-control">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+
+      <!-- Selected repo's top contributing users -->
+      <div class="col-lg-6 col-md-12 mt-4">
+        <div class="card h-100">
+          <div class="card-header card-header-warning">
+            <h5 class="card-title">Average issue closing times by label</h5>
+            <p id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">- - -</span></p>
+          </div>
+          <div class="card-body table-responsive">
+            <table id="issue_closing_times_by_label" class="table table-hover">
+            </table>
+          </div>
+        </div>
+      </div>
+
+      
+      <script>
+        function create_ranking_table_of_closing_issues_per_label_html_body(element_id_to_assign_hmtl_onto, 
+          data_url, html_head, second_col, third_col, fourth_col
+        ) {
+          /*
+          Creates the table contents (html_body)
+          second_col: represents the 'winners' e.g most starred repos
+          third_col: represents the winners' performances e.g 459 stars 
+          
+          returns the html combining the head and the body of the table
+          */
+
+          var html_body_inside = `<tbody>`
+
+          //  Create the html_body of the table
+          fetch(data_url)
+            .then(response => response.json())
+            .then(data => {
+              
+              let days = null;
+              let hours = null;
+              let minutes = null;
+              let seconds = null;
+              let days_hours_mins_secs = null;
+              
+              const closing_times_per_label = data["closing_times_per_label"]
+              for (let data_index = 0; data_index < closing_times_per_label.length; data_index++){
+              
+
+                var largest_two_durations = 
+                    closing_times_per_label[data_index]['average_closing_time_formatted']
+                
+                var largest_two_durations_formatted = ''
+                
+                for (const [key, value] of Object.entries(
+                        largest_two_durations))
+                  largest_two_durations_formatted = 
+                      largest_two_durations_formatted + value + ' ' + key + ', '
+
+                largest_two_durations_formatted = largest_two_durations_formatted.slice(',', -2)
+                
+
+
+                html_body_inside = html_body_inside 
+                  + `<tr>`
+                  + `<td>${data_index+1}</td>`
+                  + `<td>${closing_times_per_label[data_index][second_col]}</td>`
+                  + `<td>${closing_times_per_label[data_index][third_col]}</td>`
+                  + `<td>${largest_two_durations_formatted}</td>`
+                  + `</tr>`
+              }
+              html_body_inside = html_body_inside + `</tbody>`;
+              
+              document.getElementById(element_id_to_assign_hmtl_onto).innerHTML = 
+                html_head + html_body_inside;    
+              // console.log(data)
+            }
+            );
+
+        }
+
+        function update_issue_closing_time_by_label_table(repo_selected){
+          // Arguments to create the table
+          var table_html_id = "issue_closing_times_by_label"
+          // Get the data URL 
+          let data_url = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' 
+                              + repo_selected;
+          var html_head = `<thead class="text-warning">
+                            <tr>
+                              <th>Place</th>
+                              <th>Issue label</th>
+                              <th>Count</th>
+                              <th>Average issue closing times</th>
+                            </tr>
+                          </thead>`
+          var second_column_name = 'issue_label'
+          var third_column_name = 'number_of_issues_with_this_label'
+          var fourth_column_name = 'average_closing_time_formatted'
+
+          // Create the table
+          create_ranking_table_of_closing_issues_per_label_html_body(table_html_id, data_url, html_head, 
+            second_column_name, third_column_name, fourth_column_name);
+          
+        }
+
+        function update_mirror_of_selected_repo_for_issue_closing_times(label_to_mirror, repo_selected){
+                    var selected_repo_mirror = document.getElementById(label_to_mirror);
+                    selected_repo_mirror.textContent = "of selected repo: '" + repo_selected + "'";                  
+                  }
+
+        let repo_selected = null;
+        document.querySelector("#select_repo_to_get_issue_closing_times_per_labels input").addEventListener(
+            "keydown", function() {
+              if (event.key == "Enter") {
+                repo_selected = this.value;
+                console.log(repo_selected)
+                update_issue_closing_time_by_label_table(repo_selected);
+                update_mirror_of_selected_repo_for_issue_closing_times(
+                  "closing_time_by_label_repo_mirror", repo_selected)
+                getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_selected; 
+              }
+        })
+      </script>
+
+      <!-- Preselect a repo to show upon render of the page -->
+      <script>
+        const repo_whose_issue_closing_times_to_get = "Expensify/App";
+        update_issue_closing_time_by_label_table(repo_whose_issue_closing_times_to_get);
+        document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
+      </script>
+
+      
+
+    </div>
+
   </div>
-
-
 
 {% endblock content %}
 
