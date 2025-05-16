@@ -530,127 +530,6 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
             <script>
 
               function updateNumberOfGithubEventsChart(day_selected) {
-                
-                var options_accepted_rates_percentage_for_pie_chart = {
-                  series: [
-                    {
-                      name: "Accepted",
-                      data: [91, 40],
-                    },
-                    {
-                      name: "Rejected",
-                      data: [25, 32],
-                    },
-                  ],
-                  chart: {
-                    type: "bar",
-                    height: 450,
-                    offsetX: 50,
-                    width: "95%", // optional, to make room
-                  },
-                  legend: {
-                    position: "bottom",
-                    horizontalAlign: "right",
-                    offsetX: 20,
-                    offsetY: 20,
-                    fontSize: "20px",
-                    labels: {
-                      colors: ["#ffffff", "#ffffff"],
-                    },
-                    itemMargin: {
-                      horizontal: 20,
-                      vertical: 0,
-                    },
-                  },
-
-                  title: {
-                    text: "Pull request rates",
-                    align: "center",
-                    margin: 50,
-                    style: {
-                      fontSize: "30px",
-                      fontWeight: "bold",
-                      fontFamily: undefined,
-                      color: "#ffffff",
-                    },
-                  },
-
-                  plotOptions: {
-                    bar: {
-                      horizontal: false,
-                      columnWidth: "55%",
-                      borderRadius: 5,
-                      borderRadiusApplication: "end",
-                      dataLabels: {
-                        position: "top",
-                      },
-                    },
-                  },
-                  dataLabels: {
-                    enabled: true,
-                    offsetY: -30,
-                    style: {
-                      fontSize: "20px",
-                      colors: ["#fff"],
-                    },
-                    formatter: function (val) {
-                      return val + "%"
-                    },
-                  },
-                  stroke: {
-                    show: true,
-                    width: 2,
-                    colors: ["transparent"],
-                  },
-                  xaxis: {
-                    categories: ["Humans", "Bots"],
-                    labels: {
-                      style: {
-                        fontWeight: "bold",
-                        fontSize: "20px",
-                        fontFamily: undefined,
-                        colors: ["#ffffff", "#ffffff"],
-                      },
-                    },
-                  },
-                  yaxis: {
-                    min: 0,
-                    max: 100,
-                    title: {
-                      text: "Pull requests accepted percentage",
-                      style: {
-                        fontWeight: "bold",
-                        fontSize: "20px",
-                        fontFamily: undefined,
-                        color: "#ffffff",
-                      },
-                      offsetX: -10,
-                    },
-                    labels: {
-                      style: {
-                        fontWeight: "bold",
-                        fontFamily: undefined,
-                        colors: ["#ffffff"],
-                      },
-                    },
-                  },
-                  grid: {
-                    padding: {
-                      left: 20,
-                    },
-                  },
-                  fill: {
-                    opacity: 1,
-                  },
-                  tooltip: {
-                    y: {
-                      formatter: function (val) {
-                        return val + " %";
-                      },
-                    },
-                  },
-                }
-
 
                 var percentage_of_events_pie_chart_options = {
                   title: {
@@ -678,7 +557,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                       vertical: 0
                     },
                   },
-                  series: [22410, 77590],
+                  series: [77590, 77590],
                   labels: ['Created by humans', 'Created by bots'],
                   dataLabels: {
                     enabled: true,
@@ -707,16 +586,14 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                   .then(data => {
                     const total_number_of_events_by_humans = data["humans"]["total_number_of_events"];
                     const total_number_of_events_by_bots = data["bots"]["total_number_of_events"];
-                    const fetchedNumberOfEvents = {
-                      series: [total_number_of_events_by_humans, total_number_of_events_by_bots]
-                    };
-
-                    console.log("total_number_of_events_by_humans: " + total_number_of_events_by_humans);
-                    console.log("total_number_of_events_by_bots: " + total_number_of_events_by_bots);
-                    console.log("fetchedNumberOfEvents.series: " + fetchedNumberOfEvents.series)
-
-                    percentage_of_events_pie_chart.updateOptions(fetchedNumberOfEvents);
                     
+                    // Destroy and then re-render the chart for faster re-render. 
+                    // as using only percentage_of_events_pie_chart.updateOptions() renders too slow or not at all
+                    percentage_of_events_pie_chart.destroy();
+                    percentage_of_events_pie_chart_options.series = [total_number_of_events_by_humans, total_number_of_events_by_bots];
+                    percentage_of_events_pie_chart = new ApexCharts(document.querySelector("#percentage_of_events_pie_chart_id"), percentage_of_events_pie_chart_options);
+                    percentage_of_events_pie_chart.render()
+
                   }) 
               };
               
@@ -766,8 +643,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
 
         
             <script>
-
-              function update_toggling_pull_requests_chart(day_selected) {
+              function update_toggling_pull_requests_chart_backup(day_selected) {
                 
 
                 var options_accepted_rates_percentage = {
@@ -1096,6 +972,337 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                 };
               
               }
+            
+              function update_toggling_pull_requests_chart(day_selected) {
+                
+
+                var options_accepted_rates_percentage = {
+                  series: [
+                    {
+                      name: "Created by humans",
+                      data: [91, 40],
+                    },
+                    {
+                      name: "Created by humans",
+                      data: [25, 32],
+                    },
+                  ],
+                  chart: {
+                    type: "bar",
+                    height: 450,
+                    offsetX: 50,
+                    width: "95%", // optional, to make room
+                  },
+                  legend: {
+                    position: "bottom",
+                    horizontalAlign: "right",
+                    offsetX: 20,
+                    offsetY: 20,
+                    fontSize: "20px",
+                    labels: {
+                      colors: ["#ffffff", "#ffffff"],
+                    },
+                    itemMargin: {
+                      horizontal: 20,
+                      vertical: 0,
+                    },
+                  },
+
+                  title: {
+                    text: "Pull request rates",
+                    align: "center",
+                    margin: 50,
+                    style: {
+                      fontSize: "30px",
+                      fontWeight: "bold",
+                      fontFamily: undefined,
+                      color: "#ffffff",
+                    },
+                  },
+
+                  plotOptions: {
+                    bar: {
+                      horizontal: false,
+                      columnWidth: "55%",
+                      borderRadius: 5,
+                      borderRadiusApplication: "end",
+                      dataLabels: {
+                        position: "top",
+                      },
+                    },
+                  },
+                  dataLabels: {
+                    enabled: true,
+                    offsetY: -30,
+                    style: {
+                      fontSize: "20px",
+                      colors: ["#fff"],
+                    },
+                    formatter: function (val) {
+                      return val + "%"
+                    },
+                  },
+                  stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ["transparent"],
+                  },
+                  xaxis: {
+                    categories: ["Accepted", "Rejected"],
+                    labels: {
+                      style: {
+                        fontWeight: "bold",
+                        fontSize: "20px",
+                        fontFamily: undefined,
+                        colors: ["#ffffff", "#ffffff"],
+                      },
+                    },
+                  },
+                  yaxis: {
+                    min: 0,
+                    max: 100,
+                    title: {
+                      text: "Pull requests accepted percentage",
+                      style: {
+                        fontWeight: "bold",
+                        fontSize: "20px",
+                        fontFamily: undefined,
+                        color: "#ffffff",
+                      },
+                      offsetX: -10,
+                    },
+                    labels: {
+                      style: {
+                        fontWeight: "bold",
+                        fontFamily: undefined,
+                        colors: ["#ffffff"],
+                      },
+                    },
+                  },
+                  grid: {
+                    padding: {
+                      left: 20,
+                    },
+                  },
+                  fill: {
+                    opacity: 1,
+                  },
+                  tooltip: {
+                    y: {
+                      formatter: function (val) {
+                        return val + " %";
+                      },
+                    },
+                  },
+                }
+
+                var options_accepted_rates_absolute = {
+                  series: [
+                    {
+                      name: "Created by humans",
+                      data: [11111, 22000],
+                    },
+                    {
+                      name: "Created by bots",
+                      data: [2321, 7624],
+                    },
+                  ],
+                  chart: {
+                    type: "bar",
+                    height: 450,
+                    offsetX: 50,
+                    width: "95%"
+                  },
+                  legend: {
+                    position: "bottom",
+                    horizontalAlign: "right",
+                    offsetX: 20,
+                    offsetY: 20,
+                    fontSize: "20px",
+                    labels: {
+                      colors: ["#ffffff", "#ffffff"],
+                    },
+                    itemMargin: {
+                      horizontal: 20,
+                      vertical: 0,
+                    },
+                  },
+                  title: {
+                    text: 'Pull requests',
+                    align: 'center',
+                    margin: 50,
+                    style: {
+                      fontSize: "30px",
+                      fontWeight: 'bold',
+                      fontFamily: undefined,
+                      color: '#ffffff'
+                    },
+
+                  },
+                  plotOptions: {
+                    bar: {
+                      horizontal: false,
+                      columnWidth: "55%",
+                      borderRadius: 5,
+                      borderRadiusApplication: "end",
+                      dataLabels: {
+                        position: "top",
+                      },
+                    },
+                  },
+                  dataLabels: {
+                    enabled: true,
+                    offsetY: -30,
+                    style: {
+                      fontSize: "20px",
+                      colors: ['#ffffff']
+                    },
+                    formatter: function (val) {
+                      return val;
+                    },
+                  },
+                  stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ["transparent"],
+                  },
+                  xaxis: {
+                    categories: ["Accepted", "Rejected"],
+                    labels: {
+                      style: {
+                        fontWeight: 'bold',
+                        fontSize: "20px",
+                        fontFamily: undefined,
+                        colors: ['#ffffff', '#ffffff']
+                      },
+                    }
+
+                  },
+                  yaxis:
+                  {
+                    min: 0,
+                    title: {
+                      text: "Number of pull requests",
+                      style: {
+                        fontWeight: 'bold',
+                        fontSize: "20px",
+                        fontFamily: undefined,
+                        color: '#ffffff'
+                      },
+                      offsetX: -10,
+                    },
+                    labels: {
+                      style: {
+                        fontWeight: "bold",
+                        fontFamily: undefined,
+                        colors: ["#ffffff"],
+                      },
+
+                    },
+                  },
+                  grid: {
+                    padding: {
+                      left: 20,
+                    },
+                  },
+                  fill: {
+                    opacity: 1,
+                  },
+                  tooltip: {
+                    y: {
+                      formatter: function (val) {
+                        return val;
+                      },
+                    },
+                  },
+                };
+
+
+                var chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_chart"), options_accepted_rates_percentage);
+                getPullRequestsRates(day_selected);
+                chart_2.render();
+
+                function toggleChart() {
+                  document.getElementById('switchbox_V2VVB').addEventListener('click', function () {
+
+                    if (chart_2.w.config.title.text == options_accepted_rates_percentage.title.text) {
+                      chart_2.destroy();
+                      chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_chart"), options_accepted_rates_absolute);
+                      getPullRequests(day_selected);
+                      chart_2.render();
+
+
+                    } else if (chart_2.w.config.title.text == options_accepted_rates_absolute.title.text) {
+                      chart_2.destroy();
+                      chart_2 = new ApexCharts(document.querySelector("#percentage_of_pull_requests_chart"), options_accepted_rates_percentage);
+                      getPullRequestsRates(day_selected);
+                      chart_2.render();
+                    }
+
+                  });
+                }
+                toggleChart();
+
+                function getPullRequests(day_selected) {
+                  var humanUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + day_selected;
+                  var botUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + day_selected;
+
+                  Promise.all([fetch(humanUrl), fetch(botUrl)])
+                    .then(responses => Promise.all(responses.map(res => res.json())))
+                    .then(([humanData, botData]) => {
+                      const fetchedPullRequests = {
+                        series: [
+                          {
+                            name: "Created by humans",
+                            data: [humanData.number_of_accepted_pull_requests, humanData.number_of_rejected_pull_requests]
+                          },
+                          {
+                            name: "Created by bots",
+                            data: [botData.number_of_accepted_pull_requests, botData.number_of_rejected_pull_requests]
+                          }
+                        ]
+                      };
+                      chart_2.updateOptions(fetchedPullRequests);
+                    });
+                };
+
+                function getPullRequestsRates(day_selected) {
+                  var humanUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + day_selected;
+                  var botUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + day_selected;
+
+                  Promise.all([fetch(humanUrl), fetch(botUrl)])
+                    .then(responses => Promise.all(responses.map(res => res.json())))
+                    .then(([humanData, botData]) => {
+                      
+                      humanAcceptedRate = humanData.number_of_accepted_pull_requests
+                        /(humanData.number_of_accepted_pull_requests + humanData.number_of_rejected_pull_requests)*100;
+                      humanAcceptedRateTwoDecimals = humanAcceptedRate.toFixed(2);
+                      humanRejectedRateTwoDecimals = (100 - humanAcceptedRateTwoDecimals).toFixed(2);
+
+                      botAcceptedRate = botData.number_of_accepted_pull_requests
+                        /(botData.number_of_accepted_pull_requests + botData.number_of_rejected_pull_requests)*100;
+                      botAcceptedRateTwoDecimals = botAcceptedRate.toFixed(2);
+                      botRejectedRateTwoDecimals = (100 - botAcceptedRateTwoDecimals).toFixed(2);
+
+
+                      const fetchedPullRequestsRates = {
+                        series: [
+                          {
+                            name: "Created by humans",
+                            data: [humanAcceptedRateTwoDecimals, humanRejectedRateTwoDecimals]
+                          },
+                          {
+                            name: "Created by bots",
+                            data: [botAcceptedRateTwoDecimals, botRejectedRateTwoDecimals]
+                          }
+                        ]
+                      };
+                      chart_2.updateOptions(fetchedPullRequestsRates);
+                    });
+                };
+              
+              }
+            
             </script>
 
     
