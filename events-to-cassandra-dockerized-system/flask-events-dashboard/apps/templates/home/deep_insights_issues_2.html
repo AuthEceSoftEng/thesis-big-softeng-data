@@ -123,17 +123,24 @@
               repos names and closing times in seconds -->
 
             <script>
-              var pull_requests_preselected_bar_heights_list = [34, 7, 20, 56, 23, 1, 50];
-              var sum_of_bar_heights = pull_requests_preselected_bar_heights_list.reduce((a, b) => a + b, 0);
+              // Preselected bar heights list
+              var pull_requests_bar_heights_list = [34, 7, 20, 56, 23, 1, 50];
+              var sum_of_bar_heights = pull_requests_bar_heights_list.reduce((a, b) => a + b, 0);
               
 
               var pull_requests_closing_times_bar_chart_options = {
+                    // series: [
+                    //   {
+                    //     name: "Number of pull requests based on their closing times duration",
+                    //     data: [3, 7, 20, 16, 23, 10, 5],
+                    //   },
+                      
+                    // ],
                     series: [
                       {
                         name: "Number of pull requests based on their closing times duration",
                         data: [3, 7, 20, 16, 23, 10, 5],
                       },
-                      
                     ],
                     chart: {
                       type: "bar",
@@ -194,7 +201,7 @@
                         offsetX: -30,
                         offsetY: -10
                       },
-                      categories: ["0 sec - 1 min", "1 min - 1 h", "1 h - 1 d", "1 d - 1 m", "1 m - 1 y", "1 y - 10 y", "10y - 12 y, 11 m"],
+                      categories: ["0 sec - 1 min", "1 min - 1 h", "1 h - 1 d", "1 d - 1 m", "1 m - 1 y", "1 y - 10 y", "10y - 12 y, 35 m"],
                       labels: {
                         rotate: -30,
                         hideOverlappingLabels: false,
@@ -292,11 +299,14 @@
                     // as using only percentage_of_events_pie_chart.updateOptions() renders too slow or not at all
                     pull_requests_closing_times_bar_chart.destroy();
                     
+                    pull_requests_bar_heights_list = data["abs_frequencies"]
+
                     
+                    pull_requests_closing_times_bar_chart_options.series[0].data = pull_requests_bar_heights_list
                     
-                    pull_requests_closing_times_bar_chart_options.series.data = data["abs_frequencies"];
-                    sum_of_bar_heights = pull_requests_closing_times_bar_chart_options.series.data.reduce((a, b) => a + b, 0);
-                    
+                    sum_of_bar_heights = pull_requests_bar_heights_list.reduce((a, b) => a + b, 0);
+                    console.log(sum_of_bar_heights)
+
                     pull_requests_closing_times_bar_chart_options.xaxis.categories = data["corresponding_bin_centers_labels"]
                     pull_requests_closing_times_bar_chart_options.annotations.points = [
                       {
@@ -614,7 +624,7 @@
                       offsetX: -30,
                       offsetY: -10
                     },
-                    categories: ["0 sec - 1 min", "1 min - 1 h", "1 h - 1 d", "1 d - 1 m", "1 m - 1 y", "1 y - 10 y", "10y - 12 y, 11 m"],
+                    categories: ["0 sec - 1 min", "1 min - 1 h", "1 h - 1 d", "1 d - 1 m", "1 m - 1 y", "1 y - 10 y", "10y - 12 y, 35 m"],
                     labels: {
                       rotate: -30,
                       hideOverlappingLabels: false,
