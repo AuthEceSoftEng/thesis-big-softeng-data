@@ -110,6 +110,17 @@
               </div>
             </div>
             
+            <!-- Dynamic pull requests chart -->
+
+            <!-- TODO: To render the plot:
+             Get bin edges in seconds, transform adjacent edges into the bin labels 
+             Get Absolute values, get the sum of them all to calculate the percentages 
+             Get the two repos closing times. Get the x of the bin for them to be assigned to and add to the bottom of the chart container
+             Update the graph given bin_edges, abs_frequencies, and annotations for the compared repos -->
+             <!-- You ll need to expose:
+              bin_edges in seconds
+              abs_frequencies
+              repos names and closing times in seconds -->
             <script>
               var pull_requests_closing_times_bar_chart_options = {
                   series: [
@@ -268,6 +279,167 @@
               var pull_requests_closing_times_bar_chart = new ApexCharts(document.querySelector("#pull_requests_closing_times_bar_chart_id"), pull_requests_closing_times_bar_chart_options);
               pull_requests_closing_times_bar_chart.render();
             </script>
+
+
+            <!-- Static  pull requests chart-->
+            <!-- <script>
+              var pull_requests_closing_times_bar_chart_options = {
+                  series: [
+                    {
+                      name: "Number of pull requests based on their closing times duration",
+                      data: [3, 7, 20, 16, 23, 10, 5],
+                    },
+                    
+                  ],
+                  chart: {
+                    type: "bar",
+                    height: 550,
+                    offsetX: 30,
+                    offsetY: 40,
+                    width: "95%", 
+                  },
+
+                  title: {
+                    text: "Number of pull requests based on their closing times duration",
+                    align: "center",
+                    margin: 30,
+                    offsetY: -20,
+                    style: {
+                      fontSize: "25px",
+                      fontWeight: "bold",
+                      fontFamily: undefined,
+                      color: "#ffffff",
+                    },
+                  },
+
+                  plotOptions: {
+                    bar: {
+                      horizontal: false,
+                      columnWidth: "55%",
+                      borderRadius: 5,
+                      borderRadiusApplication: "end",
+                      dataLabels: {
+                        position: "top",
+                      },
+                    },
+                  },
+                  dataLabels: {
+                    enabled: true,
+                    offsetY: -30,
+                    style: {
+                      fontSize: "20px",
+                      colors: ["#fff"],
+                    },
+                    formatter: function (val) {
+                      // Calculating percentage
+                      return (val/84*100).toFixed(2) + " %";
+                    },
+                  },
+                  stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ["transparent"],
+                  },
+                  xaxis: {
+                    title: {
+                      text: "Duration from opening to closing time",
+                      style: {
+                        fontWeight: "bold",
+                        fontSize: "20px",
+                        fontFamily: undefined,
+                        color: "#ffffff",
+                      },
+                      offsetX: -30,
+                      offsetY: -10
+                    },
+                    categories: ["0 sec - 1 min", "1 min - 1 h", "1 h - 1 d", "1 d - 1 m", "1 m - 1 y", "1 y - 10 y", "10y - 12 y, 11 m"],
+                    labels: {
+                      rotate: -30,
+                      hideOverlappingLabels: false,
+                      style: {
+                        fontWeight: "bold",
+                        fontSize: "15px",
+                        fontFamily: undefined,
+                        colors: "#ffffff",
+                      },
+                      offsetY: 10
+                    },
+                  },
+                  annotations: {
+                    points: [
+                      {
+                        x: '1 m - 1 y',
+                        seriesIndex: 0,
+                        label: {
+                          borderColor: '#775DD0',
+                          offsetY: -25,
+                          style: {
+                            fontWeight: "bold",
+                            fontSize: "15px",
+                            color: '#fff',
+                            background: '#208214',
+                          },
+                          text: 'user_1/repo_1',
+                        }
+                      },
+                      {
+                        x: '1 m - 1 y',
+                        seriesIndex: 0,
+                        label: {
+                          borderColor: '#775DD0',
+                          offsetY: 0,
+                          style: {
+                            fontWeight: "bold",
+                            fontSize: "15px",
+                            color: '#fff',
+                            background: '#821440',
+                          },
+                          text: 'user_2/repo_2'
+                        }
+                      },
+                    ]
+                  },
+                  yaxis: {
+                    // min: 0,
+                    max: 32,
+                    title: {
+                      text: "Number of pull requests",
+                      style: {
+                        fontWeight: "bold",
+                        fontSize: "20px",
+                        fontFamily: undefined,
+                        color: "#ffffff",
+                      },
+                      offsetX: -10,
+                    },
+                    labels: {
+                      style: {
+                        fontWeight: "bold",
+                        fontFamily: undefined,
+                        colors: ["#ffffff"],
+                      },
+                    },
+                  },
+                  grid: {
+                    padding: {
+                      left: 20,
+                    },
+                  },
+                  fill: {
+                    opacity: 1,
+                  },
+                  tooltip: {
+                    y: {
+                      formatter: function (val) {
+                        return val;
+                      },
+                    },
+                  },
+                }
+
+              var pull_requests_closing_times_bar_chart = new ApexCharts(document.querySelector("#pull_requests_closing_times_bar_chart_id"), pull_requests_closing_times_bar_chart_options);
+              pull_requests_closing_times_bar_chart.render();
+            </script> -->
 
 
 
@@ -475,7 +647,7 @@
             <h6 class="mb-0 ">Average closing times of issues in Github</h6>
             <p class="text-sm ">From github events in December 2024</p>
             
-            <h6 class="mb-0 ">user_1/repo_1: 0</h6>
+            <h6 class="mb-0 ">user_1/repo_1: 0 sec</h6>
             <h6 class="mb-0 ">user_2/repo_2: 6 m, 14 d</h6>
 
             <hr class="dark horizontal">
