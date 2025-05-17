@@ -1248,7 +1248,6 @@ def compare_pull_request_closing_times_bar_chart(repo_name_1, repo_name_2):
     
     
     histogram_name = 'pull_requests_closing_times_histogram_bar_chart'
-    closing_times_table_name = 'pull_request_closing_times'
     
     # Query histogram info (bin centers, edges and absolute frequencies) for the given histogram name if exists
     get_pull_requests_histogram_info = f"SELECT bin_centers, bin_edges, abs_frequencies "\
@@ -1399,7 +1398,7 @@ def compare_pull_request_closing_times_bar_chart(repo_name_1, repo_name_2):
         # Iterate through the ordered time dictionary
         for k, v, in time_dict.items():
             if time_dict[k] != 0:
-                time_dict_keep_largest_two_non_zero_durations[k] = v
+                time_dict_keep_largest_two_non_zero_durations[k] = int(v)
             # Keep only 2 of the values in the time period
             if len(time_dict_keep_largest_two_non_zero_durations.items()) == 2:
                 break
@@ -1425,71 +1424,74 @@ def compare_pull_request_closing_times_bar_chart(repo_name_1, repo_name_2):
         
         
     # TODO: Uncomment and change the functions
-    # def get_pull_requests_closing_times_of_repo(repo_name=str): 
-    #     keyspace = 'prod_gharchive'
-    #     prepared_query = f"SELECT "\
-    #         "opening_time, closing_time "\
-    #         f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name}';"    
+    def get_pull_requests_closing_times_of_repo(repo_name=str): 
+        keyspace = 'prod_gharchive'
+        prepared_query = f"SELECT "\
+            "opening_time, closing_time "\
+            f"FROM {keyspace}.pull_request_closing_times WHERE repo_name = '{repo_name}';"    
         
-    #     session = cluster.connect(keyspace)
-    #     rows = session.execute(prepared_query)
-    #     rows_list = rows.all()
-    #     # Keep only closed pull requests
-    #     rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+        session = cluster.connect(keyspace)
+        rows = session.execute(prepared_query)
+        rows_list = rows.all()
+        # Keep only closed pull requests
+        rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
         
         
-    #     pull_request_closing_times = []
-    #     for row in rows_list:
-    #         opening_time_of_row = getattr(row, 'opening_time')
-    #         closing_time_of_row = getattr(row, 'closing_time')
-    #         try:
-    #             opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-    #             closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
-    #             time_diff = closing_datetime - opening_datetime
-    #             closing_time_in_seconds = time_diff.total_seconds()
-    #             # Remove rows containing closing time values earlier than opening time values
-    #             if closing_time_in_seconds < 0:
-    #                 print(f"Repo name: {getattr(row, 'repo_name')}\n"
-    #                     f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-    #                     f"Closing time: {closing_datetime} is earlier than {opening_datetime}")    
-    #         except Exception as e:
-    #             print(f"Exception: {e}\n"
-    #                 f"Repo name: {getattr(row, 'repo_name')}\n"
-    #                 f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
-    #                 f"Opening time of row: {opening_time_of_row}\n"
-    #                 f"Closing time of row: {closing_time_of_row}\n")
+        pull_request_closing_times = []
+        for row in rows_list:
+            opening_time_of_row = getattr(row, 'opening_time')
+            closing_time_of_row = getattr(row, 'closing_time')
+            try:
+                opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                time_diff = closing_datetime - opening_datetime
+                closing_time_in_seconds = time_diff.total_seconds()
+                # Remove rows containing closing time values earlier than opening time values
+                if closing_time_in_seconds < 0:
+                    print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                        f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                        f"Closing time: {closing_datetime} is earlier than {opening_datetime}")    
+            except Exception as e:
+                print(f"Exception: {e}\n"
+                    f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Pull-request number: {getattr(row, 'pull_request_number')}\n"
+                    f"Opening time of row: {opening_time_of_row}\n"
+                    f"Closing time of row: {closing_time_of_row}\n")
             
-    #         pull_request_closing_times.append(closing_time_in_seconds)
-    #     return pull_request_closing_times
+            pull_request_closing_times.append(closing_time_in_seconds)
+        return pull_request_closing_times
     
-    # def get_bin_of_average_pull_request_closing_time_of_repo(pull_request_closing_times_of_repo, bin_centers, bin_edges, abs_frequencies):
-    #     """
-    #     Given the bin centers and the edges of all pull request closing times in the database, find the bin center where the average of the issue closing times of a repo lies
-    #     """
-    #     # Get and transform the average closing time of the repo
-    #     average_closing_time_of_repo_1_no_skew = np.log10(np.average(pull_request_closing_times_of_repo) + 1)
+    
         
-    #     # (0, 0, max_abs_frequency value, 0, ..., 0, 0) to make it so only bin that appears 
-    #     # is the one with the average pull-request closing time overlapping the existing distribution
-    #     bin_of_average_pull_request_closing_time_of_repo_1 = np.zeros((len(bin_centers)))
-    #     # # Create the dataset for the repo 1 containing only 1 non zero value
-    #     for bin_edge_index in range(len(bin_edges)-1):
-    #         if average_closing_time_of_repo_1_no_skew >= bin_edges[bin_edge_index] and \
-    #             average_closing_time_of_repo_1_no_skew < bin_edges[bin_edge_index+1]:
-    #             bin_of_average_pull_request_closing_time_of_repo_1[bin_edge_index] = \
-    #                 np.max(abs_frequencies)
-    #             # Once the interval in which the average closing time lies, break the loop
-    #             break
-    #     return bin_of_average_pull_request_closing_time_of_repo_1
-    
-    # pull_request_closing_times_of_repo_1 = get_pull_requests_closing_times_of_repo(repo_name_1)
-    # bin_of_average_pull_request_closing_time_of_repo_1 = \
-    #     get_bin_of_average_pull_request_closing_time_of_repo(pull_request_closing_times_of_repo_1, bin_centers, bin_edges, abs_frequencies)
+        
+    def get_bin_label_of_average_pull_request_closing_time_of_repo(average_pull_request_closing_time_of_repo, labels_of_bin_centers, bin_edges):
+        """
+        Given the bin centers and the edges of all pull request closing times in the database, find the bin center where the average of the issue closing times of a repo lies
+        """
+        # Create the dataset for the repo 1 containing only 1 non zero value
+        for bin_edge_index in range(len(bin_edges)-1):
+            if average_pull_request_closing_time_of_repo >= bin_edges[bin_edge_index] and \
+                average_pull_request_closing_time_of_repo < bin_edges[bin_edge_index+1]:
+                bin_label_of_average_pull_request_closing_time_of_repo = \
+                    labels_of_bin_centers[bin_edge_index]
+                # Once the interval in which the average closing time lies, break the loop
+                break
+        return bin_label_of_average_pull_request_closing_time_of_repo
     
     
-    # pull_request_closing_times_of_repo_2 = get_pull_requests_closing_times_of_repo(repo_name_2)
-    # bin_of_average_pull_request_closing_time_of_repo_2 = \
-    #     get_bin_of_average_pull_request_closing_time_of_repo(pull_request_closing_times_of_repo_2, bin_centers, bin_edges, abs_frequencies)
+    
+    pull_request_closing_times_of_repo_1 = get_pull_requests_closing_times_of_repo(repo_name_1)
+    average_closing_time_of_repo_1 = np.average(pull_request_closing_times_of_repo_1)
+    average_closing_time_of_repo_1_stringified = period_to_string(seconds_to_period(average_closing_time_of_repo_1))
+    bin_label_of_average_pull_request_closing_time_of_repo_1 = \
+        get_bin_label_of_average_pull_request_closing_time_of_repo(average_closing_time_of_repo_1, corresponding_bin_centers_labels, bin_edges)
+    
+    
+    pull_request_closing_times_of_repo_2 = get_pull_requests_closing_times_of_repo(repo_name_2)
+    average_closing_time_of_repo_2 = np.average(pull_request_closing_times_of_repo_2)
+    average_closing_time_of_repo_2_stringified = period_to_string(seconds_to_period(average_closing_time_of_repo_2))
+    bin_label_of_average_pull_request_closing_time_of_repo_2 = \
+        get_bin_label_of_average_pull_request_closing_time_of_repo(average_closing_time_of_repo_2, corresponding_bin_centers_labels, bin_edges)
     
     
     dict_to_be_exposed = {}
@@ -1499,15 +1501,15 @@ def compare_pull_request_closing_times_bar_chart(repo_name_1, repo_name_2):
     dict_to_be_exposed["abs_frequencies"] = abs_frequencies
         
     # TODO: Uncomment and get the repo data needed
-    # dict_to_be_exposed["repo_name_1"] = repo_name_1
-    # dict_to_be_exposed["average_pull_request_closing_time_of_repo_1_in_seconds"] # e.g: 3646
-    # dict_to_be_exposed["average_pull_request_closing_time_of_repo_1_stringified"] # e.g: 1 h, 46 sec
-    # dict_to_be_exposed["bin_center_label_of_average_pull_request_closing_time_of_repo_1"] # e.g '1 h - 1 d'
+    dict_to_be_exposed["repo_name_1"] = repo_name_1
+    dict_to_be_exposed["average_pull_request_closing_time_of_repo_1_in_seconds"] = average_closing_time_of_repo_1 # e.g: 3646
+    dict_to_be_exposed["average_pull_request_closing_time_of_repo_1_stringified"] = average_closing_time_of_repo_1_stringified # e.g: 1 h, 46 sec
+    dict_to_be_exposed["bin_center_label_of_average_pull_request_closing_time_of_repo_1"] = bin_label_of_average_pull_request_closing_time_of_repo_1 # e.g '1 h - 1 d'
     
-    # dict_to_be_exposed["repo_name_2"] = repo_name_2
-    # dict_to_be_exposed["average_pull_request_closing_time_of_repo_2_in_seconds"]
-    # dict_to_be_exposed["average_pull_request_closing_time_of_repo_2_stringified"]
-    # dict_to_be_exposed["bin_center_label_of_average_pull_request_closing_time_of_repo_2"]
+    dict_to_be_exposed["repo_name_2"] = repo_name_2
+    dict_to_be_exposed["average_pull_request_closing_time_of_repo_2_in_seconds"] = average_closing_time_of_repo_2
+    dict_to_be_exposed["average_pull_request_closing_time_of_repo_2_stringified"] = average_closing_time_of_repo_2_stringified
+    dict_to_be_exposed["bin_center_label_of_average_pull_request_closing_time_of_repo_2"] = bin_label_of_average_pull_request_closing_time_of_repo_2
     
     
     
@@ -1528,7 +1530,7 @@ def compare_pull_request_closing_times_bar_chart(repo_name_1, repo_name_2):
 
 
 
-# Expose number of stars per repo by month for all repos
+# (For chart.js) Expose issues closing times for all repos and the specific selected two repos
 @app.route('/deep_insights_issues/issues_closing_times/<path:repo_name_1>/vs/<path:repo_name_2>',
            methods=['GET'])
 def compare_issues_closing_times(repo_name_1, repo_name_2):
@@ -1569,7 +1571,7 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
         
         # Calculate the histogram values
         print(f"Bin centers, edges and absolute values of histogram '{histogram_name}' are not in table '{histogram_keyspace}.{histograms_table_name}'.\n"\
-            f"Calculating based on table {keyspace}.pull_requests_closing_times...")
+            f"Calculating based on table {keyspace}.issues_closing_times...")
         
         
         prepared_query = f"SELECT repo_name, issue_number, opening_time, closing_time "\
@@ -1731,6 +1733,326 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
     
     cluster.shutdown()
     return jsonify(dict_to_be_exposed)
+
+
+# (For apex charts) Expose issues closing times for all repos and the specific selected two repos
+@app.route('/deep_insights_issues/issues_closing_times_bar_chart/<path:repo_name_1>/vs/<path:repo_name_2>',
+           methods=['GET'])
+def compare_issue_closing_times_bar_chart(repo_name_1, repo_name_2):
+    """
+    Example JSON to be exposed:
+    
+    """
+    print("Get issues closing times from database:\n"
+        f"Repo 1: {repo_name_1}\n"
+        f"Repo 2: {repo_name_2}\n")
+    
+    
+    def create_histogram_keyspace(cassandra_host=str, cassandra_port=int, histogram_keyspace=str):
+        """
+        Create histogram keyspace if not exists in the database
+        """
+        cluster = Cluster([cassandra_host],port=cassandra_port)
+        session = cluster.connect()
+        create_histogram_keyspace_query = f"CREATE KEYSPACE IF NOT EXISTS {histogram_keyspace} "\
+            "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}" \
+            "AND durable_writes = true;"
+        session.execute(create_histogram_keyspace_query)
+        
+    def create_histograms_table(cassandra_host=str, cassandra_port=int, histogram_keyspace=str, histograms_table_name=str):
+        """
+        Create histogram table if not exists in the database
+        """
+        cluster = Cluster([cassandra_host],port=cassandra_port)
+        session = cluster.connect()
+        create_histograms_info_table_query = f"CREATE TABLE IF NOT EXISTS {histogram_keyspace}.{histograms_table_name} "\
+            "(histogram_name text, bin_centers list<double>, bin_edges list<double>, "\
+                "abs_frequencies list<double>, PRIMARY KEY (histogram_name));"
+        session.execute(create_histograms_info_table_query)
+        
+
+
+    # Create histograms keyspace and table 
+    cassandra_host = 'cassandra_stelios'
+    cassandra_port = 9142
+    histograms_keyspace = 'histograms'
+    create_histogram_keyspace(cassandra_host, cassandra_port, histograms_keyspace)
+    histograms_table_name = 'histograms_info'
+    create_histograms_table(cassandra_host, cassandra_port, histograms_keyspace, histograms_table_name)
+
+
+    
+    
+    histogram_name = 'issues_closing_times_histogram_bar_chart'
+    
+    # Query histogram info (bin centers, edges and absolute frequencies) for the given histogram name if exists
+    get_issues_histogram_info = f"SELECT bin_centers, bin_edges, abs_frequencies "\
+        f"FROM {histograms_keyspace}.{histograms_table_name} WHERE histogram_name = '{histogram_name}';"        
+    cluster = Cluster([cassandra_host],port=cassandra_port)
+    session = cluster.connect() 
+    row = session.execute(get_issues_histogram_info)
+    row_in_response = row.one()
+    
+    # Calculate histogram info (bin centers, edges and absolute frequencies) if its name was not found in the database (or if you want to recalculate it the process)
+    if row_in_response == None:
+        
+        # Query all repos closing times
+        keyspace = "prod_gharchive"
+        print(f"Bin centers, edges and absolute values of histogram '{histogram_name}' are not in table '{histograms_keyspace}.{histograms_table_name}'.\n"\
+            f"Calculating based on table {keyspace}.issue_closing_times...")
+        
+        def query_issues_closing_times(cassandra_host, cassandra_port):
+                """
+                Queries all issues closing times of all repos in table 'prod_gharchive.issue_closing_times' and returns them as a list
+                """
+                keyspace = "prod_gharchive"
+                prepared_query = f"SELECT repo_name, issue_number, opening_time, closing_time "\
+                    f" FROM {keyspace}.issue_closing_times;"    
+                
+                cluster = Cluster([cassandra_host],port=cassandra_port)
+                session = cluster.connect()    
+                rows = session.execute(prepared_query)
+                rows_list = rows.all()
+                # Keep only closed (with non None closing times) issues
+                rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+                closing_times_list = []
+                for row in rows_list:
+                    opening_time_of_row = getattr(row, 'opening_time')
+                    closing_time_of_row = getattr(row, 'closing_time')
+                    # Remove rows containing closing time values earlier than opening time values
+                    try:
+                        opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                        closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                        time_diff = closing_datetime - opening_datetime
+                        closing_time_in_seconds = time_diff.total_seconds()
+                        if closing_time_in_seconds < 0:
+                            print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                                f"Issue number: {getattr(row, 'issue_number')}\n"
+                                f'Closing time: {closing_datetime} is earlier than {opening_datetime}')
+                    except Exception as e:
+                        print(f"Exception: {e}"
+                            f"Repo name: {getattr(row, 'repo_name')}\n"
+                            f"Issue number: {getattr(row, 'issue_number')}\n"
+                            f"Opening time of row: {opening_time_of_row}\n"
+                            f"Closing time of row: {closing_time_of_row}\n")
+                                
+                    closing_times_list.append(closing_time_in_seconds)
+                
+                return closing_times_list
+            
+        closing_times_list = query_issues_closing_times(cassandra_host, cassandra_port)
+    
+    
+        # Select the bin edges
+        seconds_in_min = 60
+        seconds_in_hour = 60* seconds_in_min
+        seconds_in_day = 24* seconds_in_hour
+        seconds_in_month = 30* seconds_in_day
+        seconds_in_year = 365* seconds_in_day
+        bin_edges = [0, seconds_in_min, seconds_in_hour, seconds_in_day, seconds_in_month, seconds_in_year, 10*seconds_in_year]
+        # Far right bin should be the max between: max(bin_edges) and max(closing_times)
+        if max(bin_edges) < max(closing_times_list):
+            bin_edges.append(max(closing_times_list))
+
+
+        def calculate_histogram_info(bin_edges=list, closing_times_list=list):
+            """
+            Calculates histogram info (bin centers and absolute_values) given the bin_edges and the closing_times list.
+            The bin edges must be in seconds.
+            """
+            
+            # Calculate absolute frequencies
+            closing_times_list_for_histogram = np.array(closing_times_list)
+            abs_frequencies, _ = np.histogram(closing_times_list_for_histogram, 
+                                                    bins=bin_edges)
+            abs_frequencies = abs_frequencies.tolist()
+            
+            # Calculate bin centers
+            bin_centers = []
+            for bin_edge_index in range(len(bin_edges)-1):
+                bin_centers.append((bin_edges[bin_edge_index]+bin_edges[bin_edge_index+1])/2)    
+            print(f"Completed calculation of bin centers, bin edges and absolute values of histogram '{histogram_name}'\n"\
+                f"Bin centers: {bin_centers},\n"\
+                f"Bin edges: {bin_edges})\n"\
+                f"Absolute frequencies: {abs_frequencies}")
+            
+            return bin_centers, abs_frequencies
+    
+        bin_centers, abs_frequencies = calculate_histogram_info(bin_edges, closing_times_list)            
+            
+        def store_histogram_info_in_cassandra(cassandra_host, cassandra_port, histograms_keyspace, histograms_table_name, histogram_name, bin_centers, bin_edges, abs_frequencies):
+            
+            cluster = Cluster([cassandra_host],port=cassandra_port)
+            session = cluster.connect()    
+            # Insert bin centers, bin edges and absolute frequencies in cassandra
+            insert_histogram_info = f"INSERT INTO {histograms_keyspace}.{histograms_table_name} "\
+                f"(histogram_name, bin_centers, bin_edges, abs_frequencies) VALUES ('{histogram_name}', {bin_centers}, {bin_edges}, "\
+                    f"{abs_frequencies});"
+            session.execute(insert_histogram_info) 
+
+        store_histogram_info_in_cassandra(cassandra_host, cassandra_port, histograms_keyspace, histograms_table_name, histogram_name, bin_centers, bin_edges, abs_frequencies) 
+        
+    elif row_in_response != None:
+        bin_centers = getattr(row_in_response, 'bin_centers')
+        bin_edges = getattr(row_in_response, 'bin_edges')
+        abs_frequencies = getattr(row_in_response, 'abs_frequencies')
+        
+        print(f"Bin centers, bin edges and absolute frequencies of histogram '{histogram_name}' already exist in table {histograms_keyspace}.{histograms_table_name}\n")
+            
+    
+    
+    
+        
+
+    def seconds_to_period(num_of_seconds):
+        """
+        :param num_of_seconds: number of seconds to convert to higher time durations (years, months, etc)
+        :return time_dict_keep_largest_two_non_zero_durations: The first two largest time durations that the seconds are converted into:
+        
+        Example:
+        For input num_of_seconds = 168039959, we get 
+        output: time_dict_keep_largest_two_non_zero_durations = {'years': 5, 'months': 3}
+        """
+        seconds_in_a_year = 365*24*60*60
+        seconds_in_a_month = 30*24*60*60
+        seconds_in_a_day = 24*60*60
+        seconds_in_an_hour = 60*60
+        seconds_in_a_minute = 60
+
+        years, remaining_seconds = divmod(num_of_seconds, seconds_in_a_year)
+        months, remaining_seconds = divmod(remaining_seconds, seconds_in_a_month)
+        days, remaining_seconds = divmod(remaining_seconds, seconds_in_a_day)
+        hours, remaining_seconds = divmod(remaining_seconds, seconds_in_an_hour)
+        minutes, remaining_seconds = divmod(remaining_seconds, seconds_in_a_minute)
+        seconds = remaining_seconds
+
+        time_dict = {'year(s)': years, 'month(s)': months, 'day(s)':days, \
+            'hour(s)':hours, 'minute(s)':minutes, 'second(s)':seconds}
+
+        time_dict_keep_largest_two_non_zero_durations = {}
+
+        # Iterate through the ordered time dictionary
+        for k, v, in time_dict.items():
+            if time_dict[k] != 0:
+                time_dict_keep_largest_two_non_zero_durations[k] = int(v)
+            # Keep only 2 of the values in the time period
+            if len(time_dict_keep_largest_two_non_zero_durations.items()) == 2:
+                break
+        
+        if time_dict_keep_largest_two_non_zero_durations == {}:
+            return {'second(s)': 0}    
+        
+        return time_dict_keep_largest_two_non_zero_durations
+
+    def period_to_string(time_dict_keep_largest_two_non_zero_durations):
+        time_periods_to_abbrev_dict = {'year(s)': 'y', 'month(s)': 'm', 'day(s)': 'd', \
+                'hour(s)': 'h', 'minute(s)': 'min', 'second(s)': 'sec'}
+        time_dict_formatted = {time_periods_to_abbrev_dict[k]: v for k, v in time_dict_keep_largest_two_non_zero_durations.items()}
+        time_dict_formatted_list = ['{} {}'.format(v, k) for k, v in time_dict_formatted.items()]
+        time_dict_formatted_list_stringified = ', '.join(time_dict_formatted_list[0:])
+        return time_dict_formatted_list_stringified
+
+
+
+    selected_bin_edges_stringified = [period_to_string(seconds_to_period(bin_edges[i])) for i in range(len(bin_edges))]                                
+    corresponding_bin_centers_labels = ['{} - {}'.format(selected_bin_edges_stringified[i], selected_bin_edges_stringified[i+1]) for i in range(len(abs_frequencies))]
+
+        
+        
+    def get_issues_closing_times_of_repo(repo_name=str): 
+        keyspace = 'prod_gharchive'
+        prepared_query = f"SELECT "\
+            "opening_time, closing_time "\
+            f"FROM {keyspace}.issue_closing_times WHERE repo_name = '{repo_name}';"    
+        
+        session = cluster.connect(keyspace)
+        rows = session.execute(prepared_query)
+        rows_list = rows.all()
+        # Keep only closed issues
+        rows_list = [row for row in rows_list if getattr(row, 'closing_time') != None] 
+        
+        
+        issues_closing_times = []
+        for row in rows_list:
+            opening_time_of_row = getattr(row, 'opening_time')
+            closing_time_of_row = getattr(row, 'closing_time')
+            try:
+                opening_datetime = datetime.strptime(opening_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                closing_datetime = datetime.strptime(closing_time_of_row, '%Y-%m-%dT%H:%M:%SZ')
+                time_diff = closing_datetime - opening_datetime
+                closing_time_in_seconds = time_diff.total_seconds()
+                # Remove rows containing closing time values earlier than opening time values
+                if closing_time_in_seconds < 0:
+                    print(f"Repo name: {getattr(row, 'repo_name')}\n"
+                        f"Issue number: {getattr(row, 'issue_number')}\n"
+                        f"Closing time: {closing_datetime} is earlier than {opening_datetime}")    
+            except Exception as e:
+                print(f"Exception: {e}\n"
+                    f"Repo name: {getattr(row, 'repo_name')}\n"
+                    f"Issue number: {getattr(row, 'issue_number')}\n"
+                    f"Opening time of row: {opening_time_of_row}\n"
+                    f"Closing time of row: {closing_time_of_row}\n")
+            
+            issues_closing_times.append(closing_time_in_seconds)
+        return issues_closing_times
+    
+    
+        
+        
+    def get_bin_label_of_average_issue_closing_time_of_repo(average_issue_closing_time_of_repo, labels_of_bin_centers, bin_edges):
+        """
+        Given the bin centers and the edges of all issues closing times in the database, find the bin center where the average of the issues closing times of a repo lies
+        """
+        # Create the dataset for the repo 1 containing only 1 non zero value
+        for bin_edge_index in range(len(bin_edges)-1):
+            if average_issue_closing_time_of_repo >= bin_edges[bin_edge_index] and \
+                average_issue_closing_time_of_repo < bin_edges[bin_edge_index+1]:
+                bin_label_of_average_issues_closing_time_of_repo = \
+                    labels_of_bin_centers[bin_edge_index]
+                # Once the interval in which the average closing time lies, break the loop
+                break
+        return bin_label_of_average_issues_closing_time_of_repo
+    
+    
+    
+    issue_closing_times_of_repo_1 = get_issues_closing_times_of_repo(repo_name_1)
+    average_closing_time_of_repo_1 = np.average(issue_closing_times_of_repo_1)
+    average_closing_time_of_repo_1_stringified = period_to_string(seconds_to_period(average_closing_time_of_repo_1))
+    bin_label_of_average_issue_closing_time_of_repo_1 = \
+        get_bin_label_of_average_issue_closing_time_of_repo(average_closing_time_of_repo_1, corresponding_bin_centers_labels, bin_edges)
+    
+    
+    issue_closing_times_of_repo_2 = get_issues_closing_times_of_repo(repo_name_2)
+    average_closing_time_of_repo_2 = np.average(issue_closing_times_of_repo_2)
+    average_closing_time_of_repo_2_stringified = period_to_string(seconds_to_period(average_closing_time_of_repo_2))
+    bin_label_of_average_issue_closing_time_of_repo_2 = \
+        get_bin_label_of_average_issue_closing_time_of_repo(average_closing_time_of_repo_2, corresponding_bin_centers_labels, bin_edges)
+    
+    
+    dict_to_be_exposed = {}
+    dict_to_be_exposed["selected_bin_edges_in_seconds"] = bin_edges
+    dict_to_be_exposed["selected_bin_edges_stringified"] = selected_bin_edges_stringified
+    dict_to_be_exposed["corresponding_bin_centers_labels"] = corresponding_bin_centers_labels
+    dict_to_be_exposed["abs_frequencies"] = abs_frequencies
+        
+    dict_to_be_exposed["repo_name_1"] = repo_name_1
+    dict_to_be_exposed["average_issue_closing_time_of_repo_1_in_seconds"] = average_closing_time_of_repo_1 # e.g: 3646
+    dict_to_be_exposed["average_issue_closing_time_of_repo_1_stringified"] = average_closing_time_of_repo_1_stringified # e.g: 1 h, 46 sec
+    dict_to_be_exposed["bin_center_label_of_average_issue_closing_time_of_repo_1"] = bin_label_of_average_issue_closing_time_of_repo_1 # e.g '1 h - 1 d'
+    
+    dict_to_be_exposed["repo_name_2"] = repo_name_2
+    dict_to_be_exposed["average_issue_closing_time_of_repo_2_in_seconds"] = average_closing_time_of_repo_2
+    dict_to_be_exposed["average_issue_closing_time_of_repo_2_stringified"] = average_closing_time_of_repo_2_stringified
+    dict_to_be_exposed["bin_center_label_of_average_issue_closing_time_of_repo_2"] = bin_label_of_average_issue_closing_time_of_repo_2
+    
+    
+    cluster.shutdown()
+    
+    return jsonify(dict_to_be_exposed)
+
+
+
+
 
 
 def get_only_first_two_not_zero_times(num_of_seconds):
