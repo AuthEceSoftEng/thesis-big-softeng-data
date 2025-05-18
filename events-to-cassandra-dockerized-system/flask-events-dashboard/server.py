@@ -993,6 +993,7 @@ def get_top_js_repo_contributors_given_js_repo_name(js_repo):
     #     ]
     #} 
         
+    cluster.shutdown()
     return {"top_contributors_of_js_repo": val_based_sorted_list_of_dicts}
     # return jsonify({val_based_sorted_list_of_dicts})
 
@@ -1016,6 +1017,7 @@ def create_histogram_keyspace(cassandra_host=str, cassandra_port=int, histogram_
         "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}" \
         "AND durable_writes = true;"
     session.execute(create_histogram_keyspace_query)
+    cluster.shutdown()
     
 def create_histograms_table(cassandra_host=str, cassandra_port=int, histogram_keyspace=str, histograms_table_name=str):
     """
@@ -1027,6 +1029,7 @@ def create_histograms_table(cassandra_host=str, cassandra_port=int, histogram_ke
         "(histogram_name text, bin_centers list<double>, bin_edges list<double>, "\
             "abs_frequencies list<double>, PRIMARY KEY (histogram_name));"
     session.execute(create_histograms_info_table_query)
+    cluster.shutdown()
 
 def calculate_histogram_info(histogram_name=str, bin_edges=list, closing_times_list=list):
             """
@@ -1060,6 +1063,7 @@ def store_histogram_info_in_cassandra(cassandra_host, cassandra_port, histograms
                 f"(histogram_name, bin_centers, bin_edges, abs_frequencies) VALUES ('{histogram_name}', {bin_centers}, {bin_edges}, "\
                     f"{abs_frequencies});"
             session.execute(insert_histogram_info) 
+            cluster.shutdown()
 
 def seconds_to_period(num_of_seconds):
         """
@@ -1220,6 +1224,9 @@ def compare_pull_request_closing_times_bar_chart(repo_name_1, repo_name_2):
             
     selected_bin_edges_stringified = [period_to_string(seconds_to_period(bin_edges[i])) for i in range(len(bin_edges))]                                
     corresponding_bin_centers_labels = ['{} - {}'.format(selected_bin_edges_stringified[i], selected_bin_edges_stringified[i+1]) for i in range(len(abs_frequencies))]
+        
+    cluster.shutdown()
+        
         
     def get_pull_requests_closing_times_of_repo(repo_name=str): 
         keyspace = 'prod_gharchive'
@@ -1529,6 +1536,7 @@ def compare_issue_closing_times_bar_chart(repo_name_1, repo_name_2):
             "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}" \
             "AND durable_writes = true;"
         session.execute(create_histogram_keyspace_query)
+        cluster.shutdown()
         
     def create_histograms_table(cassandra_host=str, cassandra_port=int, histogram_keyspace=str, histograms_table_name=str):
         """
@@ -1540,6 +1548,7 @@ def compare_issue_closing_times_bar_chart(repo_name_1, repo_name_2):
             "(histogram_name text, bin_centers list<double>, bin_edges list<double>, "\
                 "abs_frequencies list<double>, PRIMARY KEY (histogram_name));"
         session.execute(create_histograms_info_table_query)
+        cluster.shutdown()
         
 
 
@@ -1670,7 +1679,7 @@ def compare_issue_closing_times_bar_chart(repo_name_1, repo_name_2):
         
         print(f"Bin centers, bin edges and absolute frequencies of histogram '{histogram_name}' already exist in table {histograms_keyspace}.{histograms_table_name}\n")
             
-    
+    cluster.shutdown()
     
     
         
@@ -2149,6 +2158,7 @@ def get_issues_closing_times_by_label(repo_name):
             'number_of_issues_with_this_label')
         number_of_issues_per_label_dict[issue_label] = number_of_issues_for_the_label
     
+    cluster.shutdown()
     
     def get_only_first_two_not_zero_times(num_of_seconds):
         """
