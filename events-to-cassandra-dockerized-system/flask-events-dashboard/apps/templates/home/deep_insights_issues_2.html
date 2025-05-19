@@ -89,6 +89,7 @@
             </table> 
           </div>
           
+
           <script>
                             
 
@@ -152,18 +153,14 @@
                         targets: 4,
                         render: DataTable.render.seconds_to_durations_string_formatted()
                     }
-                ]
+                ],
+                "createdRow": function( row, data, dataIndex){
+                    if( data[4] >  200){
+                        $(row).css('background-color', '#ffeeba');
+                    }
+                }
+                    
               });
-              
-              // table.dataTable {
-              //   clear: both;
-              //   margin-top: 6px !important;
-              //   margin-bottom: 6px !important;
-              //   max-width: none !important;
-              //   border-collapse: collapse !important;
-              //   border-spacing: 0;
-              // }
-
             });
 
 
@@ -186,7 +183,9 @@
             // console.log("Seconds: " + seconds_mock_data_2 + ", " + "first_two_keys_duration_dict_formatted: " + seconds_to_formatted_string(seconds_mock_data_2));
                     
           </script>
-
+          
+          
+          
 
         </div>
       </div>
