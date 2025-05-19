@@ -66,42 +66,81 @@
 
           <script>
                             
-            // function seconds_to_durations_dict(seconds) {
-                
+            const seconds_mock_data = 100;
+            console.log("seconds_mock_data: " + seconds_mock_data)
+
+            function seconds_to_durations_dict(seconds) {
+              var dur = luxon.Duration.fromObject({seconds: seconds}).shiftTo('years', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds')
+              return dur.toObject();
+            }
+
+            const duration_dict_mock_data = seconds_to_durations_dict(seconds_mock_data )
+
+            console.log("duration_dict_mock_data: " + duration_dict_mock_data)
+
+
+            function duration_dict_to_first_two_keys_dict(duration_dict) {
+              first_two_non_zero_values_dict = {}
+
+              for (const [key, value] of Object.entries(duration_dict)){
+                  if (Object.keys(first_two_non_zero_values_dict).length >= 2) {
+                      break;
+                  }
+                  if (value != 0) {
+                      first_two_non_zero_values_dict[key] = value;
+                  }
+              }    
+
+              return first_two_non_zero_values_dict
+            }
+
+            const first_two_non_zero_values_dict_mock_data = duration_dict_to_first_two_keys_dict(duration_dict_mock_data);
+
+            console.log("first_two_non_zero_values_dict_mock_data: "+first_two_non_zero_values_dict_mock_data);
+
+            // duration_dict = {"years": 10, "months": 0, "days": 5, "seconds": 2}
+
+            // first_two_non_zero_values_dict = {}
+
+            // for (const [key, value] of Object.entries(my_dict)){
+            //     if (Object.keys(first_two_non_zero_values_dict).length >= 2) {
+            //         break;
+            //     }
+            //     if (value != 0) {
+            //         first_two_non_zero_values_dict[key] = value;
+            //     }
             // }
 
 
-            // function duration_dict_to_first_two_keys_dict(duration_dict) {
-                
-            // }
-            my_dict = {"years": 10, "months": 0, "days": 5, "seconds": 2}
+            function duration_dict_to_formatted_string(duration_dict) {
+              var largest_two_durations_formatted = ''
+              for (const [key, value] of Object.entries(duration_dict))
+              largest_two_durations_formatted = 
+                  largest_two_durations_formatted + value + ' ' + key + ', '
+              largest_two_durations_formatted = largest_two_durations_formatted.slice(',', -2)
 
-            first_two_non_zero_values_dict = {}
+              // console.log("first_two_non_zero_values_dict: "+duration_dict);
+              console.log("largest_two_durations_formatted: "+largest_two_durations_formatted);
 
-            for (const [key, value] of Object.entries(my_dict)){
-                if (Object.keys(first_two_non_zero_values_dict).length >= 2) {
-                    break;
-                }
-                if (value != 0) {
-                    first_two_non_zero_values_dict[key] = value;
-                }
+              return largest_two_durations_formatted
             }
 
 
-            // function duration_dict_to_formatted_string(duration_dict) {
+            const duration_formatted_string_mock_data = duration_dict_to_formatted_string(first_two_non_zero_values_dict_mock_data);
+            console.log("duration_formatted_string_mock_data: " + duration_formatted_string_mock_data);
+            
+            function seconds_to_formatted_string(seconds) {
+              const duration_dict_val = seconds_to_durations_dict(seconds);
+              
+              const first_two_keys_dict = duration_dict_to_first_two_keys_dict(duration_dict_val);
+              
+              const first_two_keys_dict_string_formatted_val = duration_dict_to_formatted_string(first_two_keys_dict);
 
-            // }
+              return first_two_keys_dict_string_formatted_val
+            }
 
-            var largest_two_durations_formatted = ''
-            for (const [key, value] of Object.entries(first_two_non_zero_values_dict))
-            largest_two_durations_formatted = 
-                largest_two_durations_formatted + value + ' ' + key + ', '
-            largest_two_durations_formatted = largest_two_durations_formatted.slice(',', -2)
-
-            console.log("Seconds: "+ seconds);
-            console.log("first_two_non_zero_values_dict: "+first_two_non_zero_values_dict);
-            console.log("largest_two_durations_formatted: "+largest_two_durations_formatted);
-
+            const seconds_mock_data_2 = 201;
+            console.log("Seconds: " + seconds_mock_data_2 + ", " + "first_two_keys_duration_dict_formatted: " + seconds_to_formatted_string(seconds_mock_data_2))
                     
           </script>
 
@@ -168,6 +207,20 @@
           //     new DataTable('#example');
           //   });
 
+          DataTable.render.seconds_to_durations_string_formatted = function ( cutoff ) {
+              return function ( data, type, row ) {
+                  // if ( type === 'display' ) {
+                  //     var str = data.toString(); // cast numbers
+          
+                  //     return str.length < cutoff ?
+                  //         str :
+                  //         str.substr(0, cutoff-1) +'&#8230;';
+                  // }
+          
+                  // Search, order and type can use the original data
+                  return seconds_to_formatted_string(data);
+              };
+          };
 
 
             
@@ -195,7 +248,7 @@
                     },
                     {
                         targets: 6,
-                        render: DataTable.render.datetime('s', 'h', 'en')
+                        render: DataTable.render.seconds_to_durations_string_formatted()
                     }
                     // {
                     //     targets: 6,
