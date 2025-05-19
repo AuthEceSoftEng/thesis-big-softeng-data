@@ -26,31 +26,96 @@
     
     <!-- Datatable -->
     <div class="row mt-4">
-      <div class="col-lg-5 col-md-12">
+      <div class="col-lg-12 col-md-12">
         <div class="card">
 
           <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
+          
           <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.min.css">
-
+          <script rel="stylesheet" href="//cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></script>
           
+          <script src="//cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
+
           <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
+          <script src="//cdn.datatables.net/2.3.1/js/dataTables.js"></script>
 
-          
-          <script src="//cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></script>
-          
-          <script>src="//cdn.datatables.net/2.3.1/js/dataTables.js"</script>
+          <!--  Playing with luxon-->
+          <script>
+            function luxon_test_func(){
+              const seconds_value = 100
+              const hours = 10
+              const minutes = 40
+              // var dur = luxon.Duration.fromObject({seconds: seconds_value}).shiftTo()
+              // var dur = luxon.Duration.fromObject({seconds: seconds_value}).toObject()
+              
+              var dur = luxon.Duration.fromObject({seconds: seconds_value}).shiftTo('years', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds')
+  
+              // var dur = luxon.Duration.fromObject({hours: hours, minutes: minutes})
+
+              // console.log("seconds_value: "+ seconds_value)
+              // console.log("duration: " + JSON.stringify(dur.toObject()));
+
+
+              
+
+            };
+
+            luxon_test_func();
+
+          </script>
+
+          <script>
+                            
+            // function seconds_to_durations_dict(seconds) {
+                
+            // }
+
+
+            // function duration_dict_to_first_two_keys_dict(duration_dict) {
+                
+            // }
+            my_dict = {"years": 10, "months": 0, "days": 5, "seconds": 2}
+
+            first_two_non_zero_values_dict = {}
+
+            for (const [key, value] of Object.entries(my_dict)){
+                if (Object.keys(first_two_non_zero_values_dict).length >= 2) {
+                    break;
+                }
+                if (value != 0) {
+                    first_two_non_zero_values_dict[key] = value;
+                }
+            }
+
+
+            // function duration_dict_to_formatted_string(duration_dict) {
+
+            // }
+
+            var largest_two_durations_formatted = ''
+            for (const [key, value] of Object.entries(first_two_non_zero_values_dict))
+            largest_two_durations_formatted = 
+                largest_two_durations_formatted + value + ' ' + key + ', '
+            largest_two_durations_formatted = largest_two_durations_formatted.slice(',', -2)
+
+            console.log("Seconds: "+ seconds);
+            console.log("first_two_non_zero_values_dict: "+first_two_non_zero_values_dict);
+            console.log("largest_two_durations_formatted: "+largest_two_durations_formatted);
+
+                    
+          </script>
 
 
           <table id="example" class="display">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Position</th>
-                    <th>Office</th>
-                    <th>Age</th>
+                    <th>Place</th>
+                    <th>Issue label</th>
+                    <th>Count</th>
+                    <th>Average issue closing time</th>
                     <th>Start date</th>
-                    <th>Salary</th>
+                    <th>Seconds</th>
+                    <th>Seconds_to_hours</th>
                 </tr>
             </thead>
             <tbody>
@@ -60,23 +125,26 @@
                     <td>Edinburgh</td>
                     <td>61</td>
                     <td>2011-04-25</td>
-                    <td>$320,800</td>
+                    <td>60</td>
+                    <td>60</td>
                 </tr>
                 <tr>
                     <td>Garrett Winters</td>
                     <td>Accountant</td>
                     <td>Tokyo</td>
                     <td>63</td>
-                    <td>2011-07-25</td>
-                    <td>$170,750</td>
+                    <td>2009-10-05</td>
+                    <td>600</td>
+                    <td>600</td>
                 </tr>
                 <tr>
                     <td>Ashton Cox</td>
                     <td>Junior Technical Author</td>
                     <td>San Francisco</td>
                     <td>66</td>
-                    <td>2009-01-12</td>
-                    <td>$86,000</td>
+                    <td>2019-01-31</td>
+                    <td>125</td>
+                    <td>125</td>
                 </tr>
               </tbody>
               <tfoot>
@@ -86,16 +154,68 @@
                       <th>Office</th>
                       <th>Age</th>
                       <th>Start date</th>
-                      <th>Salary</th>
+                      <th>Seconds</th>
+                      <th>Seconds_to_hours</th>
                   </tr>
               </tfoot>
           </table>
 
+         
 
           <script>
+         
+          // $(document).ready(function() {
+          //     new DataTable('#example');
+          //   });
+
+
+
+            
+            
+
             $(document).ready(function() {
-              new DataTable('#example');
+              
+              // DataTable.datetime('d MMM yyyy');
+              // new DataTable('#example', {
+              //   columnDefs: [
+              //       {
+              //           targets: 4,
+              //           render: DataTable.render.datetime('yyyy-MM-dd', 'MMM d, yy', 'en')
+              //       }
+              //   ]
+              // });
+
+
+              DataTable.datetime('d MMM yyyy');
+              new DataTable('#example', {
+                columnDefs: [
+                    {
+                        targets: 4,
+                        render: DataTable.render.datetime('dd MMM yyyy', 'MMM d, yy', 'en')
+                    },
+                    {
+                        targets: 6,
+                        render: DataTable.render.datetime('s', 'h', 'en')
+                    }
+                    // {
+                    //     targets: 6,
+                    //     render: function (data, type, row) {
+                    //       var seconds_in_row = 
+                    //     }
+                    // }
+                ]
+              });
+
+              
             });
+
+
+
+
+   
+            
+
+
           </script>
 
           <!-- <script>
