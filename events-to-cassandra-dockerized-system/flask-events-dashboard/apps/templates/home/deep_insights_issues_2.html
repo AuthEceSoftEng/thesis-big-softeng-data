@@ -24,6 +24,38 @@
 
   <div class="container-fluid py-4">
     
+    <!-- Issues analysis -->
+    <div class="row mt-4">
+      <div class="col-lg-5 col-md-12">
+      <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
+        <div class="card">
+          <div class="card-header card-header-warning">
+            <h4 class="card-title">Issues analysis</h4>
+          </div>
+        </div>
+      </div> 
+    </div>
+    
+    <div class="row mb-4">
+    <!-- Select repo text box -->  
+      <div class="col-lg-4 col-md-6 mt-4"  style="flex: 0 0 auto; max-height: 100px">
+        <div class="card h-100">
+          <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
+            <!-- <h5>Selected month</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
+            <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+            
+            <div class="ms-md-auto pe-md-3 d-flex align-items-center">
+              <div id="select_repo_to_get_issue_closing_times_per_labels" 
+                    class="input-group input-group-outline">
+                <label class="form-label">e.g. openssl/openssl</label>
+                <input type="text" class="form-control">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Datatable -->
     <div class="row mt-4">
       
@@ -395,39 +427,13 @@
 
 
     <!-- Select repo, get the closing times of issues per label -->
-    <!-- Top contributors in 2024 -->
-    <div class="row mt-4">
-      <div class="col-lg-5 col-md-12">
-      <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
-        <div class="card">
-          <div class="card-header card-header-warning">
-            <h4 class="card-title">Issues analysis</h4>
-          </div>
-        </div>
-      </div> 
-    </div>
-
-    <!-- Select repo and show its top contributors -->
-    <div class="row mb-4">
-      <!-- Select repo  -->  
-      <div class="col-lg-4 col-md-6 mt-4"  style="flex: 0 0 auto; max-height: 100px">
-        <div class="card h-100">
-          <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-            <!-- <h5>Selected month</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
-            <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
-            
-            <div class="ms-md-auto pe-md-3 d-flex align-items-center">
-              <div id="select_repo_to_get_issue_closing_times_per_labels" 
-                    class="input-group input-group-outline">
-                <label class="form-label">e.g. openssl/openssl</label>
-                <input type="text" class="form-control">
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     
-      <!-- Selected repo's top contributing users -->
+
+    <!-- Select repo to get its issue labels -->
+    <div class="row mb-4">
+      
+    
+      <!-- Issues' closing times by label -->
       <div class="col-lg-6 col-md-12 mt-4">
         <div class="card h-100">
           <div class="card-header card-header-warning">
@@ -584,7 +590,6 @@
     <!-- Smaller title: Closing times of pull-requests and issues -->
     <div class="row mt-4">
       <div class="col-lg-5 col-md-12">
-      <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
         <div class="card">
           <div class="card-header card-header-warning">
             <h4 class="card-title">Closing times of pull-requests and issues </h4>
