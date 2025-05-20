@@ -57,7 +57,7 @@
             <table id="example" class="display">
               <thead>
                   <tr>
-                      <th>Place</th>
+                      <th>Order</th>
                       <th>Issue label</th>
                       <th>Count</th>
                       <th>Seconds</th>
@@ -168,29 +168,56 @@
                     if( data[4] >  200){
                         $(row).css('background-color', '#ffeeba');
                     }
-                },
-                // rowGroup: {
-                //   dataSrc: 2,
-                //   startRender: function (rows, group) {
-                //     return group;
-                //   },
-                //   endRender: function (rows, group) {
-                //       var issues_count =
-                //           _.sum(rows
-                //               .data()
-                //               .pluck(2));
-                              
-          
-                //       // Use the DataTables number formatter
-                //       return (
-                //           'Total issues count: ' +
-                //           DataTable.render.number().display(issues_count)
-                //       );
-                //   }
-                // }
+                }
                     
               });
             });
+
+            function updateIssuesByLabelDataTable(repo_selected) {
+              const issuesByLabelUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
+
+              fetch(issuesByLabelUrl)
+                .then(response => response.json())
+                .then(data => {
+                  
+                  const colNames = 
+                    `<tr>
+                        <th>Order</th>
+                        <th>Issue label</th>
+                        <th>Count</th>
+                        <th>Seconds</th>
+                        <th>Average issue closing time</th>
+                    </tr>`;
+                  
+                  const head = `<head>`+ colNames+`</head> `;
+
+                  const footer = `<tfoot>`+ colNames+`</tfoot>`;
+
+                  var issueLabelsRows = ``;
+                  var numberOfIssuesLabels = data["closing_times_per_label"].length;
+                  for (i=0; i<numberOfIssuesLabels; i++){
+                    
+                    console.log("data['closing_times_per_label'][i]['average_closing_time_in_seconds']: "+ data['closing_times_per_label'][i]['average_closing_time_in_seconds'] )
+
+                    issueLabelsRows = issueLabelsRows 
+                      + `<tr>`
+                      + `<td>${i+1}</td>`
+                      + `<td>${data["closing_times_per_label"][i]["issue_label"]}</td>`
+                      + `<td>${data["closing_times_per_label"][i]["number_of_issues_with_this_label"]}</td>`
+                      + `<td>${data["closing_times_per_label"][i]["average_closing_time_in_seconds"]}</td>`
+                      + `<td>${data["closing_times_per_label"][i]["average_closing_time_in_seconds"]}</td>`
+                      + `</tr>`;
+                  }
+
+                  htmlBody = `</tbody>` + issueLabelsRows + `</tbody>`;
+            
+                  document.getElementById("example").innerHTML = head + htmlBody + footer;
+
+                });
+
+            }
+
+
 
 
             // // Demo on functions above 
@@ -244,7 +271,7 @@
             <table id="example_2" class="display">
               <thead>
                   <tr>
-                      <th>Place</th>
+                      <th>Order</th>
                       <th>Issue label</th>
                       <th>Count</th>
                       <th>Seconds</th>
@@ -318,7 +345,7 @@
               largest_two_durations_formatted = largest_two_durations_formatted.slice(',', -2)
 
               // console.log("first_two_non_zero_values_dict: "+duration_dict);
-              console.log("largest_two_durations_formatted: "+largest_two_durations_formatted);
+              // console.log("largest_two_durations_formatted: "+largest_two_durations_formatted);
 
               return largest_two_durations_formatted
             }
@@ -360,6 +387,8 @@
               });
             });
 
+
+            
 
             // // Demo on functions above 
             // // Demo 1
@@ -537,7 +566,9 @@
                 update_issue_closing_time_by_label_table(repo_selected);
                 update_mirror_of_selected_repo_for_issue_closing_times(
                   "closing_time_by_label_repo_mirror", repo_selected)
-                getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_selected; 
+                document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_selected; 
+
+                updateIssuesByLabelDataTable(repo_selected);
               }
         })
       </script>
@@ -547,6 +578,9 @@
         const repo_whose_issue_closing_times_to_get = "openssl/openssl";
         update_issue_closing_time_by_label_table(repo_whose_issue_closing_times_to_get);
         document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
+
+        updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get)
+
       </script>
 
 
@@ -1607,7 +1641,7 @@
                       time_durations_labels[i] = stringify_time_dict(time_duration_dict);
                     }
 
-                    console.log("Pull request closing times labels: " + time_durations_labels);
+                    // console.log("Pull request closing times labels: " + time_durations_labels);
 
                     // Remove existing x values
                     pull_request_closing_times_histogram.options.scales.x.labels.splice(0, time_durations_labels.length);
@@ -1810,7 +1844,7 @@
                       time_durations_labels[i] = stringify_time_dict(time_duration_dict);
                     }
 
-                    console.log("Issue closing times labels: " + time_durations_labels);
+                    // console.log("Issue closing times labels: " + time_durations_labels);
 
 
                     // Remove existing x values
