@@ -32,13 +32,21 @@
         <div class="card">
 
           <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+          <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
           
           <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.min.css">
-          <script rel="stylesheet" href="//cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></script>
-          <script src="//cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
-          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
-          <script src="//cdn.datatables.net/2.3.1/js/dataTables.js"></script>
+          <script rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></script>
+
+          <script rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.5.1/css/rowGroup.dataTables.css"></script>
+
           
+
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
+          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
+          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.js"></script>
+          <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/dataTables.rowGroup.js"></script>
+          <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/rowGroup.dataTables.js"></script>
+
           <div class="card-header mb-0">
             <h5 class="card-title">Average issue closing times by label</h5>
             <span id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">- - -</span></span>
@@ -160,7 +168,26 @@
                     if( data[4] >  200){
                         $(row).css('background-color', '#ffeeba');
                     }
-                }
+                },
+                // rowGroup: {
+                //   dataSrc: 2,
+                //   startRender: function (rows, group) {
+                //     return group;
+                //   },
+                //   endRender: function (rows, group) {
+                //       var issues_count =
+                //           _.sum(rows
+                //               .data()
+                //               .pluck(2));
+                              
+          
+                //       // Use the DataTables number formatter
+                //       return (
+                //           'Total issues count: ' +
+                //           DataTable.render.number().display(issues_count)
+                //       );
+                //   }
+                // }
                     
               });
             });
