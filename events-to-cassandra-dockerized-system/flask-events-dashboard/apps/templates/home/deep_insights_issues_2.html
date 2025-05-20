@@ -194,32 +194,28 @@
 
 
             var issuesByLabelDataTable;
-            $(document).ready(function() {
-              issuesByLabelDataTable = new DataTable('#example', {
-                columnDefs: [
-                    {
-                        targets: 4,
-                        render: DataTable.render.seconds_to_durations_string_formatted()
-                    }
-                ],
-                "createdRow": function( row, data, dataIndex){
-                    console.log("From createdRow: " + data[4]);
-
-                    if( data[4] >  200){
-                        $(row).css('background-color', '#ffeeba');
-                    }
-                },
-                "updatedRow": function( row, data, dataIndex){
-                    if( data[4] >  200){
-                        $(row).css('background-color', '#ffeeba');
-                    }
-                }
-                    
-              });
+            issuesByLabelDataTable = new DataTable('#example', {
+              columnDefs: [
+                  {
+                      targets: 4,
+                      render: DataTable.render.seconds_to_durations_string_formatted()
+                  }
+              ],
+              "createdRow": function( row, data, dataIndex){
+                  if( data[4] >  200){
+                      $(row).css('background-color', '#ffeeba');
+                  }
+              },
+              "updatedRow": function( row, data, dataIndex){
+                  if( data[4] >  200){
+                      $(row).css('background-color', '#ffeeba');
+                  }
+              }
+                  
             });
+          
 
-             function updateIssuesByLabelDataTable(repo_selected) {
-              
+            function updateIssuesByLabelDataTable(repo_selected) {  
 
               const issuesByLabelUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
 
@@ -228,8 +224,13 @@
                 .then(data => {
                   
                   const numberOfIssuesLabels = data["closing_times_per_label"].length;
-                  issuesByLabelDataTable.clear();
-                    
+                  
+                  // console.log("Clearing table...")
+                  issuesByLabelDataTable.clear().draw();
+                  // console.log("Should be cleared...")
+                  // issuesByLabelDataTable = Datatable('#example');
+                  // issuesByLabelDataTable.clear();
+
                   for (var rowIndex=0; rowIndex < numberOfIssuesLabels; rowIndex++) {  
                     var rowOrder = rowIndex+1;
                     var rowIssueLabel = data["closing_times_per_label"][rowIndex]["issue_label"];
@@ -438,7 +439,7 @@
         <div class="card h-100">
           <div class="card-header card-header-warning">
             <h5 class="card-title">Average issue closing times by label</h5>
-            <p id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">- - -</span></p>
+            <p id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">openssl/openssl</span></p>
           </div>
           <div class="card-body table-responsive">
             <table id="issue_closing_times_by_label" class="table table-hover">
@@ -558,7 +559,7 @@
         update_issue_closing_time_by_label_table(repo_whose_issue_closing_times_to_get);
         document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
 
-        updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get)
+        updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);
 
       </script>
 
