@@ -254,6 +254,24 @@
 
         </div>
       </div>
+
+      <!-- Issues' closing times by label -->
+      <div class="col-lg-6 col-md-6">
+        <div class="card h-100">
+          
+          <div class="card-header card-header-warning">
+            <h5 class="card-title">Average issue closing times by label</h5>
+            <p id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">openssl/openssl</span></p>
+          </div>
+          <div class="card-body table-responsive">
+            <table id="issue_closing_times_by_label" class="table table-hover">
+            </table>
+          </div>
+
+        </div>
+      </div>
+        
+    
       
 
       <!-- Backup search box -->
@@ -434,19 +452,7 @@
     <div class="row mb-4">
       
     
-      <!-- Issues' closing times by label -->
-      <div class="col-lg-6 col-md-12 mt-4">
-        <div class="card h-100">
-          <div class="card-header card-header-warning">
-            <h5 class="card-title">Average issue closing times by label</h5>
-            <p id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">openssl/openssl</span></p>
-          </div>
-          <div class="card-body table-responsive">
-            <table id="issue_closing_times_by_label" class="table table-hover">
-            </table>
-          </div>
-        </div>
-      </div>
+      
 
       <script>
         function create_ranking_table_of_closing_issues_per_label_html_body(element_id_to_assign_hmtl_onto, 
