@@ -107,10 +107,7 @@
                             
 
             function seconds_to_durations_dict(seconds) {
-              console.log("Seconds: " + seconds);
-              var dur = luxon.Duration.fromObject({seconds: seconds}).shiftTo('years', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds')
-              
-              console.log("After seconds, dur = " + JSON.stringify(dur.toObject()));
+              var dur = luxon.Duration.fromObject({seconds: seconds}).shiftTo('years', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds')              
               return dur.toObject();
             }
 
@@ -136,7 +133,6 @@
                   largest_two_durations_formatted + value + ' ' + key + ', '
               largest_two_durations_formatted = largest_two_durations_formatted.slice(',', -2)
 
-              console.log("largest_two_durations_formatted: "+largest_two_durations_formatted);
 
               return largest_two_durations_formatted
             }
@@ -153,17 +149,17 @@
               return first_two_keys_dict_string_formatted_val
             }
 
-            DataTable.render.seconds_to_durations_string_formatted = function () {
+            DataTable.render.seconds_to_durations_string_formatted = function ( ) {
               return function ( data, type, row ) {
                     if (type == "display") {
-                      console.log(data)
                       return seconds_to_formatted_string(data);
                     }
                     // Search, order and type can use the original data
-                    // return data
+                    return data
                 };
-
               };
+
+
 
             var issuesByLabelDataTable;
             $(document).ready(function() {
@@ -175,6 +171,8 @@
                     }
                 ],
                 "createdRow": function( row, data, dataIndex){
+                    console.log("From createdRow: " + data[4]);
+
                     if( data[4] >  200){
                         $(row).css('background-color', '#ffeeba');
                     }
@@ -202,11 +200,12 @@
                     
                   for (var rowIndex=0; rowIndex < numberOfIssuesLabels; rowIndex++) {  
                     var rowOrder = rowIndex+1;
-                    var rowIssueLabel = data["closing_times_per_label"][rowIndex]["issue_label"]
-                    var rowCount = data["closing_times_per_label"][rowIndex]["number_of_issues_with_this_label"]
-                    var rowSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"]
-                    var rowAverageClosingTimesSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"]
+                    var rowIssueLabel = data["closing_times_per_label"][rowIndex]["issue_label"];
+                    var rowCount = data["closing_times_per_label"][rowIndex]["number_of_issues_with_this_label"];
+                    var rowSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"];
+                    var rowAverageClosingTimesSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"];
                     
+                    // console.log([rowOrder, rowIssueLabel, rowCount, rowSeconds, rowAverageClosingTimesSeconds]);
                     issuesByLabelDataTable.row.add([rowOrder, rowIssueLabel, rowCount, rowSeconds, rowAverageClosingTimesSeconds]).draw();
                   };                 
 
@@ -214,108 +213,7 @@
 
             }
 
-
-
-
-            // function updateIssuesByLabelDataTable(repo_selected) {
-              
-
-            //   const issuesByLabelUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
-
-            //   fetch(issuesByLabelUrl)
-            //     .then(response => response.json())
-            //     .then(data => {
-                  
-            //       const numberOfIssuesLabels = data["closing_times_per_label"].length;
-            //       // var table = DataTable('#example');
-                  
-            //       var table = $('#example').DataTable;
-                  
-            //       // var table = $('#example');
-
-            //       // console.log("table: " + JSON.stringify(table))
-            //       console.log("type of table: " + typeof(table))
-
-
-            //       table.clear().draw();
-                    
-            //       for (var rowIndex=0; rowIndex < numberOfIssuesLabels; rowIndex++) {  
-            //         // table.cell(rowIndex, 0).data(data["closing_times_per_label"][rowIndex]["issue_label"]).draw();
-            //         // table.cell(rowIndex, 0).data(data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"]).draw();
-            //         // table.cell(rowIndex, 0).data(data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"]).draw();
-                    
-            //         var rowOrder = rowIndex+1;
-            //         var rowIssueLabel = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"]
-            //         var rowCount = data["closing_times_per_label"][rowIndex]["number_of_issues_with_this_label"]
-            //         var rowSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"]
-            //         var rowAverageClosingTimesSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"]
-                    
-
-            //         table.row().add([rowOrder, rowIssueLabel, rowCount, rowSeconds, rowAverageClosingTimesSeconds]);
-
-            //       }; 
-                  
-            //       table.rows.draw();
-                    
-
-            //       // const colNames = 
-            //       //   `<tr>
-            //       //       <th>Order</th>
-            //       //       <th>Issue label</th>
-            //       //       <th>Count</th>
-            //       //       <th>Seconds</th>
-            //       //       <th>Average issue closing time</th>
-            //       //   </tr>`;
-                  
-            //       // const head = `<thead>`+ colNames+`</thead> `;
-
-            //       // const footer = `<tfoot>`+ colNames+`</tfoot>`;
-
-            //       // var issueLabelsRows = ``;
-            //       // var numberOfIssuesLabels = data["closing_times_per_label"].length;
-            //       // for (i=0; i<numberOfIssuesLabels; i++){
-                    
-            //       //   issueLabelsRows = issueLabelsRows 
-            //       //     + `<tr>`
-            //       //     + `<td>${i+1}</td>`
-            //       //     + `<td>${data["closing_times_per_label"][i]["issue_label"]}</td>`
-            //       //     + `<td>${data["closing_times_per_label"][i]["number_of_issues_with_this_label"]}</td>`
-            //       //     + `<td>${data["closing_times_per_label"][i]["average_closing_time_in_seconds"]}</td>`
-            //       //     + `<td>${data["closing_times_per_label"][i]["average_closing_time_in_seconds"]}</td>`
-            //       //     + `</tr>`;
-            //       // }
-
-            //       // htmlBody = `</tbody>` + issueLabelsRows + `</tbody>`;
-            
-            //       // document.getElementById("example").innerHTML = head + htmlBody + footer;
-
-            //       // console.log("document.getElementById('example').innerHTML: " + document.getElementById("example").innerHTML)
-
-            //     });
-
-            // }
-
-
-
-
-            // // Demo on functions above 
-            // // Demo 1
-            // const seconds_mock_data = 100;
-            // console.log("seconds_mock_data: " + seconds_mock_data)
-
-            // const duration_dict_mock_data = seconds_to_durations_dict(seconds_mock_data )
-            // console.log("duration_dict_mock_data: " + duration_dict_mock_data)
-            
-            // const first_two_non_zero_values_dict_mock_data = duration_dict_to_first_two_keys_dict(duration_dict_mock_data);
-            // console.log("first_two_non_zero_values_dict_mock_data: "+first_two_non_zero_values_dict_mock_data);
-            
-            // const duration_formatted_string_mock_data = duration_dict_to_formatted_string(first_two_non_zero_values_dict_mock_data);
-            // console.log("duration_formatted_string_mock_data: " + duration_formatted_string_mock_data);
-
-            // // Demo 2
-            // const seconds_mock_data_2 = 201;
-            // console.log("Seconds: " + seconds_mock_data_2 + ", " + "first_two_keys_duration_dict_formatted: " + seconds_to_formatted_string(seconds_mock_data_2));
-                    
+   
           </script>
           
           
@@ -325,11 +223,8 @@
       </div>
       
 
-
-
-
       <!-- Backup search box -->
-      <div class="col-lg-6 col-md-6">
+      <!-- <div class="col-lg-6 col-md-6">
         <div class="card">
 
           <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -339,6 +234,7 @@
           <script src="//cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
           <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
           <script src="//cdn.datatables.net/2.3.1/js/dataTables.js"></script>
+          
           
           <div class="card-header mb-0">
             <h5 class="card-title">Average issue closing times by label</h5>
@@ -468,23 +364,23 @@
 
             
 
-            // // Demo on functions above 
-            // // Demo 1
-            // const seconds_mock_data = 100;
-            // console.log("seconds_mock_data: " + seconds_mock_data)
+            // Demo on functions above 
+            // Demo 1
+            const seconds_mock_data = 100;
+            console.log("seconds_mock_data: " + seconds_mock_data)
 
-            // const duration_dict_mock_data = seconds_to_durations_dict(seconds_mock_data )
-            // console.log("duration_dict_mock_data: " + duration_dict_mock_data)
+            const duration_dict_mock_data = seconds_to_durations_dict(seconds_mock_data )
+            console.log("duration_dict_mock_data: " + duration_dict_mock_data)
             
-            // const first_two_non_zero_values_dict_mock_data = duration_dict_to_first_two_keys_dict(duration_dict_mock_data);
-            // console.log("first_two_non_zero_values_dict_mock_data: "+first_two_non_zero_values_dict_mock_data);
+            const first_two_non_zero_values_dict_mock_data = duration_dict_to_first_two_keys_dict(duration_dict_mock_data);
+            console.log("first_two_non_zero_values_dict_mock_data: "+first_two_non_zero_values_dict_mock_data);
             
-            // const duration_formatted_string_mock_data = duration_dict_to_formatted_string(first_two_non_zero_values_dict_mock_data);
-            // console.log("duration_formatted_string_mock_data: " + duration_formatted_string_mock_data);
+            const duration_formatted_string_mock_data = duration_dict_to_formatted_string(first_two_non_zero_values_dict_mock_data);
+            console.log("duration_formatted_string_mock_data: " + duration_formatted_string_mock_data);
 
-            // // Demo 2
-            // const seconds_mock_data_2 = 201;
-            // console.log("Seconds: " + seconds_mock_data_2 + ", " + "first_two_keys_duration_dict_formatted: " + seconds_to_formatted_string(seconds_mock_data_2));
+            // Demo 2
+            const seconds_mock_data_2 = 201;
+            console.log("Seconds: " + seconds_mock_data_2 + ", " + "first_two_keys_duration_dict_formatted: " + seconds_to_formatted_string(seconds_mock_data_2));
                     
           </script>
           
@@ -492,7 +388,7 @@
           
 
         </div>
-      </div>
+      </div>  -->
       
 
     </div>
