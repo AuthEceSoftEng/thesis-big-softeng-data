@@ -2097,6 +2097,8 @@ def get_issues_closing_times_by_label(repo_name):
     # Map each issue closing time to a list with the corresponding label
     
     closing_times_per_issue_label = {}
+    sum_of_closing_times_in_seconds = 0
+    closing_times_list_in_seconds = []
     for row in rows_list:
         
         issue_label = getattr(row, 'label')
@@ -2135,10 +2137,23 @@ def get_issues_closing_times_by_label(repo_name):
                 f"Closing time of row: {closing_time_of_row}")
 
         
-        # Add the closing time to the to the list
+        # Add the closing time to the list for the specific 
         closing_times_per_issue_label[issue_label].append(closing_time_in_seconds)
+        
+        # Sum closing times to get the average closing time of all issues
+        sum_of_closing_times_in_seconds += closing_time_in_seconds
+        closing_times_list_in_seconds.append(closing_time_in_seconds)
     
-    
+    dict_to_expose = {}
+    dict_to_expose["repo_name"] = repo_name
+    average_closing_time_of_all_repo_issues = np.average(closing_times_list_in_seconds)
+    # Average of all issues of repo regardless of issue label (meaning not average of averages per label
+    # but average of all repo issues closing times)
+    dict_to_expose["average_closing_time_of_all_repo_issues"] = average_closing_time_of_all_repo_issues
+    closing_time_standard_deviation =  np.std(closing_times_list_in_seconds)
+    dict_to_expose["closing_time_standard_deviation"] = closing_time_standard_deviation
+
+
     average_closing_time_of_issues_per_label = {}
     for issue_label in closing_times_per_issue_label.keys():
         closing_times_list_given_label = closing_times_per_issue_label[issue_label]
@@ -2216,12 +2231,8 @@ def get_issues_closing_times_by_label(repo_name):
         sorted(average_closing_time_of_issues_per_label_list, \
             key= lambda item: item["number_of_issues_with_this_label"], reverse=True)
     
-    # dict_to_expose = \
-    #     {"closing_times_per_label": average_closing_time_of_issues_per_label_sorted_list}
-    # average_closing_time_of_issues_per_label_sorted_list = 0
-    dict_to_expose = \
-        {"repo_name": repo_name, \
-            "closing_times_per_label": average_closing_time_of_issues_per_label_list_sorted}
+    dict_to_expose["closing_times_per_label"] = average_closing_time_of_issues_per_label_list_sorted
+
     
     cluster.shutdown()
     # Expose the dictionary {label: closing_time in format (days, hours, minutes)}

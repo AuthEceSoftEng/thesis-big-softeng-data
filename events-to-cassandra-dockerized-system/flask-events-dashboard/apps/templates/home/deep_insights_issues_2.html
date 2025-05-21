@@ -105,14 +105,14 @@
                     <td>bug</td>
                     <td>10</td>
                     <td>60</td>
-                    <td>60</td>
+                    <td>125</td>
                 </tr>
                 <tr>
                     <td>2</td>
                     <td>waiting triage</td>
                     <td>5</td>
                     <td>600</td>
-                    <td>600</td>
+                    <td>125</td>
                 </tr>
                 <tr>
                     <td>3</td>
@@ -214,11 +214,11 @@
                       $(row).css('background-color', '#ffeeba');
                   }
               },
-              "updatedRow": function( row, data, dataIndex){
-                  if( data[4] >  200){
-                      $(row).css('background-color', '#ffeeba');
-                  }
-              }
+              // "updatedRow": function( row, data, dataIndex){
+              //     if( data[3] >  200){
+              //         $(row).css('background-color', '#ffeeba');
+              //     }
+              // }
                   
             });
           
@@ -232,13 +232,8 @@
                 .then(data => {
                   
                   const numberOfIssuesLabels = data["closing_times_per_label"].length;
-                  
-                  // console.log("Clearing table...")
                   issuesByLabelDataTable.clear().draw();
-                  // console.log("Should be cleared...")
-                  // issuesByLabelDataTable = Datatable('#example');
-                  // issuesByLabelDataTable.clear();
-
+                  
                   for (var rowIndex=0; rowIndex < numberOfIssuesLabels; rowIndex++) {  
                     var rowOrder = rowIndex+1;
                     var rowIssueLabel = data["closing_times_per_label"][rowIndex]["issue_label"];
@@ -400,7 +395,8 @@
 
       <!-- Preselect a repo to show upon render of the page -->
       <script>
-        const repo_whose_issue_closing_times_to_get = "openssl/openssl";
+        // const repo_whose_issue_closing_times_to_get = "openssl/openssl";
+        const repo_whose_issue_closing_times_to_get = "Expensify/App";
         update_issue_closing_time_by_label_table(repo_whose_issue_closing_times_to_get);
         document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
 
