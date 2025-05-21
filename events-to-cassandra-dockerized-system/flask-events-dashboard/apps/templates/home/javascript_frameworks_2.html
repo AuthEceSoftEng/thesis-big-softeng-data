@@ -24,322 +24,6 @@
 
 <div class="container-fluid py-4">
   
-  <!-- Top contributors in 2024 -->
-  <div class="row ms-3">
-    <div class="col-lg-5 col-md-12">
-      <div class="card">
-        <div class="card-header card-header-warning">
-          <h3 class="card-title">Top contributors</h4>
-          <p >Based on commits acquired during December 2024</p>
-        </div>
-      </div>
-    </div> 
-  </div>
-
-  <!-- Select repo drop down list -->
-  <div class="row mb-4 ms-3">
-    <div class="col-lg-4 col-md-6 mt-4" style="flex: 0 0 auto; max-height: 100px">
-      <div class="card h-100">
-        <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-          <!-- <h5>Selected month</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
-          <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
-          
-          <div class="dropdown float-lg-end pe-4">
-            <ul>
-              <select id="repo_dropdown_list_selection" class="drop_down_list_select bg-gradient-success" name="repo">
-                <option >Polymer/polymer</option>
-                <option >alpinejs/alpine</option>
-                <option >angular/angular</option>
-                <option >angular/angular.js</option>
-                <option >aurelia/aurelia</option>
-                <option >aurelia/framework</option>
-                <option >daemonite/material</option>
-                <option >dojo/dojo</option>
-                <option >emberjs/ember.js</option>
-                <option >facebook/react</option>
-                <option >finom/seemple</option>
-                <option >hotwired/stimulus</option>
-                <option >ionic-team/stencil</option>
-                <option >jashkenas/backbone</option>
-                <option >jorgebucaran/hyperapp</option>
-                <option >jquery/jquery</option>
-                <option >knockout/knockout</option>
-                <option >marko-js/marko</option>
-                <option >mithriljs/mithril.js</option>
-                <option >neomjs/neo</option>
-                <option >optimizely/nuclear-js</option>
-                <option >polymer/lit-element</option>
-                <option >preactjs/preact</option>
-                <option >riot/riot</option>
-                <option >solidjs/solid</option>
-                <option >spine/spine</option>
-                <option >sveltejs/svelte</option>
-                <option >tastejs/todomvc</option>
-                <option >vuejs/core</option>
-                <option >vuejs/vue</option>
-              </select>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Top contributing users tables -->
-  <div class="row mb-4 ms-3">
-    
-    <!-- Selected repo's top contributing users - (datatable) -->
-    <div class="col-lg-6 col-md-12 mt-4">
-      <div class="card h-100">
-        
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-        <script src=https://cdn.datatables.net/2.3.1/js/jquery.dataTables.min.js></script>
-
-        
-        <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.min.css">
-        <script rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></script>
-
-        <script rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.5.1/css/rowGroup.dataTables.css"></script>
-
-
-        <script src="https://cdn.datatables.net/2.3.1/js/dataTables.js"></script>
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
-        <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
-        
-        <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/dataTables.rowGroup.js"></script>
-        <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/rowGroup.dataTables.js"></script>
-
-        
-        <div class="card-header card-header-warning">
-          <h4 class="card-title">Ranking</h4>
-          <p>of selected repo: 
-            <span name="top_js_repo_contributors_repo_mirror">'Polymer/polymer'</span>
-          </p>
-        </div>
-        
-
-
-        <div class="card-body table-responsive" style="margin-top: -3rem">
-          <table id="top_js_repo_contributors_table_datatable" class="display">
-            <thead>
-                <tr>
-                    <th>Order</th>
-                    <th>Contributor</th>
-                    <th>Number of contributions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>username1</td>
-                  <td>10</td>
-              </tr>
-              <tr>
-                  <td>2</td>
-                  <td>username2</td>
-                  <td>5</td>
-              </tr>
-              <tr>
-                  <td>3</td>
-                  <td>username3</td>
-                  <td>7</td>
-              </tr>
-          </tbody>
-            <tfoot>
-              <tr>
-                <th>Order</th>
-                <th>Contributor</th>
-                <th>Number of contributions</th>
-              </tr>
-            </tfoot>
-          </table> 
-        </div>
-        
-
-        <script>
-          var topJsContributorsDataTable;
-          $(document).ready(function() {
-            topJsContributorsDataTable = new DataTable('#top_js_repo_contributors_table_datatable');
-
-          });
-
-
-          function updateTopJsContributorsDataTable(repo_selected) {  
-
-            const topJsContributorsDataTableUrl = 'http://localhost:3200/javascript_frameworks/top_contributors_of_js_repo/' + repo_selected;
-
-            fetch(topJsContributorsDataTableUrl)
-              .then(response => response.json())
-              .then(data => {
-                
-                const numberOfIssuesLabels = data["top_contributors_of_js_repo"].length;
-                
-                
-                topJsContributorsDataTable.clear().draw();
-                
-                for (var rowIndex=0; rowIndex < numberOfIssuesLabels; rowIndex++) {  
-                  var rowOrder = rowIndex+1;
-                  var rowContributorUsername = data["top_contributors_of_js_repo"][rowIndex]["username"];
-                  var rowNumberOfContributions = data["top_contributors_of_js_repo"][rowIndex]["number_of_contributions"];
-                  
-                  topJsContributorsDataTable.row.add([rowOrder, rowContributorUsername, rowNumberOfContributions]).draw();
-                };                 
-
-              });
-
-          }
-        </script>
-
-        
-        
-      </div>
-    </div>
-    
-    <!-- Selected repo's top contributing users - (deprecated)-->
-    <div class="col-lg-6 col-md-12 mt-4">
-      <div class="card">
-        <div class="card h-100"></div>
-        
-        <div class="card-header card-header-warning">
-          <h4 class="card-title">Ranking</h4>
-          <p>of selected repo: 
-            <span name="top_js_repo_contributors_repo_mirror">'Polymer/polymer'</span>
-          </p>
-          
-        </div>
-
-        <div class="card-body table-responsive">
-          <table id="top_js_repo_contributors_table" class="table table-hover">
-            
-            <!-- Create top human contributors table -->
-            <script>
-              function create_top_contributors_of_js_repo_ranking_table_html_body(element_id_to_assign_hmtl_onto, 
-                data_url, html_head, second_col, third_col
-              ) {
-                /*
-                Creates the table contents (html_body)
-                second_col: represents the 'winners' e.g most starred repos
-                third_col: represents the winners' performances e.g 459 stars 
-                
-                returns the html combining the head and the body of the table
-                */
-
-                var html_body_inside = `<tbody>`
-
-                //  Create the html_body of the table
-                fetch(data_url)
-                  .then(response => response.json())
-                  .then(data => {
-                    // const pull_requests = data[0][0].total_pull_requests;
-                    const top_contributors_list = data["top_contributors_of_js_repo"]
-                    for (let data_index = 0; data_index < top_contributors_list.length; data_index++){
-                      html_body_inside = html_body_inside 
-                        + `<tr>`
-                        + `<td>${data_index+1}</td>`
-                        + `<td>${top_contributors_list[data_index][second_col]}</td>`
-                        + `<td>${top_contributors_list[data_index][third_col]}</td>`
-                        + `</tr>`
-                    }
-                    html_body_inside = html_body_inside + `</tbody>`;
-                    
-                    document.getElementById(element_id_to_assign_hmtl_onto).innerHTML = 
-                    html_head + html_body_inside;    
-                  }
-                  );
-
-              }
-
-              function update_top_js_repo_contributors_table(repo_selected){
-                // Arguments to create the table
-                var table_html_id = "top_js_repo_contributors_table"
-                // Get the data URL 
-                let data_url = 'http://localhost:3200/javascript_frameworks/top_contributors_of_js_repo/' 
-                                    + repo_selected;
-                var html_head = `<thead class="text-warning">
-                                  <tr>
-                                    <th>Place</th>
-                                    <th>Contributor name</th>
-                                    <th>Number of commits</th>
-                                  </tr>
-                                </thead>`
-                var second_column_name = 'username'
-                var third_column_name = 'number_of_contributions'
-                
-                // Create the table
-                create_top_contributors_of_js_repo_ranking_table_html_body(table_html_id, data_url, html_head, 
-                  second_column_name, third_column_name);
-                
-              }
-
-              // document.getElementById("repo_dropdown_list_selection").addEventListener(
-              //     "change", function() {
-              //   let repo_selected = this.value;
-              //   console.log(repo_selected)
-              //   update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
-              //     repo_selected);
-              //   update_top_js_repo_contributors_table(repo_selected);
-              //   updateTopJsContributorsDataTable(repo_selected);
-              // })
-            </script>
-
-
-
-            <!-- Create top contributors of js repos upon page render -->
-            <script>
-                function update_mirror_of_selected_repo_for_issue_closing_times(label_to_mirror, repo_selected){
-                  var selected_repo_mirror_array = document.getElementsByName(label_to_mirror);
-                  for (let selected_mirror_array_index=0; selected_mirror_array_index<selected_repo_mirror_array.length; selected_mirror_array_index++){
-                      selected_repo_mirror_array[selected_mirror_array_index].textContent = repo_selected ;
-                  }
-                }
-
-              
-              // const repo_preselected = "preactjs/preact";
-              // update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
-              //   repo_preselected);
-              // update_top_js_repo_contributors_table(repo_preselected);
-              // updateTopJsContributorsDataTable(repo_preselected);
-            </script>
-
-            
-          </table>
-        </div>
-
-      </div>
-    </div>
-
-    
-
-    <script>
-      
-      $(document).ready(function() {
-
-        const repo_preselected = "preactjs/preact";
-        update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
-          repo_preselected);
-        update_top_js_repo_contributors_table(repo_preselected);
-        updateTopJsContributorsDataTable(repo_preselected);
-
-
-        document.getElementById("repo_dropdown_list_selection").addEventListener(
-                    "change", function() {
-                  let repo_selected = this.value;
-                  update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
-                    repo_selected);
-                  update_top_js_repo_contributors_table(repo_selected);
-                  updateTopJsContributorsDataTable(repo_selected);
-                });
-
-      });
-
-
-    </script>
-
-  </div>
-
-
   <!-- Open Javascript repos page title  -->
   <div class="row ms-3">
     <div class="col-lg-5 col-md-12">
@@ -352,8 +36,6 @@
     </div>
   </div>
 
-
-  
   <!-- Star history of some opensource javascript repos -->
   <div class="row ms-3 mt-4">
     <div class="mt-4 mb-4">
@@ -669,8 +351,328 @@
 
 
       </div>
-    </div>
   </div> 
+
+  <!-- Top contributors in 2024 -->
+  <div class="row ms-3">
+    <div class="col-lg-5 col-md-12">
+      <div class="card">
+        <div class="card-header card-header-warning">
+          <h3 class="card-title">Top contributors</h4>
+          <p >Based on commits acquired during December 2024</p>
+        </div>
+      </div>
+    </div> 
+  </div>
+
+  <!-- Select repo drop down list -->
+  <div class="row mb-4 ms-3">
+    <div class="col-lg-4 col-md-6 mt-4" style="flex: 0 0 auto; max-height: 100px">
+      <div class="card h-100">
+        <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
+          <!-- <h5>Selected month</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
+          <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+          
+          <div class="dropdown float-lg-end pe-4">
+            <ul>
+              <select id="repo_dropdown_list_selection" class="drop_down_list_select bg-gradient-success" name="repo">
+                <option >Polymer/polymer</option>
+                <option >alpinejs/alpine</option>
+                <option >angular/angular</option>
+                <option >angular/angular.js</option>
+                <option >aurelia/aurelia</option>
+                <option >aurelia/framework</option>
+                <option >daemonite/material</option>
+                <option >dojo/dojo</option>
+                <option >emberjs/ember.js</option>
+                <option >facebook/react</option>
+                <option >finom/seemple</option>
+                <option >hotwired/stimulus</option>
+                <option >ionic-team/stencil</option>
+                <option >jashkenas/backbone</option>
+                <option >jorgebucaran/hyperapp</option>
+                <option >jquery/jquery</option>
+                <option >knockout/knockout</option>
+                <option >marko-js/marko</option>
+                <option >mithriljs/mithril.js</option>
+                <option >neomjs/neo</option>
+                <option >optimizely/nuclear-js</option>
+                <option >polymer/lit-element</option>
+                <option >preactjs/preact</option>
+                <option >riot/riot</option>
+                <option >solidjs/solid</option>
+                <option >spine/spine</option>
+                <option >sveltejs/svelte</option>
+                <option >tastejs/todomvc</option>
+                <option >vuejs/core</option>
+                <option >vuejs/vue</option>
+              </select>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top contributing users tables -->
+  <div class="row mb-4 ms-3">
+    
+    <!-- Selected repo's top contributing users - (datatable) -->
+    <div class="col-lg-6 col-md-12 mt-4">
+      <div class="card h-100">
+        
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+        <script src=https://cdn.datatables.net/2.3.1/js/jquery.dataTables.min.js></script>
+
+        
+        <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.min.css">
+        <script rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></script>
+
+        <script rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.5.1/css/rowGroup.dataTables.css"></script>
+
+
+        <script src="https://cdn.datatables.net/2.3.1/js/dataTables.js"></script>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
+        <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
+        
+        <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/dataTables.rowGroup.js"></script>
+        <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/rowGroup.dataTables.js"></script>
+
+        
+        <div class="card-header card-header-warning">
+          <h4 class="card-title">Ranking</h4>
+          <p>of selected repo: 
+            <span name="top_js_repo_contributors_repo_mirror">'Polymer/polymer'</span>
+          </p>
+        </div>
+        
+
+
+        <div class="card-body table-responsive" style="margin-top: -3rem">
+          <table id="top_js_repo_contributors_table_datatable" class="display">
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Contributor</th>
+                    <th>Number of contributions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>username1</td>
+                  <td>10</td>
+              </tr>
+              <tr>
+                  <td>2</td>
+                  <td>username2</td>
+                  <td>5</td>
+              </tr>
+              <tr>
+                  <td>3</td>
+                  <td>username3</td>
+                  <td>7</td>
+              </tr>
+          </tbody>
+            <tfoot>
+              <tr>
+                <th>Order</th>
+                <th>Contributor</th>
+                <th>Number of contributions</th>
+              </tr>
+            </tfoot>
+          </table> 
+        </div>
+        
+
+        <script>
+          var topJsContributorsDataTable;
+          $(document).ready(function() {
+            topJsContributorsDataTable = new DataTable('#top_js_repo_contributors_table_datatable', {
+              columnDefs: [
+                {
+                  className: "dt-center", 
+                  targets: "_all"
+                }
+              ],
+            });
+          });
+
+          function updateTopJsContributorsDataTable(repo_selected) {  
+
+            const topJsContributorsDataTableUrl = 'http://localhost:3200/javascript_frameworks/top_contributors_of_js_repo/' + repo_selected;
+
+            fetch(topJsContributorsDataTableUrl)
+              .then(response => response.json())
+              .then(data => {
+                
+                const numberOfIssuesLabels = data["top_contributors_of_js_repo"].length;
+                
+                
+                topJsContributorsDataTable.clear().draw();
+                
+                for (var rowIndex=0; rowIndex < numberOfIssuesLabels; rowIndex++) {  
+                  var rowOrder = rowIndex+1;
+                  var rowContributorUsername = data["top_contributors_of_js_repo"][rowIndex]["username"];
+                  var rowNumberOfContributions = data["top_contributors_of_js_repo"][rowIndex]["number_of_contributions"];
+                  
+                  topJsContributorsDataTable.row.add([rowOrder, rowContributorUsername, rowNumberOfContributions]).draw();
+                };                 
+
+              });
+
+          }
+        </script>
+
+        
+        
+      </div>
+    </div>
+    
+    <!-- Selected repo's top contributing users - (deprecated)-->
+    <div class="col-lg-6 col-md-12 mt-4">
+      <div class="card">
+        <div class="card h-100"></div>
+        
+        <div class="card-header card-header-warning">
+          <h4 class="card-title">Ranking</h4>
+          <p>of selected repo: 
+            <span name="top_js_repo_contributors_repo_mirror">'Polymer/polymer'</span>
+          </p>
+          
+        </div>
+
+        <div class="card-body table-responsive">
+          <table id="top_js_repo_contributors_table" class="table table-hover">
+            
+            <!-- Create top human contributors table -->
+            <script>
+              function create_top_contributors_of_js_repo_ranking_table_html_body(element_id_to_assign_hmtl_onto, 
+                data_url, html_head, second_col, third_col
+              ) {
+                /*
+                Creates the table contents (html_body)
+                second_col: represents the 'winners' e.g most starred repos
+                third_col: represents the winners' performances e.g 459 stars 
+                
+                returns the html combining the head and the body of the table
+                */
+
+                var html_body_inside = `<tbody>`
+
+                //  Create the html_body of the table
+                fetch(data_url)
+                  .then(response => response.json())
+                  .then(data => {
+                    // const pull_requests = data[0][0].total_pull_requests;
+                    const top_contributors_list = data["top_contributors_of_js_repo"]
+                    for (let data_index = 0; data_index < top_contributors_list.length; data_index++){
+                      html_body_inside = html_body_inside 
+                        + `<tr>`
+                        + `<td>${data_index+1}</td>`
+                        + `<td>${top_contributors_list[data_index][second_col]}</td>`
+                        + `<td>${top_contributors_list[data_index][third_col]}</td>`
+                        + `</tr>`
+                    }
+                    html_body_inside = html_body_inside + `</tbody>`;
+                    
+                    document.getElementById(element_id_to_assign_hmtl_onto).innerHTML = 
+                    html_head + html_body_inside;    
+                  }
+                  );
+
+              }
+
+              function update_top_js_repo_contributors_table(repo_selected){
+                // Arguments to create the table
+                var table_html_id = "top_js_repo_contributors_table"
+                // Get the data URL 
+                let data_url = 'http://localhost:3200/javascript_frameworks/top_contributors_of_js_repo/' 
+                                    + repo_selected;
+                var html_head = `<thead class="text-warning">
+                                  <tr>
+                                    <th>Place</th>
+                                    <th>Contributor name</th>
+                                    <th>Number of commits</th>
+                                  </tr>
+                                </thead>`
+                var second_column_name = 'username'
+                var third_column_name = 'number_of_contributions'
+                
+                // Create the table
+                create_top_contributors_of_js_repo_ranking_table_html_body(table_html_id, data_url, html_head, 
+                  second_column_name, third_column_name);
+                
+              }
+
+              // document.getElementById("repo_dropdown_list_selection").addEventListener(
+              //     "change", function() {
+              //   let repo_selected = this.value;
+              //   console.log(repo_selected)
+              //   update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+              //     repo_selected);
+              //   update_top_js_repo_contributors_table(repo_selected);
+              //   updateTopJsContributorsDataTable(repo_selected);
+              // })
+            </script>
+
+
+
+            <!-- Create top contributors of js repos upon page render -->
+            <script>
+                function update_mirror_of_selected_repo_for_issue_closing_times(label_to_mirror, repo_selected){
+                  var selected_repo_mirror_array = document.getElementsByName(label_to_mirror);
+                  for (let selected_mirror_array_index=0; selected_mirror_array_index<selected_repo_mirror_array.length; selected_mirror_array_index++){
+                      selected_repo_mirror_array[selected_mirror_array_index].textContent = repo_selected ;
+                  }
+                }
+
+              
+              // const repo_preselected = "preactjs/preact";
+              // update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+              //   repo_preselected);
+              // update_top_js_repo_contributors_table(repo_preselected);
+              // updateTopJsContributorsDataTable(repo_preselected);
+            </script>
+
+            
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <script>
+      
+      $(document).ready(function() {
+
+        const repo_preselected = "preactjs/preact";
+        update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+          repo_preselected);
+        update_top_js_repo_contributors_table(repo_preselected);
+        updateTopJsContributorsDataTable(repo_preselected);
+
+
+        document.getElementById("repo_dropdown_list_selection").addEventListener(
+                    "change", function() {
+                  let repo_selected = this.value;
+                  update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+                    repo_selected);
+                  update_top_js_repo_contributors_table(repo_selected);
+                  updateTopJsContributorsDataTable(repo_selected);
+                });
+
+      });
+
+
+    </script>
+
+  </div>
+
+
+  
 
 
 
