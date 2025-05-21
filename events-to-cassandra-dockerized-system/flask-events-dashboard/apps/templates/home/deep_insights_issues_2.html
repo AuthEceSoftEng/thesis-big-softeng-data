@@ -199,7 +199,15 @@
                   {
                       targets: 4,
                       render: DataTable.render.seconds_to_durations_string_formatted()
-                  }
+                  },
+                  {
+                  className: "dt-head-center", 
+                  targets: "_all"
+                  },
+                  {
+                    className: "dt-body-center", 
+                    targets: "_all"
+                  },
               ],
               "createdRow": function( row, data, dataIndex){
                   if( data[4] >  200){
