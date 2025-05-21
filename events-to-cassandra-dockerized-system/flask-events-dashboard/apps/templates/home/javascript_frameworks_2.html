@@ -36,7 +36,7 @@
     </div> 
   </div>
 
-  <!-- Select repo and show its top contributors -->
+  <!-- Select repo drop down list -->
   <div class="row mb-4 ms-3">
     <div class="col-lg-4 col-md-6 mt-4" style="flex: 0 0 auto; max-height: 100px">
       <div class="card h-100">
@@ -85,10 +85,9 @@
     </div>
   </div>
 
-
-  <!-- Selected repo's top contributing users -->
+  
   <div class="row mb-4 ms-3">
-   
+    <!-- Selected repo's top contributing users - (deprecated)-->
     <div class="col-lg-6 col-md-12 mt-4">
       <div class="card">
         <div class="card h-100"></div>
@@ -165,14 +164,15 @@
                 
               }
 
-              document.getElementById("repo_dropdown_list_selection").addEventListener(
-                  "change", function() {
-                let repo_selected = this.value;
-                console.log(repo_selected)
-                update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
-                  repo_selected);
-                update_top_js_repo_contributors_table(repo_selected);
-              })
+              // document.getElementById("repo_dropdown_list_selection").addEventListener(
+              //     "change", function() {
+              //   let repo_selected = this.value;
+              //   console.log(repo_selected)
+              //   update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+              //     repo_selected);
+              //   update_top_js_repo_contributors_table(repo_selected);
+              //   updateTopJsContributorsDataTable(repo_selected);
+              // })
             </script>
 
 
@@ -187,10 +187,11 @@
                 }
 
               
-              const repo_preselected = "preactjs/preact";
-              update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
-                repo_preselected);
-              update_top_js_repo_contributors_table(repo_preselected);
+              // const repo_preselected = "preactjs/preact";
+              // update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+              //   repo_preselected);
+              // update_top_js_repo_contributors_table(repo_preselected);
+              // updateTopJsContributorsDataTable(repo_preselected);
             </script>
 
             
@@ -200,7 +201,7 @@
       </div>
     </div>
 
-    <!-- Selected repo's top contributing users -->
+    <!-- Selected repo's top contributing users - (datatable) -->
       <div class="col-lg-6 col-md-12 mt-4">
         <div class="card h-100">
           
@@ -237,42 +238,32 @@
               <thead>
                   <tr>
                       <th>Order</th>
-                      <th>Issue label</th>
-                      <th>Count</th>
-                      <th>Seconds</th>
-                      <th>Average issue closing time</th>
+                      <th>Contributor</th>
+                      <th>Number of contributions</th>
                   </tr>
               </thead>
               <tbody>
                   <tr>
                     <td>1</td>
-                    <td>bug</td>
+                    <td>username1</td>
                     <td>10</td>
-                    <td>60</td>
-                    <td>60</td>
                 </tr>
                 <tr>
                     <td>2</td>
-                    <td>waiting triage</td>
+                    <td>username2</td>
                     <td>5</td>
-                    <td>600</td>
-                    <td>600</td>
                 </tr>
                 <tr>
                     <td>3</td>
-                    <td>to_fix</td>
+                    <td>username3</td>
                     <td>7</td>
-                    <td>125</td>
-                    <td>125</td>
                 </tr>
             </tbody>
               <tfoot>
                 <tr>
                   <th>Order</th>
-                  <th>Issue label</th>
-                  <th>Count</th>
-                  <th>Seconds</th>
-                  <th>Average issue closing time</th>
+                  <th>Contributor</th>
+                  <th>Number of contributions</th>
                 </tr>
               </tfoot>
             </table> 
@@ -290,7 +281,7 @@
                 .then(response => response.json())
                 .then(data => {
                   
-                  const numberOfIssuesLabels = data["closing_times_per_label"].length;
+                  const numberOfIssuesLabels = data["top_contributors_of_js_repo"].length;
                   
                   
                   topJsContributorsDataTable.clear().draw();
@@ -311,6 +302,26 @@
         </div>
       </div>
 
+      <script>
+        
+        const repo_preselected = "preactjs/preact";
+        update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+          repo_preselected);
+        update_top_js_repo_contributors_table(repo_preselected);
+        updateTopJsContributorsDataTable(repo_preselected);
+
+
+        document.getElementById("repo_dropdown_list_selection").addEventListener(
+                    "change", function() {
+                  let repo_selected = this.value;
+                  console.log(repo_selected)
+                  update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+                    repo_selected);
+                  update_top_js_repo_contributors_table(repo_selected);
+                  updateTopJsContributorsDataTable(repo_selected);
+                });
+
+      </script>
 
   </div>
 
