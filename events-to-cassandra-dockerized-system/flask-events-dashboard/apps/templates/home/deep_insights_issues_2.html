@@ -25,7 +25,7 @@
   <div class="container-fluid py-4">
     
     <!-- Issues analysis -->
-    <div class="row mt-4">
+    <div class="row mb-4 mt-4">
       <div class="col-lg-5 col-md-12">
       <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
         <div class="card">
@@ -57,7 +57,7 @@
     </div>
 
     <!-- Datatable -->
-    <div class="row mt-4">
+    <div class="row mb-4 mt-4">
       
       
       <div class="col-lg-6 col-md-6">
@@ -273,175 +273,6 @@
         
     
       
-
-      <!-- Backup search box -->
-      <!-- <div class="col-lg-6 col-md-6">
-        <div class="card">
-
-          <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-          
-          <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.min.css">
-          <script rel="stylesheet" href="//cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></script>
-          <script src="//cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
-          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
-          <script src="//cdn.datatables.net/2.3.1/js/dataTables.js"></script>
-          
-          
-          <div class="card-header mb-0">
-            <h5 class="card-title">Average issue closing times by label</h5>
-            <span id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">- - -</span></span>
-          </div>
-
-          <div class="card-body table-responsive" style="margin-top: -3rem">
-            <table id="example_2" class="display">
-              <thead>
-                  <tr>
-                      <th>Order</th>
-                      <th>Issue label</th>
-                      <th>Count</th>
-                      <th>Seconds</th>
-                      <th>Average issue closing time</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  <tr>
-                    <td>1</td>
-                    <td>bug</td>
-                    <td>10</td>
-                    <td>60</td>
-                    <td>60</td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>waiting triage</td>
-                    <td>5</td>
-                    <td>600</td>
-                    <td>600</td>
-                </tr>
-                <tr>
-                    <td>3</td>
-                    <td>to_fix</td>
-                    <td>7</td>
-                    <td>125</td>
-                    <td>125</td>
-                </tr>
-            </tbody>
-              <tfoot>
-                <tr>
-                  <th>Place</th>
-                  <th>Issue label</th>
-                  <th>Count</th>
-                  <th>Seconds</th>
-                  <th>Average issue closing time</th>
-                </tr>
-              </tfoot>
-            </table> 
-          </div>
-          
-
-          <script>
-                            
-
-            function seconds_to_durations_dict(seconds) {
-              var dur = luxon.Duration.fromObject({seconds: seconds}).shiftTo('years', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds')
-              return dur.toObject();
-            }
-
-            function duration_dict_to_first_two_keys_dict(duration_dict) {
-              first_two_non_zero_values_dict = {}
-
-              for (const [key, value] of Object.entries(duration_dict)){
-                  if (Object.keys(first_two_non_zero_values_dict).length >= 2) {
-                      break;
-                  }
-                  if (value != 0) {
-                      first_two_non_zero_values_dict[key] = value;
-                  }
-              }    
-
-              return first_two_non_zero_values_dict
-            }
-
-            function duration_dict_to_formatted_string(duration_dict) {
-              var largest_two_durations_formatted = ''
-              for (const [key, value] of Object.entries(duration_dict))
-              largest_two_durations_formatted = 
-                  largest_two_durations_formatted + value + ' ' + key + ', '
-              largest_two_durations_formatted = largest_two_durations_formatted.slice(',', -2)
-
-              // console.log("first_two_non_zero_values_dict: "+duration_dict);
-              // console.log("largest_two_durations_formatted: "+largest_two_durations_formatted);
-
-              return largest_two_durations_formatted
-            }
-            
-            function seconds_to_formatted_string(seconds) {
-              const duration_dict_val = seconds_to_durations_dict(seconds);
-              
-              const first_two_keys_dict = duration_dict_to_first_two_keys_dict(duration_dict_val);
-              
-              const first_two_keys_dict_string_formatted_val = duration_dict_to_formatted_string(first_two_keys_dict);
-
-              return first_two_keys_dict_string_formatted_val
-            }
-
-            DataTable.render.seconds_to_durations_string_formatted = function ( cutoff ) {
-                return function ( data, type, row ) {
-                    if (type == "display") {
-                      return seconds_to_formatted_string(data);
-                    }
-                    // Search, order and type can use the original data
-                    return data
-                };
-            };
-
-            $(document).ready(function() {
-              new DataTable('#example_2', {
-                columnDefs: [
-                    {
-                        targets: 4,
-                        render: DataTable.render.seconds_to_durations_string_formatted()
-                    }
-                ],
-                "createdRow": function( row, data, dataIndex){
-                    if( data[4] >  200){
-                        $(row).css('background-color', '#ffeeba');
-                    }
-                }
-                    
-              });
-            });
-
-
-            
-
-            // Demo on functions above 
-            // Demo 1
-            const seconds_mock_data = 100;
-            console.log("seconds_mock_data: " + seconds_mock_data)
-
-            const duration_dict_mock_data = seconds_to_durations_dict(seconds_mock_data )
-            console.log("duration_dict_mock_data: " + duration_dict_mock_data)
-            
-            const first_two_non_zero_values_dict_mock_data = duration_dict_to_first_two_keys_dict(duration_dict_mock_data);
-            console.log("first_two_non_zero_values_dict_mock_data: "+first_two_non_zero_values_dict_mock_data);
-            
-            const duration_formatted_string_mock_data = duration_dict_to_formatted_string(first_two_non_zero_values_dict_mock_data);
-            console.log("duration_formatted_string_mock_data: " + duration_formatted_string_mock_data);
-
-            // Demo 2
-            const seconds_mock_data_2 = 201;
-            console.log("Seconds: " + seconds_mock_data_2 + ", " + "first_two_keys_duration_dict_formatted: " + seconds_to_formatted_string(seconds_mock_data_2));
-                    
-          </script>
-          
-          
-          
-
-        </div>
-      </div>  -->
-      
-
     </div>
 
 
@@ -582,7 +413,7 @@
 
 
     <!-- Big title: Deep Insights issues, comparison of repos  -->
-    <div class="row">
+    <div class="row mb-4">
       <div class="col-lg-5 col-md-12">
       <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
         <div class="card">
@@ -595,7 +426,7 @@
     </div>
 
     <!-- Smaller title: Closing times of pull-requests and issues -->
-    <div class="row mt-4">
+    <div class="row mb-4 mt-4">
       <div class="col-lg-5 col-md-12">
         <div class="card">
           <div class="card-header card-header-warning">
@@ -646,7 +477,7 @@
     </div>
 
      <!-- Closing times bar charts -->
-    <div class="row mt-5">
+    <div class="row mb-4 mt-5">
       
       <script>
         function seconds_to_larger_time_durations(seconds_to_transform){
@@ -1275,7 +1106,7 @@
     
 
     <!-- Closing times histograms -->
-    <div class="row mt-5">
+    <div class="row mb-4 mt-5">
       
       <script>
         function seconds_to_larger_time_durations(seconds_to_transform){
