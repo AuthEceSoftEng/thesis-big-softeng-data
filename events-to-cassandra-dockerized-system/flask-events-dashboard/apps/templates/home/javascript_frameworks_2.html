@@ -493,9 +493,15 @@
             topJsContributorsDataTable = new DataTable('#top_js_repo_contributors_table_datatable', {
               columnDefs: [
                 {
-                  className: "dt-center", 
+                  className: "dt-head-center", 
                   targets: "_all"
-                }
+                },
+                {
+                  className: "dt-body-center", 
+                  targets: "_all"
+                },
+                
+                
               ],
             });
           });
@@ -525,8 +531,8 @@
 
           }
         </script>
-
-        
+                
+      
         
       </div>
     </div>
