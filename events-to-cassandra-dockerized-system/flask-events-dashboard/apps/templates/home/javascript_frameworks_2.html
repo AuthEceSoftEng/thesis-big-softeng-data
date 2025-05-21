@@ -1,0 +1,545 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Tables {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- Start of container -->
+<body>
+  <nav class="navbar navbar-main navbar-expand-lg px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
+    <div class="container-fluid py-1 px-3">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
+          <li class="breadcrumb-item text-sm"><a class="opacity-5 text-dark" href="javascript:;">Github Analyzer</a></li>
+          <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Javascript frameworks</li>
+        </ol>
+        <h6 class="font-weight-bolder mb-0">Javascript frameworks</h6>
+      </nav>
+      <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
+    </div>
+  </nav>
+
+<div class="container-fluid py-4">
+  
+  <!-- Top contributors in 2024 -->
+  <div class="row ms-3">
+    <div class="col-lg-5 col-md-12">
+      <div class="card">
+        <div class="card-header card-header-warning">
+          <h3 class="card-title">Top contributors</h4>
+          <p >Based on commits acquired during December 2024</p>
+        </div>
+      </div>
+    </div> 
+  </div>
+
+  <!-- Select repo and show its top contributors -->
+  <div class="row mb-4 ms-3">
+  <div class="col-lg-4 col-md-6 mt-4" style="flex: 0 0 auto; max-height: 100px">
+    <div class="card h-100">
+      <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
+        <!-- <h5>Selected month</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
+        <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+        
+        <div class="dropdown float-lg-end pe-4">
+          <ul>
+            <select id="repo_dropdown_list_selection" class="drop_down_list_select bg-gradient-success" name="repo">
+              <option >Polymer/polymer</option>
+              <option >alpinejs/alpine</option>
+              <option >angular/angular</option>
+              <option >angular/angular.js</option>
+              <option >aurelia/aurelia</option>
+              <option >aurelia/framework</option>
+              <option >daemonite/material</option>
+              <option >dojo/dojo</option>
+              <option >emberjs/ember.js</option>
+              <option >facebook/react</option>
+              <option >finom/seemple</option>
+              <option >hotwired/stimulus</option>
+              <option >ionic-team/stencil</option>
+              <option >jashkenas/backbone</option>
+              <option >jorgebucaran/hyperapp</option>
+              <option >jquery/jquery</option>
+              <option >knockout/knockout</option>
+              <option >marko-js/marko</option>
+              <option >mithriljs/mithril.js</option>
+              <option >neomjs/neo</option>
+              <option >optimizely/nuclear-js</option>
+              <option >polymer/lit-element</option>
+              <option >preactjs/preact</option>
+              <option >riot/riot</option>
+              <option >solidjs/solid</option>
+              <option >spine/spine</option>
+              <option >sveltejs/svelte</option>
+              <option >tastejs/todomvc</option>
+              <option >vuejs/core</option>
+              <option >vuejs/vue</option>
+            </select>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selected repo's top contributing users -->
+  <div class="col-lg-6 col-md-12 mt-4">
+    <div class="card">
+      <div class="card h-100"></div>
+      <div class="card-header card-header-warning">
+        <h4 class="card-title">Ranking</h4>
+        <p id="top_js_repo_contributors_repo_mirror">of selected repo: 'Polymer/polymer'</p>
+      </div>
+
+      <div class="card-body table-responsive">
+        <table id="top_js_repo_contributors_table" class="table table-hover">
+          
+          <!-- Create top human contributors table -->
+          <script>
+            function create_top_contributors_of_js_repo_ranking_table_html_body(element_id_to_assign_hmtl_onto, 
+              data_url, html_head, second_col, third_col
+            ) {
+              /*
+              Creates the table contents (html_body)
+              second_col: represents the 'winners' e.g most starred repos
+              third_col: represents the winners' performances e.g 459 stars 
+              
+              returns the html combining the head and the body of the table
+              */
+
+              var html_body_inside = `<tbody>`
+
+              //  Create the html_body of the table
+              fetch(data_url)
+                .then(response => response.json())
+                .then(data => {
+                  // const pull_requests = data[0][0].total_pull_requests;
+                  const top_contributors_list = data["top_contributors_of_js_repo"]
+                  for (let data_index = 0; data_index < top_contributors_list.length; data_index++){
+                    html_body_inside = html_body_inside 
+                      + `<tr>`
+                      + `<td>${data_index+1}</td>`
+                      + `<td>${top_contributors_list[data_index][second_col]}</td>`
+                      + `<td>${top_contributors_list[data_index][third_col]}</td>`
+                      + `</tr>`
+                  }
+                  html_body_inside = html_body_inside + `</tbody>`;
+                  
+                  document.getElementById(element_id_to_assign_hmtl_onto).innerHTML = 
+                  html_head + html_body_inside;    
+                  console.log(data)
+                }
+                );
+
+            }
+
+            function update_top_js_repo_contributors_table(repo_selected){
+              // Arguments to create the table
+              var table_html_id = "top_js_repo_contributors_table"
+              // Get the data URL 
+              let data_url = 'http://localhost:3200/javascript_frameworks/top_contributors_of_js_repo/' 
+                                  + repo_selected;
+              var html_head = `<thead class="text-warning">
+                                <tr>
+                                  <th>Place</th>
+                                  <th>Contributor name</th>
+                                  <th>Number of commits</th>
+                                </tr>
+                              </thead>`
+              var second_column_name = 'username'
+              var third_column_name = 'number_of_contributions'
+              
+              // Create the table
+              create_top_contributors_of_js_repo_ranking_table_html_body(table_html_id, data_url, html_head, 
+                second_column_name, third_column_name);
+              
+            }
+
+            document.getElementById("repo_dropdown_list_selection").addEventListener(
+                "change", function() {
+              let repo_selected = this.value;
+              console.log(repo_selected)
+              update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+                repo_selected);
+              update_top_js_repo_contributors_table(repo_selected);
+            })
+          </script>
+
+
+
+          <!-- Create top contributors of js repos upon page render -->
+          <script>
+              function update_mirror_of_selected_repo_for_issue_closing_times(label_to_mirror, repo_selected){
+                var selected_repo_mirror = document.getElementById(label_to_mirror);
+                selected_repo_mirror.textContent = "of selected repo: '" + repo_selected + "'";                  
+              }
+
+            
+            const repo_preselected = "preactjs/preact";
+            update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+              repo_preselected);
+            update_top_js_repo_contributors_table(repo_preselected);
+          </script>
+
+          
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  </div>
+
+
+  
+  <!-- Open Javascript repos page title  -->
+  <div class="row">
+    <div class="col-lg-5 col-md-12">
+      <div class="card">
+        <div class="card-header card-header-warning">
+          <h3 class="card-title">Popular Opensource Javascript repos</h4>
+          <p >Based on stars acquired during December 2024</p>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+
+  
+  <!-- Star history of some opensource javascript repos -->
+  <div class="row mt-4">
+    <div class="mt-4 mb-4">
+      <div class="card">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+          <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+            <div class="chart">
+              <canvas id="star_history_chart" class="chart-canvas" height="500"></canvas>
+              <script src="/static/assets/js/plugins/chartjs.min.js"></script>
+              
+
+              <!-- Create star history chart -->
+              <script>
+              function getRandomColor() {
+                  return `#${Math.floor(Math.random()*16777215).toString(16)}`;
+              }
+
+              var ctx_js_repos = document.getElementById("star_history_chart").getContext("2d");
+              // const month_labels = // Take it from the server.py (2024-01, 2024-02 etc)
+              // const datasets_labels = // Take it from the server.py
+              // const point_background_color // make a random one when creating the data 
+              // in the socket.io listening to the file.
+
+              var star_history_chart = new Chart(ctx_js_repos, {
+                type: "line",
+                data: {
+                  labels: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+                    "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+                    "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"
+                  ],
+                  datasets: [],
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      maxHeight: 1000,
+                      labels: {
+                        color: '#ffffff',
+                        font: {
+                          size: 20
+                        }
+                      } 
+                    }
+                  },
+                  interaction: {
+                    intersect: false,
+                    mode: 'index',
+                  },
+                  scales: {
+                    y: {
+                      grid: {
+                        drawBorder: false,
+                        display: true,
+                        drawOnChartArea: true,
+                        drawTicks: false,
+                        borderDash: [5, 5],
+                        color: 'rgba(255, 255, 255, .2)'
+                      },
+                      ticks: {
+                        display: true,
+                        padding: 10,
+                        color: '#f8f9fa',
+                        font: {
+                          size: 14,
+                          // size: 20,
+                          weight: 300,
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        },
+                      }
+                    },
+                    x: {
+                      grid: {
+                        drawBorder: false,
+                        display: false,
+                        drawOnChartArea: false,
+                        drawTicks: false,
+                        borderDash: [5, 5]
+                      },
+                      ticks: {
+                        display: true,
+                        color: '#f8f9fa',
+                        padding: 10,
+                        font: {
+                          size: 14,
+                          weight: 300,
+                          family: "Roboto",
+                          style: 'normal',
+                          lineHeight: 2
+                        },
+                      }
+                    },
+                  },
+                },
+              });
+
+              </script>
+
+              <!-- create_js_repo_star_history_graph -->
+              <script>
+                function create_js_repo_star_history_graph(){
+                  const data_url = 'http://localhost:3200/javascript_frameworks/number_of_stars_by_repo';
+                  //  Create the html_body of the table
+                  fetch(data_url)
+                    .then(response => response.json())
+                    .then(data => {          
+                    
+                    // const num_of_js_repos_to_appear = Object.keys(data).length
+                    const num_of_js_repos_to_appear = 10;
+                    var js_repo_name;
+                    var stars_only;
+                    var stars_per_month_dict;
+                    var new_js_repo_dataset;
+
+
+                    for (let js_repo_index = 0; js_repo_index < num_of_js_repos_to_appear; js_repo_index++){
+                      // console.log(Object.keys(data)[0]);
+                      var js_repo_name = Object.keys(data)[js_repo_index];
+                      var stars_per_day = Object.values(data)[js_repo_index]['stars_by_day'];
+
+                      // [js_repo_name, stars_per_month_dict] = Object.entries(data)[js_repo_index];
+                      // stars_only = Object.values(stars_per_month_dict);
+
+                      new_js_repo_dataset = {
+                        label: js_repo_name,
+                        tension: 0,
+                        borderWidth: 0,
+                        pointRadius: 5,
+                        pointBackgroundColor: (color=getRandomColor()),
+                        pointBorderColor: "transparent",
+                        borderColor: color,
+                        borderWidth: 4,
+                        backgroundColor: "transparent",
+                        fill: true,
+                        data: stars_per_day,
+                        maxBarThickness: 6
+
+                      }
+                      star_history_chart.data.datasets.push(new_js_repo_dataset);
+                      star_history_chart.update();  
+                    } 
+                    
+                    }
+                  );
+                  
+                };
+                
+              </script>
+
+              
+
+              <!-- create_js_repo_star_history_graph_given_num_of_js_repos -->
+              <script>
+                function create_js_repo_star_history_graph_given_num_of_js_repos(num_of_js_repos_to_show){
+                  const data_url = 'http://localhost:3200/javascript_frameworks/number_of_stars_by_repo';
+                  //  Create the html_body of the table
+                  fetch(data_url)
+                    .then(response => response.json())
+                    .then(data => {          
+                    
+                    // const num_of_js_repos_to_appear = Object.keys(data).length
+                    var num_of_js_repos_to_appear = num_of_js_repos_to_show;
+
+                    // If 'all' js_repos are selected to appear, show all js_repos stored in the database 
+                    if (num_of_js_repos_to_appear == 'all'){
+                      num_of_js_repos_to_appear =  Object.keys(data).length;
+                    }
+
+                    var js_repo_name;
+                    var stars_only;
+                    var stars_per_month_dict;
+                    var new_js_repo_dataset;
+
+                    // Remove the existing js repos star histories from the table (if exists)
+                    star_history_chart.data.datasets.splice(0, star_history_chart.data.datasets.length)
+                    star_history_chart.data.labels.splice(0, star_history_chart.data.labels.length)
+
+
+                    for (let js_repo_index = 0; js_repo_index < num_of_js_repos_to_appear; js_repo_index++){
+                      var js_repo_name = Object.keys(data)[js_repo_index];
+                      var stars_per_day= Object.values(data)[js_repo_index]['stars_by_day'];
+                      
+
+                      // [js_repo_name, stars_per_month_dict] = Object.entries(data)[js_repo_index];
+                      // stars_only = Object.values(stars_per_month_dict);
+
+                      new_js_repo_dataset = {
+                        label: js_repo_name,
+                        tension: 0,
+                        borderWidth: 0,
+                        pointRadius: 5,
+                        pointBackgroundColor: (color=getRandomColor()),
+                        pointBorderColor: "transparent",
+                        borderColor: color,
+                        borderWidth: 4,
+                        backgroundColor: "transparent",
+                        fill: true,
+                        data: stars_per_day,
+                        maxBarThickness: 6
+
+                      }
+                      star_history_chart.data.datasets.push(new_js_repo_dataset);
+                      star_history_chart.update();  
+                    } 
+                    
+                    }
+                  );
+                  
+                };
+              </script>
+
+
+             
+
+
+
+              <!-- Change number of js repos shown based on UI selection -->
+              <script>
+                function listen_to_selected_num_of_js_repos(preselected_option){
+                  
+                  // Initialize all values with this class name
+                  let num_of_js_repos_placeholders_elements =  
+                      document.getElementsByClassName("num_of_js_repos_class");
+                  for (var num_of_js_repos_placeholders_index = 0; 
+                        num_of_js_repos_placeholders_index < num_of_js_repos_placeholders_elements.length;
+                        num_of_js_repos_placeholders_index++){
+                          num_of_js_repos_placeholders_elements[num_of_js_repos_placeholders_index].textContent = 
+                          preselected_option;
+                      }
+
+                  document.getElementById("select_number_of_js_repos_to_show").addEventListener(
+                    "change", function() {
+                      const selected_num_of_js_repos = this.value; 
+                      let num_of_js_repos_placeholders_elements =  document.getElementsByClassName("num_of_js_repos_class")
+                      for (var num_of_js_repos_placeholders_index = 0; 
+                        num_of_js_repos_placeholders_index < num_of_js_repos_placeholders_elements.length;
+                        num_of_js_repos_placeholders_index++){
+                          num_of_js_repos_placeholders_elements[num_of_js_repos_placeholders_index].textContent = 
+                            selected_num_of_js_repos;
+                      }
+                    }
+                  )
+                }
+              </script>
+
+
+              
+
+    
+            </div>
+          </div>
+        </div>
+
+
+        <div class="row">
+          <div class="col-lg-5 col-md-12">
+
+            <div class="card-body mt-4">
+              <h6 class="mb-0">Star history of some popular Javascript frameworks on Github</h6>
+              <p class="text-sm ">Number of repos selected to be shown: 
+                <span class="num_of_js_repos_class">---</span>
+              </p>
+              
+              <hr class="dark horizontal">
+              
+              <div class="d-flex">
+                <i class="material-icons text-sm my-auto me-1">schedule</i>
+                <p class="mb-0 text-sm">just updated</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-5 col-md-12">
+            <div class="card-body mt-4">
+                <h6 class="mb-0">Select number of repos to show:</h6>
+                <p class="dropdown text-sm float-lg-end pe-4">
+                  <ul>
+                    <select id="select_number_of_js_repos_to_show" class="drop_down_list_select bg-gradient-success" name="repo">
+                      <option >3</option>
+                      <option >5</option>
+                      <option >10</option>
+                      <option >15</option>
+                      <option >all</option>
+                    </select>
+                  </ul>
+                </p>
+              </div>
+              
+              <!-- Implement star history graph -->
+              <script>
+                // Initialize all preselected option for the number of javascript repos 
+                const preselected_option = document.getElementById("select_number_of_js_repos_to_show").value;
+                listen_to_selected_num_of_js_repos(preselected_option);
+                create_js_repo_star_history_graph_given_num_of_js_repos(preselected_option);
+                
+                // On select new number of js repos to show, create the new js repo star history graph
+                document.getElementById("select_number_of_js_repos_to_show").addEventListener(
+                    "change", function() {
+                  let num_of_js_repos_selected = this.value;
+                  create_js_repo_star_history_graph_given_num_of_js_repos(num_of_js_repos_selected);
+                })
+
+              </script>
+
+
+            </div>
+          </div> 
+        </div>
+
+
+      </div>
+    </div>
+  </div> 
+
+
+
+
+  
+
+
+</div>
+
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}
+</body>
