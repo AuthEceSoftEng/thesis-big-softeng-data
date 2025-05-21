@@ -2014,8 +2014,6 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
         get_bin_of_average_issue_closing_time_of_repo(issue_closing_times_of_repo_2, bin_centers, bin_edges, abs_frequencies)
     
     
-    
-    
     # Expose data
     dict_to_be_exposed = {}
     dict_to_be_exposed["bin_centers_log_transformed"] = bin_centers
