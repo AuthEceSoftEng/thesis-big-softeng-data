@@ -193,23 +193,8 @@
 
             // Global variable representing the IssueByLabelDataTable
             // var issuesByLabelDataTable =  new DataTable('#example');
-            function styleIssuesByLabelTable(repo_selected){
-              const issuesByLabelUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
 
-              // var closing_times_avg;
-              // var closing_time_std;
-              fetch(issuesByLabelUrl)
-                .then(response => response.json())
-                .then(data => {
-                  
-                  // closing_times_avg = data["average_closing_time_of_all_repo_issues"]
-                  // closing_time_std = data["closing_time_standard_deviation"]
-                
-                  // const number_of_stds_from_mean = 0.5
-                  // var lower_lim = closing_times_avg - number_of_stds_from_mean * closing_time_std;
-                  // var upper_lim = closing_times_avg + number_of_stds_from_mean * closing_time_std;
-                  
-                  issuesByLabelDataTable = new DataTable('#example', {
+            var issuesByLabelDataTable = new DataTable('#example', {
                   // var issuesByLabelDataTableMirror = $('#example').DataTable({
                     columnDefs: [
                         {
@@ -228,7 +213,45 @@
                           className: "dt-body-center", 
                           targets: "_all"
                         },
-                    ],
+                    ]
+            });
+
+            // function styleIssuesByLabelTable(repo_selected){
+            //   const issuesByLabelUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
+
+            //   // var closing_times_avg;
+            //   // var closing_time_std;
+            //   fetch(issuesByLabelUrl)
+            //     .then(response => response.json())
+            //     .then(data => {
+                  
+                  // closing_times_avg = data["average_closing_time_of_all_repo_issues"]
+                  // closing_time_std = data["closing_time_standard_deviation"]
+                
+                  // const number_of_stds_from_mean = 0.5
+                  // var lower_lim = closing_times_avg - number_of_stds_from_mean * closing_time_std;
+                  // var upper_lim = closing_times_avg + number_of_stds_from_mean * closing_time_std;
+                  
+                  // issuesByLabelDataTable = new DataTable('#example', {
+                  // // var issuesByLabelDataTableMirror = $('#example').DataTable({
+                  //   columnDefs: [
+                  //       {
+                  //           targets: 3,
+                  //           render: DataTable.render.number(null, null, 0, null, null)
+                  //       },
+                  //       {
+                  //           targets: 4,
+                  //           render: DataTable.render.seconds_to_durations_string_formatted()
+                  //       },
+                  //       {
+                  //       className: "dt-head-center", 
+                  //       targets: "_all"
+                  //       },
+                  //       {
+                  //         className: "dt-body-center", 
+                  //         targets: "_all"
+                  //       },
+                  //   ],
                     // "createdRow": function (repo_selected) {
                     //   return function( row, data, dataIndex){
                     //     if( data[4] > upper_lim){
@@ -244,9 +267,9 @@
                     //     }
                     // }
                         
-                  });
-                })
-            }
+            //       });
+            //     })
+            // }
           
 
             function updateIssuesByLabelDataTable(repo_selected) {  
@@ -305,8 +328,15 @@
         </div>
       <!-- </div> -->
 
-      <!-- Issues' closing times by label (deprecated)-->
-      <!-- <div class="col-lg-6 col-md-6">
+     
+    
+      
+    </div>
+
+     <!-- Issues' closing times by label (deprecated)-->
+       
+    <div class="row mb-4 mt-4">
+      <div class="col-lg-6 col-md-6">
         <div class="card h-100">
           
           <div class="card-header card-header-warning">
@@ -320,9 +350,6 @@
 
         </div>
       </div>
-         -->
-    
-      
     </div>
 
 
@@ -436,7 +463,7 @@
                 document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_selected; 
 
                 
-                styleIssuesByLabelTable(repo_selected);
+                // styleIssuesByLabelTable(repo_selected);
                 updateIssuesByLabelDataTable(repo_selected);
                 
                 
@@ -452,7 +479,7 @@
         document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
 
         
-        styleIssuesByLabelTable(repo_whose_issue_closing_times_to_get);
+        // styleIssuesByLabelTable(repo_whose_issue_closing_times_to_get);
         updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);
         // updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);
         
