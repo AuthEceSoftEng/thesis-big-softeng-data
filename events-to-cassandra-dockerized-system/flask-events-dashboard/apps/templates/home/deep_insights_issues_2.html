@@ -56,11 +56,11 @@
       </div>
     </div>
 
-    <!-- Datatable -->
+    <!-- Datatables -->
     <div class="row mb-4 mt-4">
       
-      
-      <div class="col-lg-6 col-md-6">
+      <!-- Issues' closing times by label (datatables)-->
+      <!-- <div class="col-lg-6 col-md-6"> -->
         <div class="card">
 
           
@@ -196,22 +196,26 @@
             function styleIssuesByLabelTable(repo_selected){
               const issuesByLabelUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
 
-              var closing_times_avg;
-              var closing_time_std;
+              // var closing_times_avg;
+              // var closing_time_std;
               fetch(issuesByLabelUrl)
                 .then(response => response.json())
                 .then(data => {
                   
-                  closing_times_avg = data["average_closing_time_of_all_repo_issues"]
-                  closing_time_std = data["closing_time_standard_deviation"]
+                  // closing_times_avg = data["average_closing_time_of_all_repo_issues"]
+                  // closing_time_std = data["closing_time_standard_deviation"]
                 
-                  const number_of_stds_from_mean = 0.5
-                  var lower_lim = closing_times_avg - number_of_stds_from_mean * closing_time_std;
-                  var upper_lim = closing_times_avg + number_of_stds_from_mean * closing_time_std;
+                  // const number_of_stds_from_mean = 0.5
+                  // var lower_lim = closing_times_avg - number_of_stds_from_mean * closing_time_std;
+                  // var upper_lim = closing_times_avg + number_of_stds_from_mean * closing_time_std;
                   
                   issuesByLabelDataTable = new DataTable('#example', {
                   // var issuesByLabelDataTableMirror = $('#example').DataTable({
                     columnDefs: [
+                        {
+                            targets: 3,
+                            render: DataTable.render.number(null, null, 0, null, null)
+                        },
                         {
                             targets: 4,
                             render: DataTable.render.seconds_to_durations_string_formatted()
@@ -225,15 +229,15 @@
                           targets: "_all"
                         },
                     ],
-                    "createdRow": function (repo_selected) {
-                      return function( row, data, dataIndex){
-                        if( data[4] > upper_lim){
-                            console.log("data[4]: " + data[4])
-                            console.log("upper_lim: " + upper_lim)
-                            $(row).css('background-color', '#ffeeba');
-                        }
-                      }
-                    }
+                    // "createdRow": function (repo_selected) {
+                    //   return function( row, data, dataIndex){
+                    //     if( data[4] > upper_lim){
+                    //         console.log("data[4]: " + data[4])
+                    //         console.log("upper_lim: " + upper_lim)
+                    //         $(row).css('background-color', '#ffeeba');
+                    //    }
+                    //   }
+                    // }
                     // "updatedRow": function( row, data, dataIndex){
                     //     if( data[3] >  200){
                     //         $(row).css('background-color', '#ffeeba');
@@ -263,9 +267,29 @@
                     var rowSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"];
                     var rowAverageClosingTimesSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"];
                     
-                    // console.log([rowOrder, rowIssueLabel, rowCount, rowSeconds, rowAverageClosingTimesSeconds]);
                     issuesByLabelDataTable.row.add([rowOrder, rowIssueLabel, rowCount, rowSeconds, rowAverageClosingTimesSeconds]).draw();
 
+
+                    // Paint the row red if the issue closing time in seconds is higher than the upper limit threshold (mean + 2 * sigma)
+                    var closing_times_avg = data["average_closing_time_of_all_repo_issues"];
+                    var closing_time_std = data["closing_time_standard_deviation"]
+                    const number_of_stds_from_mean = 0.5
+                    var lower_lim = closing_times_avg - number_of_stds_from_mean * closing_time_std;
+                    var upper_closing_time_threshold = closing_times_avg + number_of_stds_from_mean * closing_time_std;
+                    
+                    // console.log("rowAverageClosingTimesSeconds: " + rowAverageClosingTimesSeconds)
+                    // console.log("upper_closing_time_threshold: " + upper_closing_time_threshold)
+                    
+                    if (rowAverageClosingTimesSeconds > upper_closing_time_threshold){
+                    // if (rowAverageClosingTimesSeconds > 1){
+                      console.log("rowAverageClosingTimesSeconds: "+ rowAverageClosingTimesSeconds+ "\t>\t" + upper_closing_time_threshold + "\n");
+                      var rowNode = issuesByLabelDataTable.row(':last').node();
+                      $(rowNode).css('background-color', '#ffeeba');
+                    } else {
+                      console.log("rowAverageClosingTimesSeconds: "+ rowAverageClosingTimesSeconds+ "\t<\t" + upper_closing_time_threshold + "\n");
+                      
+                    }
+                      
                   };                 
 
                 });
@@ -279,10 +303,10 @@
           
 
         </div>
-      </div>
+      <!-- </div> -->
 
-      <!-- Issues' closing times by label -->
-      <div class="col-lg-6 col-md-6">
+      <!-- Issues' closing times by label (deprecated)-->
+      <!-- <div class="col-lg-6 col-md-6">
         <div class="card h-100">
           
           <div class="card-header card-header-warning">
@@ -296,7 +320,7 @@
 
         </div>
       </div>
-        
+         -->
     
       
     </div>

@@ -2145,7 +2145,7 @@ def get_issues_closing_times_by_label(repo_name):
     average_closing_time_of_all_repo_issues = np.average(closing_times_list_in_seconds)
     # Average of all issues of repo regardless of issue label (meaning not average of averages per label
     # but average of all repo issues closing times)
-    dict_to_expose["average_closing_time_of_all_repo_issues"] = average_closing_time_of_all_repo_issues
+    dict_to_expose["average_closing_time_of_all_repo_issues"] = round(average_closing_time_of_all_repo_issues, 0)
     closing_time_standard_deviation =  np.std(closing_times_list_in_seconds)
     dict_to_expose["closing_time_standard_deviation"] = closing_time_standard_deviation
 
@@ -2217,7 +2217,7 @@ def get_issues_closing_times_by_label(repo_name):
         # days_hours_min_secs_tuple = 
         dict_element = {"issue_label" : issue_label, 
                 "number_of_issues_with_this_label": number_of_issues_per_label_dict[issue_label],
-                "average_closing_time_in_seconds": average_closing_time_of_issues_per_label[issue_label],
+                "average_closing_time_in_seconds": round(average_closing_time_of_issues_per_label[issue_label], 0),
                 "average_closing_time_formatted": time_dict_largest_two_durations}
         average_closing_time_of_issues_per_label_list.append(dict_element)
 
