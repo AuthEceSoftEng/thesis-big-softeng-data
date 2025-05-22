@@ -1225,7 +1225,6 @@ def compare_pull_request_closing_times_bar_chart(repo_name_1, repo_name_2):
     selected_bin_edges_stringified = [period_to_string(seconds_to_period(bin_edges[i])) for i in range(len(bin_edges))]                                
     corresponding_bin_centers_labels = ['{} - {}'.format(selected_bin_edges_stringified[i], selected_bin_edges_stringified[i+1]) for i in range(len(abs_frequencies))]
         
-    cluster.shutdown()
         
         
     def get_pull_requests_closing_times_of_repo(repo_name=str): 
@@ -1679,7 +1678,6 @@ def compare_issue_closing_times_bar_chart(repo_name_1, repo_name_2):
         
         print(f"Bin centers, bin edges and absolute frequencies of histogram '{histogram_name}' already exist in table {histograms_keyspace}.{histograms_table_name}\n")
             
-    cluster.shutdown()
     
     
         
@@ -2171,7 +2169,6 @@ def get_issues_closing_times_by_label(repo_name):
             'number_of_issues_with_this_label')
         number_of_issues_per_label_dict[issue_label] = number_of_issues_for_the_label
     
-    cluster.shutdown()
     
     def get_only_first_two_not_zero_times(num_of_seconds):
         """
