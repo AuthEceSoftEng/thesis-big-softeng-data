@@ -63,24 +63,23 @@
       <div class="col-lg-6 col-md-6">
         <div class="card">
 
+          
           <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
           <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-          <script src=https://cdn.datatables.net/2.3.1/js/jquery.dataTables.min.js></script>
-
           
-          <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.min.css">
-          <script rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></script>
-
-          <script rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.5.1/css/rowGroup.dataTables.css"></script>
-
-
-          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.js"></script>
-
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
+          <script src="https://cdn.datatables.net/2.3.1/js/jquery.dataTables.min.js"></script>
           <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
-          
+          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.js"></script>
           <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/dataTables.rowGroup.js"></script>
           <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/rowGroup.dataTables.js"></script>
+
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
+
+          <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.min.css">
+          <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></link>
+          <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.5.1/css/rowGroup.dataTables.css"></link> 
+
+          
 
           <div class="card-header mb-0">
             <h5 class="card-title">Average issue closing times by label</h5>
@@ -193,8 +192,8 @@
 
 
             // Global variable representing the IssueByLabelDataTable
-            var issuesByLabelDataTable =  new DataTable('#example');
-            function initializeIssuesByLabelTable(repo_selected){
+            // var issuesByLabelDataTable =  new DataTable('#example');
+            function styleIssuesByLabelTable(repo_selected){
               const issuesByLabelUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
 
               var closing_times_avg;
@@ -202,7 +201,7 @@
               fetch(issuesByLabelUrl)
                 .then(response => response.json())
                 .then(data => {
-                  console.log("data['average_closing_time_of_all_repo_issues']: "+ data["average_closing_time_of_all_repo_issues"])
+                  
                   closing_times_avg = data["average_closing_time_of_all_repo_issues"]
                   closing_time_std = data["closing_time_standard_deviation"]
                 
@@ -210,8 +209,8 @@
                   var lower_lim = closing_times_avg - number_of_stds_from_mean * closing_time_std;
                   var upper_lim = closing_times_avg + number_of_stds_from_mean * closing_time_std;
                   
-                  // issuesByLabelDataTable = new DataTable('#example', {
-                  $('#example').dataTable({
+                  issuesByLabelDataTable = new DataTable('#example', {
+                  // var issuesByLabelDataTableMirror = $('#example').DataTable({
                     columnDefs: [
                         {
                             targets: 4,
@@ -412,8 +411,10 @@
                   "closing_time_by_label_repo_mirror", repo_selected)
                 document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_selected; 
 
-                initializeIssuesByLabelTable(repo_selected);
+                
+                styleIssuesByLabelTable(repo_selected);
                 updateIssuesByLabelDataTable(repo_selected);
+                
                 
               }
         })
@@ -426,8 +427,10 @@
         update_issue_closing_time_by_label_table(repo_whose_issue_closing_times_to_get);
         document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
 
-        initializeIssuesByLabelTable(repo_whose_issue_closing_times_to_get);
+        
+        styleIssuesByLabelTable(repo_whose_issue_closing_times_to_get);
         updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);
+        // updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);
         
       </script>
 
@@ -769,7 +772,6 @@
                     pull_requests_closing_times_bar_chart_options.series[0].data = pull_requests_bar_heights_list
                     
                     sum_of_pull_requests_bar_heights = pull_requests_bar_heights_list.reduce((a, b) => a + b, 0);
-                    console.log(sum_of_pull_requests_bar_heights)
 
                     pull_requests_closing_times_bar_chart_options.xaxis.categories = data["corresponding_bin_centers_labels"]
                     pull_requests_closing_times_bar_chart_options.annotations.points = [
@@ -1051,7 +1053,6 @@
                     issues_closing_times_bar_chart_options.series[0].data = issues_bar_heights_list
                     
                     sum_of_issues_bar_heights = issues_bar_heights_list.reduce((a, b) => a + b, 0);
-                    console.log(sum_of_issues_bar_heights)
 
                     issues_closing_times_bar_chart_options.xaxis.categories = data["corresponding_bin_centers_labels"]
                     issues_closing_times_bar_chart_options.annotations.points = [
