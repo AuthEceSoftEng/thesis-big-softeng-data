@@ -196,18 +196,19 @@
 
             var issuesByLabelDataTable = new DataTable('#example', {
                   // var issuesByLabelDataTableMirror = $('#example').DataTable({
-                    columnDefs: [
+                  // order: [[4, 'desc']],   
+                  columnDefs: [
                         {
                             targets: 3,
-                            render: DataTable.render.number(null, null, 0, null, null)
+                            render: DataTable.render.number(null, null, 0)
                         },
                         {
                             targets: 4,
                             render: DataTable.render.seconds_to_durations_string_formatted()
                         },
                         {
-                        className: "dt-head-center", 
-                        targets: "_all"
+                          className: "dt-head-center", 
+                          targets: "_all"
                         },
                         {
                           className: "dt-body-center", 
@@ -216,61 +217,9 @@
                     ]
             });
 
-            // function styleIssuesByLabelTable(repo_selected){
-            //   const issuesByLabelUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
+      
+            
 
-            //   // var closing_times_avg;
-            //   // var closing_time_std;
-            //   fetch(issuesByLabelUrl)
-            //     .then(response => response.json())
-            //     .then(data => {
-                  
-                  // closing_times_avg = data["average_closing_time_of_all_repo_issues"]
-                  // closing_time_std = data["closing_time_standard_deviation"]
-                
-                  // const number_of_stds_from_mean = 0.5
-                  // var lower_lim = closing_times_avg - number_of_stds_from_mean * closing_time_std;
-                  // var upper_lim = closing_times_avg + number_of_stds_from_mean * closing_time_std;
-                  
-                  // issuesByLabelDataTable = new DataTable('#example', {
-                  // // var issuesByLabelDataTableMirror = $('#example').DataTable({
-                  //   columnDefs: [
-                  //       {
-                  //           targets: 3,
-                  //           render: DataTable.render.number(null, null, 0, null, null)
-                  //       },
-                  //       {
-                  //           targets: 4,
-                  //           render: DataTable.render.seconds_to_durations_string_formatted()
-                  //       },
-                  //       {
-                  //       className: "dt-head-center", 
-                  //       targets: "_all"
-                  //       },
-                  //       {
-                  //         className: "dt-body-center", 
-                  //         targets: "_all"
-                  //       },
-                  //   ],
-                    // "createdRow": function (repo_selected) {
-                    //   return function( row, data, dataIndex){
-                    //     if( data[4] > upper_lim){
-                    //         console.log("data[4]: " + data[4])
-                    //         console.log("upper_lim: " + upper_lim)
-                    //         $(row).css('background-color', '#ffeeba');
-                    //    }
-                    //   }
-                    // }
-                    // "updatedRow": function( row, data, dataIndex){
-                    //     if( data[3] >  200){
-                    //         $(row).css('background-color', '#ffeeba');
-                    //     }
-                    // }
-                        
-            //       });
-            //     })
-            // }
-          
 
             function updateIssuesByLabelDataTable(repo_selected) {  
 
@@ -290,29 +239,24 @@
                     var rowSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"];
                     var rowAverageClosingTimesSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"];
                     
-                    issuesByLabelDataTable.row.add([rowOrder, rowIssueLabel, rowCount, rowSeconds, rowAverageClosingTimesSeconds]).draw();
-
-
                     // Paint the row red if the issue closing time in seconds is higher than the upper limit threshold (mean + 2 * sigma)
-                    var closing_times_avg = data["average_closing_time_of_all_repo_issues"];
-                    var closing_time_std = data["closing_time_standard_deviation"]
-                    const number_of_stds_from_mean = 0.5
-                    var lower_lim = closing_times_avg - number_of_stds_from_mean * closing_time_std;
+                    closing_times_avg = data["average_closing_time_of_all_repo_issues"]
+                    closing_time_std = data["closing_time_standard_deviation"] 
+                    // console.log("closing_times_avg: "+closing_times_avg);
+                    // console.log("closing_time_std: "+closing_time_std);
+                    var number_of_stds_from_mean = 2
                     var upper_closing_time_threshold = closing_times_avg + number_of_stds_from_mean * closing_time_std;
                     
-                    // console.log("rowAverageClosingTimesSeconds: " + rowAverageClosingTimesSeconds)
-                    // console.log("upper_closing_time_threshold: " + upper_closing_time_threshold)
-                    
-                    if (rowAverageClosingTimesSeconds > upper_closing_time_threshold){
-                    // if (rowAverageClosingTimesSeconds > 1){
-                      console.log("rowAverageClosingTimesSeconds: "+ rowAverageClosingTimesSeconds+ "\t>\t" + upper_closing_time_threshold + "\n");
-                      var rowNode = issuesByLabelDataTable.row(':last').node();
-                      $(rowNode).css('background-color', '#ffeeba');
-                    } else {
-                      console.log("rowAverageClosingTimesSeconds: "+ rowAverageClosingTimesSeconds+ "\t<\t" + upper_closing_time_threshold + "\n");
-                      
-                    }
-                      
+                    issuesByLabelDataTable.on('draw', function () {
+                      issuesByLabelDataTable.rows().every(function () {
+                        const data = this.data();
+                        if (data[4] > upper_closing_time_threshold) {
+                          $(this.node()).css('background-color', '#ffeeba');
+                        }
+                      });
+                    });
+                    issuesByLabelDataTable.row.add([rowOrder, rowIssueLabel, rowCount, rowSeconds, rowAverageClosingTimesSeconds]).draw();
+
                   };                 
 
                 });
@@ -463,10 +407,7 @@
                 document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_selected; 
 
                 
-                // styleIssuesByLabelTable(repo_selected);
-                updateIssuesByLabelDataTable(repo_selected);
-                
-                
+                updateIssuesByLabelDataTable(repo_selected);                
               }
         })
       </script>
@@ -477,12 +418,8 @@
         const repo_whose_issue_closing_times_to_get = "Expensify/App";
         update_issue_closing_time_by_label_table(repo_whose_issue_closing_times_to_get);
         document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
-
         
-        // styleIssuesByLabelTable(repo_whose_issue_closing_times_to_get);
-        updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);
-        // updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);
-        
+        updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);        
       </script>
 
 
