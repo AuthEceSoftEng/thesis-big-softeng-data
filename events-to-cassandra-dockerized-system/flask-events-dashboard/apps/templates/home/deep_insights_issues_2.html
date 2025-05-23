@@ -4,8 +4,16 @@
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}{% endblock stylesheets %}
+<link rel="stylesheet" href="../../static/assets/css/toggling_button.css">
 
 {% block content %}
+<head>
+<style>
+    th, td {
+      text-align: center;
+    }
+  </style>
+</head>
 
 <body>
   <nav class="navbar navbar-main navbar-expand-lg px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
@@ -22,7 +30,7 @@
   </nav>
 
 
-  <div class="container-fluid py-4">
+  <div class="container-fluid py-4 col-lg-12">
     
     <!-- Issues analysis -->
     <div class="row mb-4 mt-4">
@@ -30,7 +38,7 @@
       <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
         <div class="card">
           <div class="card-header card-header-warning">
-            <h4 class="card-title">Issues analysis</h4>
+            <h3 class="card-title">Issues analysis</h3>
           </div>
         </div>
       </div> 
@@ -60,28 +68,10 @@
     <div class="row mb-4 mt-4">
       
       <!-- Issues' closing times by label (datatables)-->
-      <!-- <div class="col-lg-6 col-md-6"> -->
-        <div class="card">
+      <div class="col-lg-6 col-md-12">
+        <div class="card h-100">
 
-          
-          <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-          <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-          
-          <script src="https://cdn.datatables.net/2.3.1/js/jquery.dataTables.min.js"></script>
-          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
-          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.js"></script>
-          <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/dataTables.rowGroup.js"></script>
-          <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/rowGroup.dataTables.js"></script>
-
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
-
-          <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.min.css">
-          <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></link>
-          <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.5.1/css/rowGroup.dataTables.css"></link> 
-
-          
-
-          <div class="card-header mb-0">
+          <div class="card-header card-header-warning">
             <h5 class="card-title">Average issue closing times by label</h5>
             <span id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">- - -</span></span>
           </div>
@@ -133,6 +123,21 @@
             </table> 
           </div>
           
+
+          <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+          <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+          
+          <script src="https://cdn.datatables.net/2.3.1/js/jquery.dataTables.min.js"></script>
+          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
+          <script src="https://cdn.datatables.net/2.3.1/js/dataTables.js"></script>
+          <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/dataTables.rowGroup.js"></script>
+          <script src="https://cdn.datatables.net/rowgroup/1.5.1/js/rowGroup.dataTables.js"></script>
+
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/2.3.1/luxon.min.js"></script>
+
+          <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.min.css">
+          <link rel="stylesheet" href="https://cdn.datatables.net/2.3.1/css/dataTables.dataTables.css"></link>
+          <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.5.1/css/rowGroup.dataTables.css"></link> 
 
           <script>
                             
@@ -266,21 +271,10 @@
    
           </script>
           
-          
-          
-
         </div>
-      <!-- </div> -->
+      </div>
 
-     
-    
-      
-    </div>
-
-     <!-- Issues' closing times by label (deprecated)-->
-       
-    <div class="row mb-4 mt-4">
-      <div class="col-lg-6 col-md-6">
+      <div class="col-lg-6 col-md-12">
         <div class="card h-100">
           
           <div class="card-header card-header-warning">
@@ -294,6 +288,26 @@
 
         </div>
       </div>
+
+
+    </div>
+
+     <!-- Issues' closing times by label (deprecated)-->
+    <div class="row mb-4 mt-4">
+      <!-- <div class="col-lg-6 col-md-6">
+        <div class="card h-100">
+          
+          <div class="card-header card-header-warning">
+            <h5 class="card-title">Average issue closing times by label</h5>
+            <p id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">openssl/openssl</span></p>
+          </div>
+          <div class="card-body table-responsive">
+            <table id="issue_closing_times_by_label" class="table table-hover">
+            </table>
+          </div>
+
+        </div>
+      </div> -->
     </div>
 
 

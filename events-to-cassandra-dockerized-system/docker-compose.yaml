@@ -277,7 +277,7 @@ services:
 # Python flask UI for a single month
   events-flask-app:
     image: python:3.10-script-executing-image
-    container_name: event-flask-app
+    container_name: events-flask-app
     volumes: 
       - ./flask-events-dashboard:/usrlib/flask-events-dashboard
       - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
