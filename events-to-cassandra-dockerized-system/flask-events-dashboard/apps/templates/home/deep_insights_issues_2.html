@@ -68,7 +68,7 @@
     </div>
 
     <!-- Datatables -->
-    <div class="row mb-4 mt-4">
+    <div class="row mb-7 mt-4">
       
       <!-- Issues' closing times by label (datatables)-->
       <div class="col-lg-12 col-md-12">
@@ -414,13 +414,6 @@
     </div>
 
 
-
-
-
-
-
-
-
     <!-- Big title: Deep Insights issues, comparison of repos  -->
     <div class="row mb-4">
       <div class="col-lg-5 col-md-12">
@@ -486,7 +479,7 @@
     </div>
 
      <!-- Closing times bar charts -->
-    <div class="row mb-4 mt-5">
+    <div class="row mb-4 mt-4">
       
       <script>
         function seconds_to_larger_time_durations(seconds_to_transform){
@@ -563,7 +556,7 @@
             
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
               <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
-                  <div id="pull_requests_closing_times_bar_chart_id" style="height: 600px;"></div>
+                  <div id="pull_requests_closing_times_bar_chart_id" style="height: 650px;"></div>
               </div>
             </div>
             
@@ -585,7 +578,7 @@
                     ],
                     chart: {
                       type: "bar",
-                      height: 550,
+                      height: 600,
                       offsetX: 30,
                       offsetY: 40,
                       width: "95%", 
@@ -640,7 +633,7 @@
                           color: "#ffffff",
                         },
                         offsetX: -30,
-                        offsetY: -10
+                        offsetY: 20
                       },
                       categories: ["0 sec - 1 min", "1 min - 1 h", "1 h - 1 d", "1 d - 1 m", "1 m - 1 y", "1 y - 10 y", "10y - 12 y, 35 m"],
                       labels: {
@@ -713,6 +706,7 @@
                     grid: {
                       padding: {
                         left: 20,
+                        bottom: 20
                       },
                     },
                     fill: {
@@ -841,7 +835,7 @@
 
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
               <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
-                  <div id="issues_closing_times_bar_chart_id" style="height: 600px;"></div>
+                  <div id="issues_closing_times_bar_chart_id" style="height: 650px;"></div>
 
               </div>
             </div>
@@ -863,7 +857,7 @@
                   ],
                   chart: {
                     type: "bar",
-                    height: 550,
+                    height: 600,
                     offsetX: 30,
                     offsetY: 40,
                     width: "95%", 
@@ -920,7 +914,7 @@
                         color: "#ffffff",
                       },
                       offsetX: -30,
-                      offsetY: -10
+                      offsetY: 20
                     },
                     categories: ["0 sec - 1 min", "1 min - 1 h", "1 h - 1 d", "1 d - 1 m", "1 m - 1 y", "1 y - 10 y", "10y - 12 y, 35 m"],
                     labels: {
@@ -993,6 +987,7 @@
                   grid: {
                     padding: {
                       left: 20,
+                      bottom: 20
                     },
                   },
                   fill: {
