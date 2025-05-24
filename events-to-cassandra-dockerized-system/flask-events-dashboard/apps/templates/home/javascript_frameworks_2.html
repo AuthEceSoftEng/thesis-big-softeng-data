@@ -310,42 +310,41 @@
               
               <div class="d-flex">
                 <i class="material-icons text-sm my-auto me-1">schedule</i>
-                <p class="mb-0 text-sm">just updated</p>
               </div>
             </div>
           </div>
 
           <div class="col-lg-5 col-md-12">
             <div class="card-body mt-4">
-                <h6 class="mb-0">Select number of repos to show:</h6>
-                <p class="dropdown text-sm float-lg-end pe-4">
-                  <ul>
-                    <select id="select_number_of_js_repos_to_show" class="drop_down_list_select bg-gradient-success" name="repo">
-                      <option >3</option>
-                      <option >5</option>
-                      <option >10</option>
-                      <option >15</option>
-                      <option >all</option>
-                    </select>
-                  </ul>
-                </p>
-              </div>
+              <h6 class="mb-0">Select number of repos to show:</h6>
+              <p class="dropdown text-sm float-lg-end pe-4">
+                <ul>
+                  <select id="select_number_of_js_repos_to_show" class="drop_down_list_select bg-gradient-success" name="repo">
+                    <option >3</option>
+                    <option >5</option>
+                    <option >10</option>
+                    <option >15</option>
+                    <option >all</option>
+                  </select>
+                </ul>
+              </p>
+            </div>
               
-              <!-- Implement star history graph -->
-              <script>
-                // Initialize all preselected option for the number of javascript repos 
-                const preselected_option = document.getElementById("select_number_of_js_repos_to_show").value;
-                listen_to_selected_num_of_js_repos(preselected_option);
-                create_js_repo_star_history_graph_given_num_of_js_repos(preselected_option);
-                
-                // On select new number of js repos to show, create the new js repo star history graph
-                document.getElementById("select_number_of_js_repos_to_show").addEventListener(
-                    "change", function() {
-                  let num_of_js_repos_selected = this.value;
-                  create_js_repo_star_history_graph_given_num_of_js_repos(num_of_js_repos_selected);
-                })
+            <!-- Implement star history graph -->
+            <script>
+              // Initialize all preselected option for the number of javascript repos 
+              const preselected_option = document.getElementById("select_number_of_js_repos_to_show").value;
+              listen_to_selected_num_of_js_repos(preselected_option);
+              create_js_repo_star_history_graph_given_num_of_js_repos(preselected_option);
+              
+              // On select new number of js repos to show, create the new js repo star history graph
+              document.getElementById("select_number_of_js_repos_to_show").addEventListener(
+                  "change", function() {
+                let num_of_js_repos_selected = this.value;
+                create_js_repo_star_history_graph_given_num_of_js_repos(num_of_js_repos_selected);
+              })
 
-              </script>
+            </script>
 
 
             </div>
