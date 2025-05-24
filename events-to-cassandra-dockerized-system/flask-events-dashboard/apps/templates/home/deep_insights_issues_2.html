@@ -68,7 +68,7 @@
     </div>
 
     <!-- Datatables -->
-    <div class="row mb-7 mt-4">
+    <div class="row mb-4 mt-4">
       
       <!-- Issues' closing times by label (datatables)-->
       <div class="col-lg-12 col-md-12">
@@ -80,7 +80,7 @@
           </div>
 
           
-          <div class="card-body table-responsive" style="margin-top: -3rem;">
+          <div class="card-body table-responsive" style="margin-top: -1rem;">
             <table id="example" class="display">
               <thead>
                   <tr>
@@ -274,7 +274,27 @@
    
           </script>
           
+
+          <div class="card-body" style="margin-top: -2rem;">
+                    
+            <h6 class="mb-0"> Total number of issues:
+              <span id="repo_total_number_of_issues_id"> 242134234
+              </span>
+            </h6>
+            <h6 class="mb-0"> 95% of closing times should be falling in the interval between
+              <span id="repo_closing_times_interval_lower_lim">-1 months, 2 years
+              </span>
+            and
+            <span id="repo_closing_times_interval_upper_lim">3 seconds, 0 months
+              </span>
+            </h6>
+            
+          </div>
+
+       
+
         </div>
+      </div>
 
     
 
@@ -428,7 +448,7 @@
     </div>
 
     <!-- Smaller title: Closing times of pull-requests and issues -->
-    <div class="row mb-4 mt-4">
+    <div class="row mb-4">
       <div class="col-lg-5 col-md-12">
         <div class="card">
           <div class="card-header card-header-warning">
@@ -439,16 +459,16 @@
     </div>
 
     <!-- Select repos row with search box-->
-    <div class="row mb-4 mt-4">
+    <div class="row mb-5">
       <!-- Select repo 1 -->
-      <div class="col-lg-6 col-md-4 mt-4">
+      <div class="col-lg-6 col-md-4">
         <div class="card h-100">
           <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
             <span id="selected_repo_mirror_repo_1" class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
             
             <div class="ms-md-auto pe-md-3 d-flex align-items-center">
               <div id="repo_selection_search_box_repo_1" class="input-group input-group-outline">
-                <label class="form-label">e.g. microsoft/winget-pkgs</label>
+                <label class="form-label">e.g. openssl/openssl</label>
                 <input type="text" class="form-control">
               </div>
             </div>
@@ -457,7 +477,7 @@
       </div>
 
 
-      <div class="col-lg-6 col-md-12 mt-4">
+      <div class="col-lg-6 col-md-12">
         <div class="card h-100">
           <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
             <span id="selected_repo_mirror_repo_2" class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
