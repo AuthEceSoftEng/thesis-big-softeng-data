@@ -76,7 +76,9 @@
 
           <div class="card-header card-header-warning" >
             <h5 class="card-title">Average issue closing times by label</h5>
-            <span id="closing_time_by_label_repo_mirror">of selected repo: <span id="preselected_repo_for_issue_closing_times_by_label">- - -</span></span>
+            <span id="closing_time_by_label_repo_mirror">of selected repo: 
+              <span id="preselected_repo_for_issue_closing_times_by_label">- - -</span>
+            </span>
           </div>
 
           
@@ -134,10 +136,10 @@
               </span>
             </h6>
             <h6 class="mb-0"> 95% of closing times should be falling in the interval between
-              <span id="repo_closing_times_interval_lower_lim">-1 months, 2 years
+              <span id="repo_closing_times_interval_lower_lim_id">-1 months, 2 years
               </span>
             and
-            <span id="repo_closing_times_interval_upper_lim">3 seconds, 0 months
+            <span id="repo_closing_times_interval_upper_lim_id">3 seconds, 0 months
               </span>
             </h6>
             
@@ -224,7 +226,7 @@
 
             var issuesByLabelDataTable = new DataTable('#example', {
                   // var issuesByLabelDataTableMirror = $('#example').DataTable({
-                  order: [[1, 'asc']],   
+                  // order: [[3, 'desc']],   
                   columnDefs: [
                         {
                             targets: 3,
@@ -262,11 +264,11 @@
                   issuesByLabelDataTable.clear().draw();
                   
                   // Paint the row red if the issue closing time in seconds is higher than the upper limit threshold (mean + 2 * sigma)
-                  var closing_times_avg = data["average_closing_time_of_all_repo_issues"];
-                  var closing_time_std = data["closing_time_standard_deviation"];
-                  var number_of_stds_from_mean = 2
-                  var lower_closing_time_threshold = closing_times_avg - number_of_stds_from_mean * closing_time_std;
-                  var upper_closing_time_threshold = closing_times_avg + number_of_stds_from_mean * closing_time_std;
+                  const closing_times_avg = data["average_closing_time_of_all_repo_issues"];
+                  const closing_time_std = data["closing_time_standard_deviation"];
+                  const number_of_stds_from_mean = 2
+                  const lower_closing_time_threshold = closing_times_avg - number_of_stds_from_mean * closing_time_std;
+                  const upper_closing_time_threshold = closing_times_avg + number_of_stds_from_mean * closing_time_std;
                   
                   for (var rowIndex=0; rowIndex < numberOfIssuesLabels; rowIndex++) {  
                     var rowOrder = rowIndex+1;
@@ -280,6 +282,7 @@
                       issuesByLabelDataTable.rows().every(function () {
                         const data = this.data();
                         if (data[4] > upper_closing_time_threshold) {
+                          console.log(data[4] + ">" + upper_closing_time_threshold);
                           $(this.node()).css('background-color', '#ffeeba');
                         }
                       });
@@ -290,12 +293,16 @@
                   // Update datatable legend
                   var total_number_of_issues_of_repo = 0;
                   for (var rowIndex=0; rowIndex < numberOfIssuesLabels; rowIndex++) {  
-                    total_number_of_issues_of_repo += data["closing_times_per_label"][rowIndex]["number_of_issues_with_this_label"]
+                    total_number_of_issues_of_repo += data["closing_times_per_label"][rowIndex]["number_of_issues_with_this_label"];
                   };
                   
+                  // TODO: This is wrong - see console.log 
                   document.getElementById("repo_total_number_of_issues_id").textContent = total_number_of_issues_of_repo.toString();
-                  document.getElementById("repo_closing_times_interval_lower_lim").textContent = seconds_to_formatted_string(Math.max(lower_closing_time_threshold, 0)); // Time cannot be lower than 0
-                  document.getElementById("repo_closing_times_interval_upper_lim").textContent = seconds_to_formatted_string(upper_closing_time_threshold);
+                  document.getElementById("repo_closing_times_interval_lower_lim_id").textContent = lower_closing_time_threshold.toString(); // Time cannot be lower than 0
+                  document.getElementById("repo_closing_times_interval_upper_lim_id").textContent = upper_closing_time_threshold.toString();
+
+                  // document.getElementById("repo_closing_times_interval_lower_lim_id").textContent = seconds_to_formatted_string(Math.max(lower_closing_time_threshold, 0)); // Time cannot be lower than 0
+                  // document.getElementById("repo_closing_times_interval_upper_lim_id").textContent = seconds_to_formatted_string(upper_closing_time_threshold);
 
                 });
 
@@ -414,19 +421,13 @@
           
         }
 
-        function update_mirror_of_selected_repo_for_issue_closing_times(label_to_mirror, repo_selected){
-                    var selected_repo_mirror = document.getElementById(label_to_mirror);
-                    selected_repo_mirror.textContent = "of selected repo: '" + repo_selected + "'";                  
-                  }
+
 
         let repo_selected = null;
         document.querySelector("#select_repo_to_get_issue_closing_times_per_labels input").addEventListener(
             "keydown", function() {
               if (event.key == "Enter") {
                 repo_selected = this.value;
-                update_issue_closing_time_by_label_table(repo_selected);
-                update_mirror_of_selected_repo_for_issue_closing_times(
-                  "closing_time_by_label_repo_mirror", repo_selected)
                 document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_selected; 
 
                 
@@ -437,9 +438,8 @@
 
       <!-- Preselect a repo to show upon render of the page -->
       <script>
-        // const repo_whose_issue_closing_times_to_get = "openssl/openssl";
-        const repo_whose_issue_closing_times_to_get = "Expensify/App";
-        update_issue_closing_time_by_label_table(repo_whose_issue_closing_times_to_get);
+        const repo_whose_issue_closing_times_to_get = "openssl/openssl";
+        // const repo_whose_issue_closing_times_to_get = "Expensify/App";
         document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
         
         updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);        
@@ -817,6 +817,63 @@
               }
             
               
+              function updateIssuesBarChart(selected_repo_1, selected_repo_2) {
+                
+                
+                const IssuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ selected_repo_1+ '/vs/'+ selected_repo_2 ;
+                fetch(IssuesBarChartUrl)
+                  .then(response => response.json())
+                  .then(data => {
+                    // Destroy and then re-render the chart for faster re-render. 
+                    // as using only percentage_of_events_pie_chart.updateOptions() renders too slow or not at all
+                    issues_closing_times_bar_chart.destroy();
+                    // Add the number of repos in the topic 
+                    issues_bar_heights_list = data["abs_frequencies"]
+
+                    
+                    issues_closing_times_bar_chart_options.series[0].data = issues_bar_heights_list
+                    
+                    sum_of_issues_bar_heights = issues_bar_heights_list.reduce((a, b) => a + b, 0);
+
+                    issues_closing_times_bar_chart_options.xaxis.categories = data["corresponding_bin_centers_labels"]
+                    issues_closing_times_bar_chart_options.annotations.points = [
+                      {
+                        x: data["bin_center_label_of_average_issue_closing_time_of_repo_1"],
+                        seriesIndex: 0,
+                        label: {
+                          borderColor: '#775DD0',
+                          offsetY: -25,
+                          style: {
+                            fontWeight: "bold",
+                            fontSize: "15px",
+                            color: '#fff',
+                            background: '#208214',
+                          },
+                          text: data["repo_name_1"],
+                        }
+                      },
+                      {
+                        x: data["bin_center_label_of_average_issue_closing_time_of_repo_2"],
+                        seriesIndex: 0,
+                        label: {
+                          borderColor: '#775DD0',
+                          offsetY: 0,
+                          style: {
+                            fontWeight: "bold",
+                            fontSize: "15px",
+                            color: '#fff',
+                            background: '#821440',
+                          },
+                          text: data["repo_name_2"],
+                        }
+                      },]
+
+                    issues_closing_times_bar_chart = new ApexCharts(document.querySelector("#issues_closing_times_bar_chart_id"), issues_closing_times_bar_chart_options);
+                    issues_closing_times_bar_chart.render();
+                  }) 
+              }
+            
+            
             </script> 
 
 
@@ -827,7 +884,7 @@
             <p class="text-sm ">From github events in December 2024</p>
                         
             <h6 class="mb-0" id="repo_1_and_pull_request_closing_time_stringified_id">user_1/repo_1: 8 m, 2 d</h6>
-            <h6 class="mb-0 " id="repo_2_and_pull_request_closing_time_stringified_id">user_2/repo_2: 1 m, 28 d</h6>
+            <h6 class="mb-0" id="repo_2_and_pull_request_closing_time_stringified_id">user_2/repo_2: 1 m, 28 d</h6>
 
             <script>
               function updateRepoAndPullRequestsClosingTimesInChartContainer(repo_name_1, repo_name_2) {
@@ -876,6 +933,263 @@
               </div>
             </div>
             
+            <script>      
+              // Preselect repos
+              let repo_1_selected = 'freeCodeCamp/freeCodeCamp';
+              let repo_2_selected = 'facebook/react';
+
+              function update_label(label_to_mirror, repo_selected){
+                var selected_repo_mirror = document.getElementById(label_to_mirror);
+                selected_repo_mirror.textContent = "Selected repo: '" + repo_selected + "'";                  
+              }
+
+
+              function create_issue_closing_times_histogram(repo_name_1, repo_name_2){
+                const data_url = 
+                  'http://localhost:3200/deep_insights_issues/issues_closing_times/' + repo_name_1
+                  + '/vs/' + repo_name_2;
+                
+                
+                //  Create the html_body of the table
+                fetch(data_url)
+                  .then(response => response.json())
+                  .then(data => {          
+
+                    const binCenters = data["bin_centers_in_seconds"];
+                    const absFrequencies = data["abs_frequencies"];
+                    const chartData = binCenters.map((center, index) => ({
+                      x: center,
+                      y: absFrequencies[index]
+                    }));
+
+                    const issues_histogram_dataset = {
+                      label: "All repos",
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color,
+                      borderColor: hist_distribution_color,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: chartData,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 1
+                    };
+                    
+                    // const repo_name_1 = data["repo_name_1"]
+                    const frequencies_of_bins_repo_1 = 
+                        data["bin_of_average_issue_closing_time_of_repo_1"];
+                    const repo1Data = binCenters.map((center, index) => ({
+                      x: center,
+                      y: frequencies_of_bins_repo_1[index]
+                    }));
+
+                    const average_issue_times_dataset_repo_1 = {
+                      label: "Repo 1: " + repo_name_1,
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color_3,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color_3,
+                      borderColor: hist_distribution_color_3,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: repo1Data,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 0.1
+                    };
+
+                    const frequencies_of_bins_repo_2 = 
+                        data["bin_of_average_issue_closing_time_of_repo_2"];
+                    const repo2Data = binCenters.map((center, index) => ({
+                      x: center,
+                      y: frequencies_of_bins_repo_2[index]
+                    }));
+                    
+                    
+                    // const repo_name_2 = data["repo_name_2"]
+                    
+                    const average_issue_times_dataset_repo_2 = {
+                      label: "Repo 2: " + repo_name_2,
+                      // labels: data["bin_centers"],
+                      tension: 0,
+                      // borderWidth: 0,
+                      pointRadius: 5,
+                      pointBackgroundColor: hist_distribution_color_2,
+                      // pointBorderColor: "transparent",
+                      pointBorderColor: hist_distribution_color_2,
+                      borderColor: hist_distribution_color_2,
+                      borderWidth: 4,
+                      backgroundColor: "transparent",
+                      fill: true,
+                      data: repo2Data,
+                      borderWidth: 1,
+                      barPercentage: 1,
+                      categoryPercentage: 0.1
+                    };
+
+
+                    // console.log("Bin centers: ", data["bin_centers_log_transformed"])
+                    // console.log("Absolute frequencies: ", data["abs_frequencies"])
+                    // console.log("Repo 1 bins: ", data["bin_of_average_issue_closing_time_of_repo_1"])
+                    // console.log("Repo 2 bins: ", data["bin_of_average_issue_closing_time_of_repo_2"])
+
+                    // Update 
+                    issue_closing_times_histogram.data.
+                        datasets.push(issues_histogram_dataset);
+                    issue_closing_times_histogram.data.
+                        datasets.push(average_issue_times_dataset_repo_1);
+                    issue_closing_times_histogram.data.
+                        datasets.push(average_issue_times_dataset_repo_2);
+                    
+
+
+                    
+
+                    // // Remove existing x values
+                    // issue_closing_times_histogram.options.scales.x5.labels.splice(0, binCenters.length);
+                    // // Add new values
+                    // issue_closing_times_histogram.options.scales.x5.labels = binCenters;
+
+
+                    
+                    // e.g. 2 year(s), 4 month(s)
+                    // TODO: Turn the seconds into larger duration strings to have as labels on the bins
+                    // Create labels
+                    let time_durations_labels = [];
+                    let time_duration_dict;
+                    
+                    for (let i = 0; i < binCenters.length; i++){
+                      time_duration_dict = seconds_to_larger_time_durations(binCenters[i]);
+                      time_durations_labels[i] = stringify_time_dict(time_duration_dict);
+                    }
+
+                    // console.log("Issue closing times labels: " + time_durations_labels);
+
+
+                    // Remove existing x values
+                    issue_closing_times_histogram.options.scales.x5.labels.splice(0, time_durations_labels.length);
+                    // Add new values
+                    issue_closing_times_histogram.options.scales.x5.labels = time_durations_labels;
+
+
+                    issue_closing_times_histogram.update();  
+                  } 
+                );
+                  
+              };
+              
+              document.querySelector("#repo_selection_search_box_repo_1 input").addEventListener(
+                  "keydown", function() {
+                    if (event.key == "Enter") {
+                      repo_1_selected = this.value;
+                      update_label("selected_repo_mirror_repo_1", repo_1_selected);
+                      check_and_create_pull_request_closing_times_histogram();
+                      check_and_create_issue_closing_times_histogram();
+                    }
+                
+              })
+              document.querySelector("#repo_selection_search_box_repo_2 input").addEventListener(
+                  "keydown", function() {
+                    if (event.key == "Enter") {
+                      repo_2_selected = this.value;
+                      update_label("selected_repo_mirror_repo_2", repo_2_selected);
+                      check_and_create_pull_request_closing_times_histogram();
+                      check_and_create_issue_closing_times_histogram();
+                    }
+                
+              })
+
+            
+              function updateRepoAndIssuesClosingTimesInChartContainer(repo_name_1, repo_name_2) {
+                  const issuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ repo_name_1 + '/vs/'+ repo_name_2;
+                  fetch(issuesBarChartUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                      document.getElementById("repo_1_and_issue_closing_time_stringified_id").textContent = 
+                        repo_name_1 + ": " + data["average_issue_closing_time_of_repo_1_stringified"];
+
+                      document.getElementById("repo_2_and_issue_closing_time_stringified_id").textContent = 
+                        repo_name_2 + ": " + data["average_issue_closing_time_of_repo_2_stringified"];
+
+                  })
+                }  
+            
+
+              function check_and_create_pull_request_closing_times_histogram() {
+                  
+                if (repo_1_selected && repo_2_selected) {
+
+                    console.log("Creating pull-requests closing times histogram including repos:")
+                    console.log(repo_1_selected);
+                    console.log(repo_2_selected);  
+                    create_pull_request_closing_times_histogram(repo_1_selected, repo_2_selected);
+                    
+                    updatePullRequestsBarChart(repo_1_selected, repo_2_selected);
+                    updateRepoAndPullRequestsClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
+
+                    updateIssuesBarChart(repo_1_selected, repo_2_selected);
+                    updateRepoAndIssuesClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
+                }
+              }
+              
+              // check_and_create_pull_request_closing_times_histogram(repo_1_selected, repo_2_selected);
+              
+              updatePullRequestsBarChart(repo_1_selected, repo_2_selected);
+              updateRepoAndPullRequestsClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
+
+              updateIssuesBarChart(repo_1_selected, repo_2_selected);
+              updateRepoAndIssuesClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
+              
+              create_pull_request_closing_times_histogram(repo_1_selected, 
+                  repo_2_selected);
+
+              create_issue_closing_times_histogram(repo_1_selected, 
+                  repo_2_selected);
+              
+              // function initialize_create_pull_request_closing_times_histogram_upon_page_render() {
+              //   let repo_1_preselected = 'UTSAVS26/PyVerse';
+              //   let repo_2_preselected = 'eosnetworkfoundation/silkworm';
+
+              //   // let repo_1_preselected = 'microsoft/winget-pkgs';
+              //   // let repo_2_preselected = 'facebook/react';
+
+              //   document.addEventListener("DOMContentLoaded", () => {
+              //     create_pull_request_closing_times_histogram(repo_1_preselected, repo_2_preselected);
+              //   });
+              // }
+
+
+              function check_and_create_issue_closing_times_histogram() {
+                  if (repo_1_selected && repo_2_selected) {
+                    // Remove existing datasets from the graph
+                    pull_request_closing_times_histogram.data.datasets.splice(0, 
+                        pull_request_closing_times_histogram.data.datasets.length);
+                  
+                    // Remove existing datasets from the graph
+                    issue_closing_times_histogram.data.datasets.splice(0, 
+                      issue_closing_times_histogram.data.datasets.length);
+                  
+
+                    console.log("Creating issue closing times histogram including repos:")
+                    console.log(repo_1_selected);
+                    console.log(repo_2_selected);  
+                    create_issue_closing_times_histogram(repo_1_selected, repo_2_selected);
+                  }
+                }
+              // check_and_create_pull_request_closing_times_histogram();
+                
+            </script>
+
 
             <!-- Dynamic issues chart -->
             <script>
@@ -1042,63 +1356,6 @@
               issues_closing_times_bar_chart.render();
                 
               
-              function updateIssuesBarChart(selected_repo_1, selected_repo_2) {
-                
-                
-                const IssuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ selected_repo_1+ '/vs/'+ selected_repo_2 ;
-                fetch(IssuesBarChartUrl)
-                  .then(response => response.json())
-                  .then(data => {
-                    // Destroy and then re-render the chart for faster re-render. 
-                    // as using only percentage_of_events_pie_chart.updateOptions() renders too slow or not at all
-                    issues_closing_times_bar_chart.destroy();
-                    // Add the number of repos in the topic 
-                    issues_bar_heights_list = data["abs_frequencies"]
-
-                    
-                    issues_closing_times_bar_chart_options.series[0].data = issues_bar_heights_list
-                    
-                    sum_of_issues_bar_heights = issues_bar_heights_list.reduce((a, b) => a + b, 0);
-
-                    issues_closing_times_bar_chart_options.xaxis.categories = data["corresponding_bin_centers_labels"]
-                    issues_closing_times_bar_chart_options.annotations.points = [
-                      {
-                        x: data["bin_center_label_of_average_issue_closing_time_of_repo_1"],
-                        seriesIndex: 0,
-                        label: {
-                          borderColor: '#775DD0',
-                          offsetY: -25,
-                          style: {
-                            fontWeight: "bold",
-                            fontSize: "15px",
-                            color: '#fff',
-                            background: '#208214',
-                          },
-                          text: data["repo_name_1"],
-                        }
-                      },
-                      {
-                        x: data["bin_center_label_of_average_issue_closing_time_of_repo_2"],
-                        seriesIndex: 0,
-                        label: {
-                          borderColor: '#775DD0',
-                          offsetY: 0,
-                          style: {
-                            fontWeight: "bold",
-                            fontSize: "15px",
-                            color: '#fff',
-                            background: '#821440',
-                          },
-                          text: data["repo_name_2"],
-                        }
-                      },]
-
-                    issues_closing_times_bar_chart = new ApexCharts(document.querySelector("#issues_closing_times_bar_chart_id"), issues_closing_times_bar_chart_options);
-                    issues_closing_times_bar_chart.render();
-                  }) 
-              }
-            
-            
             
             </script>
 
@@ -1111,21 +1368,7 @@
             <h6 class="mb-0" id="repo_1_and_issue_closing_time_stringified_id">user_1/repo_1: 0 sec</h6>
             <h6 class="mb-0 " id="repo_2_and_issue_closing_time_stringified_id">user_2/repo_2: 6 m, 14 d</h6>
 
-            <script>
-              function updateRepoAndIssuesClosingTimesInChartContainer(repo_name_1, repo_name_2) {
-                  const issuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ repo_name_1 + '/vs/'+ repo_name_2;
-                  fetch(issuesBarChartUrl)
-                    .then(response => response.json())
-                    .then(data => {
-                      document.getElementById("repo_1_and_issue_closing_time_stringified_id").textContent = 
-                        repo_name_1 + ": " + data["average_issue_closing_time_of_repo_1_stringified"];
-
-                      document.getElementById("repo_2_and_issue_closing_time_stringified_id").textContent = 
-                        repo_name_2 + ": " + data["average_issue_closing_time_of_repo_2_stringified"];
-
-                  })
-                }  
-            </script>
+            
             
             <hr class="dark horizontal">
             <div class="d-flex">
