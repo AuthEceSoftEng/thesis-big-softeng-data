@@ -132,122 +132,8 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
     }
   </script>
 
-  <!-- Update pull-requests made by humans -->
-  <script>
-    function update_pull_requests_by_humans(day_selected){
-      data_url = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + day_selected;
-      //  Create the html_body of the table
-      fetch(data_url)
-        .then(response => response.json())
-        .then(data => {          
-          
-          number_of_accepted_pull_requests = data["number_of_accepted_pull_requests"];
-          number_of_rejected_pull_requests = data["number_of_rejected_pull_requests"];
-          
-          // Percentage
-          merge_rate = number_of_accepted_pull_requests
-            /(number_of_accepted_pull_requests + number_of_rejected_pull_requests)*100;
-          
-          merge_rate_two_decimals = merge_rate.toFixed(2)
-          merge_rate_stringified = merge_rate_two_decimals.toString() + '%';
 
-          // Print number of accepted pull-requests and corresponding rate 
-          // if there are accepted pull requests (not null valued) 
-          if (number_of_accepted_pull_requests != null){
-            document.getElementById("number-of-accepted-pull-requests-by-humans").textContent = number_of_accepted_pull_requests;
-            document.getElementById("pull-request-merge-success-by-humans").textContent = 
-              merge_rate_stringified;
-          }
-          
-
-        }
-      );
-      
-    };
-  </script>
-
-  <!-- Update pull-requests made by bots -->
-  <script>
-    function update_pull_requests_by_bots(day_selected){
-      data_url = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + day_selected;
-      //  Create the html_body of the table
-      fetch(data_url)
-        .then(response => response.json())
-        .then(data => {          
-          
-          number_of_accepted_pull_requests = data["number_of_accepted_pull_requests"];
-          number_of_rejected_pull_requests = data["number_of_rejected_pull_requests"];
-          
-          // Percentage
-          merge_rate = number_of_accepted_pull_requests
-            /(number_of_accepted_pull_requests + number_of_rejected_pull_requests)*100;
-          // 
-          merge_rate_two_decimals = merge_rate.toFixed(2)
-          merge_rate_stringified = merge_rate_two_decimals.toString() + '%';
-
-          // Print number of accepted pull-requests and corresponding rate 
-          // if there are accepted pull requests (not null valued) 
-          if (number_of_accepted_pull_requests != null){
-            document.getElementById("number-of-accepted-pull-requests-by-bots").          textContent = number_of_accepted_pull_requests;
-            document.getElementById("pull-request-merge-success-by-bots").textContent = 
-              merge_rate_stringified;
-          }
-          
-        }
-      );
-      
-    };
-  </script>
-
-  <!-- Update number of events made by humans and bots -->
-  <script>
-    function update_number_of_events_by_humans_and_bots(day_selected){
-      data_url = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' 
-        + day_selected;
-      
-      //  Create the html_body of the table
-      fetch(data_url)
-        .then(response => response.json())
-        .then(data => {          
-          
-          // Print total number of human events, bot events and corresponding percentage of human and bot events among total number of events
-          total_number_of_events_by_humans = data["humans"]["total_number_of_events"];
-          total_number_of_events_by_bots = data["bots"]["total_number_of_events"];
-
-          human_events_percentage = total_number_of_events_by_humans
-            /(total_number_of_events_by_humans + total_number_of_events_by_bots)*100;
-          human_events_percentage_two_decimals = human_events_percentage.toFixed(2)
-          human_events_percentage_stringified = 
-            human_events_percentage_two_decimals.toString() + '%';
-          
-          bot_events_percentage = total_number_of_events_by_bots
-            /(total_number_of_events_by_humans + total_number_of_events_by_bots)*100;
-          bot_events_percentage_two_decimals = bot_events_percentage.toFixed(2);
-          bot_events_percentage_stringified = 
-            bot_events_percentage_two_decimals.toString() + '%';
-          
-
-          if (total_number_of_events_by_humans != 0){
-            document.getElementById("number-of-events-by-humans").textContent = 
-              total_number_of_events_by_humans;
-              document.getElementById("human-events-percentage").textContent = 
-            human_events_percentage_stringified;
-          }
-
-          if (total_number_of_events_by_bots != 0){
-            document.getElementById("number-of-events-by-bots").textContent = 
-            total_number_of_events_by_bots;
-            document.getElementById("bot-events-percentage").textContent = 
-            bot_events_percentage_stringified;
-          }
-          
-          
-        }
-      );
-      
-    };
-  </script>
-
+  
 <!-- TODO: Add functions for the events, also change the ids of the respective HTML elements -->
 
 
@@ -1230,10 +1116,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
       const day_preselected = '1';
       update_top_human_contributors_table(day_preselected);
       update_top_bot_contributors_table(day_preselected);
-      update_pull_requests_by_humans(day_preselected);
-      update_pull_requests_by_bots(day_preselected);
-      update_number_of_events_by_humans_and_bots(day_preselected);
-
+      
       update_toggling_pull_requests_chart(day_preselected);
       updateNumberOfGithubEventsChart(day_preselected);
     </script>
@@ -1246,9 +1129,6 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
         let day_selected = this.value;
         update_top_human_contributors_table(day_selected);
         update_top_bot_contributors_table(day_selected);
-        update_pull_requests_by_humans(day_selected);
-        update_pull_requests_by_bots(day_selected);
-        update_number_of_events_by_humans_and_bots(day_selected);
         
         update_toggling_pull_requests_chart(day_selected);
         updateNumberOfGithubEventsChart(day_selected);
