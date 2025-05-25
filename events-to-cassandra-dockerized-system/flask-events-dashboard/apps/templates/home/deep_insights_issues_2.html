@@ -674,6 +674,7 @@
                       categories: ["0 sec - 1 min", "1 min - 1 h", "1 h - 1 d", "1 d - 1 m", "1 m - 1 y", "1 y - 10 y", "10y - 12 y, 35 m"],
                       labels: {
                         rotate: -30,
+                        rotateAlways: true,
                         hideOverlappingLabels: false,
                         style: {
                           fontWeight: "bold",
@@ -816,64 +817,7 @@
                   }) 
               }
             
-              
-              function updateIssuesBarChart(selected_repo_1, selected_repo_2) {
-                
-                
-                const IssuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ selected_repo_1+ '/vs/'+ selected_repo_2 ;
-                fetch(IssuesBarChartUrl)
-                  .then(response => response.json())
-                  .then(data => {
-                    // Destroy and then re-render the chart for faster re-render. 
-                    // as using only percentage_of_events_pie_chart.updateOptions() renders too slow or not at all
-                    issues_closing_times_bar_chart.destroy();
-                    // Add the number of repos in the topic 
-                    issues_bar_heights_list = data["abs_frequencies"]
-
-                    
-                    issues_closing_times_bar_chart_options.series[0].data = issues_bar_heights_list
-                    
-                    sum_of_issues_bar_heights = issues_bar_heights_list.reduce((a, b) => a + b, 0);
-
-                    issues_closing_times_bar_chart_options.xaxis.categories = data["corresponding_bin_centers_labels"]
-                    issues_closing_times_bar_chart_options.annotations.points = [
-                      {
-                        x: data["bin_center_label_of_average_issue_closing_time_of_repo_1"],
-                        seriesIndex: 0,
-                        label: {
-                          borderColor: '#775DD0',
-                          offsetY: -25,
-                          style: {
-                            fontWeight: "bold",
-                            fontSize: "15px",
-                            color: '#fff',
-                            background: '#208214',
-                          },
-                          text: data["repo_name_1"],
-                        }
-                      },
-                      {
-                        x: data["bin_center_label_of_average_issue_closing_time_of_repo_2"],
-                        seriesIndex: 0,
-                        label: {
-                          borderColor: '#775DD0',
-                          offsetY: 0,
-                          style: {
-                            fontWeight: "bold",
-                            fontSize: "15px",
-                            color: '#fff',
-                            background: '#821440',
-                          },
-                          text: data["repo_name_2"],
-                        }
-                      },]
-
-                    issues_closing_times_bar_chart = new ApexCharts(document.querySelector("#issues_closing_times_bar_chart_id"), issues_closing_times_bar_chart_options);
-                    issues_closing_times_bar_chart.render();
-                  }) 
-              }
-            
-            
+             
             </script> 
 
 
@@ -933,94 +877,7 @@
               </div>
             </div>
             
-            <script>      
-              // Preselect repos
-              let repo_1_selected = 'freeCodeCamp/freeCodeCamp';
-              let repo_2_selected = 'facebook/react';
-
-              function update_label(label_to_mirror, repo_selected){
-                var selected_repo_mirror = document.getElementById(label_to_mirror);
-                selected_repo_mirror.textContent = "Selected repo: '" + repo_selected + "'";                  
-              }
-
-
-              document.querySelector("#repo_selection_search_box_repo_1 input").addEventListener(
-                  "keydown", function() {
-                    if (event.key == "Enter") {
-                      repo_1_selected = this.value;
-                      update_label("selected_repo_mirror_repo_1", repo_1_selected);
-                      check_and_create_pull_request_closing_times_histogram();
-                    }
-                
-              })
-              document.querySelector("#repo_selection_search_box_repo_2 input").addEventListener(
-                  "keydown", function() {
-                    if (event.key == "Enter") {
-                      repo_2_selected = this.value;
-                      update_label("selected_repo_mirror_repo_2", repo_2_selected);
-                      check_and_create_pull_request_closing_times_histogram();
-                    }
-                
-              })
-
             
-              function updateRepoAndIssuesClosingTimesInChartContainer(repo_name_1, repo_name_2) {
-                  const issuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ repo_name_1 + '/vs/'+ repo_name_2;
-                  fetch(issuesBarChartUrl)
-                    .then(response => response.json())
-                    .then(data => {
-                      document.getElementById("repo_1_and_issue_closing_time_stringified_id").textContent = 
-                        repo_name_1 + ": " + data["average_issue_closing_time_of_repo_1_stringified"];
-
-                      document.getElementById("repo_2_and_issue_closing_time_stringified_id").textContent = 
-                        repo_name_2 + ": " + data["average_issue_closing_time_of_repo_2_stringified"];
-
-                  })
-                }  
-            
-
-              function check_and_create_pull_request_closing_times_histogram() {
-                  
-                if (repo_1_selected && repo_2_selected) {
-
-                    console.log("Creating pull-requests closing times histogram including repos:")
-                    console.log(repo_1_selected);
-                    console.log(repo_2_selected);  
-                    
-                    updatePullRequestsBarChart(repo_1_selected, repo_2_selected);
-                    updateRepoAndPullRequestsClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
-
-                    updateIssuesBarChart(repo_1_selected, repo_2_selected);
-                    updateRepoAndIssuesClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
-                }
-              }
-              
-              // check_and_create_pull_request_closing_times_histogram(repo_1_selected, repo_2_selected);
-              
-              updatePullRequestsBarChart(repo_1_selected, repo_2_selected);
-              updateRepoAndPullRequestsClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
-
-              updateIssuesBarChart(repo_1_selected, repo_2_selected);
-              updateRepoAndIssuesClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
-              
-              
-              // function initialize_create_pull_request_closing_times_histogram_upon_page_render() {
-              //   let repo_1_preselected = 'UTSAVS26/PyVerse';
-              //   let repo_2_preselected = 'eosnetworkfoundation/silkworm';
-
-              //   // let repo_1_preselected = 'microsoft/winget-pkgs';
-              //   // let repo_2_preselected = 'facebook/react';
-
-              //   document.addEventListener("DOMContentLoaded", () => {
-              //     create_pull_request_closing_times_histogram(repo_1_preselected, repo_2_preselected);
-              //   });
-              // }
-
-
-               
-            </script>
-
-
             <!-- Dynamic issues chart -->
             <script>
               // Preselected bar heights list
@@ -1099,6 +956,7 @@
                     categories: ["0 sec - 1 min", "1 min - 1 h", "1 h - 1 d", "1 d - 1 m", "1 m - 1 y", "1 y - 10 y", "10y - 12 y, 35 m"],
                     labels: {
                       rotate: -30,
+                      rotateAlways: true,
                       hideOverlappingLabels: false,
                       style: {
                         fontWeight: "bold",
@@ -1185,7 +1043,64 @@
               var issues_closing_times_bar_chart = new ApexCharts(document.querySelector("#issues_closing_times_bar_chart_id"), issues_closing_times_bar_chart_options);
               issues_closing_times_bar_chart.render();
                 
-              
+               
+              function updateIssuesBarChart(selected_repo_1, selected_repo_2) {
+                
+                
+                const IssuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ selected_repo_1+ '/vs/'+ selected_repo_2 ;
+                fetch(IssuesBarChartUrl)
+                  .then(response => response.json())
+                  .then(data => {
+                    // Destroy and then re-render the chart for faster re-render. 
+                    // as using only percentage_of_events_pie_chart.updateOptions() renders too slow or not at all
+                    issues_closing_times_bar_chart.destroy();
+                    // Add the number of repos in the topic 
+                    issues_bar_heights_list = data["abs_frequencies"]
+
+                    
+                    issues_closing_times_bar_chart_options.series[0].data = issues_bar_heights_list
+                    
+                    sum_of_issues_bar_heights = issues_bar_heights_list.reduce((a, b) => a + b, 0);
+
+                    issues_closing_times_bar_chart_options.xaxis.categories = data["corresponding_bin_centers_labels"]
+                    issues_closing_times_bar_chart_options.annotations.points = [
+                      {
+                        x: data["bin_center_label_of_average_issue_closing_time_of_repo_1"],
+                        seriesIndex: 0,
+                        label: {
+                          borderColor: '#775DD0',
+                          offsetY: -25,
+                          style: {
+                            fontWeight: "bold",
+                            fontSize: "15px",
+                            color: '#fff',
+                            background: '#208214',
+                          },
+                          text: data["repo_name_1"],
+                        }
+                      },
+                      {
+                        x: data["bin_center_label_of_average_issue_closing_time_of_repo_2"],
+                        seriesIndex: 0,
+                        label: {
+                          borderColor: '#775DD0',
+                          offsetY: 0,
+                          style: {
+                            fontWeight: "bold",
+                            fontSize: "15px",
+                            color: '#fff',
+                            background: '#821440',
+                          },
+                          text: data["repo_name_2"],
+                        }
+                      },]
+
+                    issues_closing_times_bar_chart = new ApexCharts(document.querySelector("#issues_closing_times_bar_chart_id"), issues_closing_times_bar_chart_options);
+                    issues_closing_times_bar_chart.render();
+                  }) 
+              }
+            
+            
             
             </script>
 
@@ -1215,6 +1130,93 @@
 
     </div>
     
+
+    <script>      
+      // Preselect repos
+      let repo_1_selected = 'freeCodeCamp/freeCodeCamp';
+      let repo_2_selected = 'facebook/react';
+
+      function update_label(label_to_mirror, repo_selected){
+        var selected_repo_mirror = document.getElementById(label_to_mirror);
+        selected_repo_mirror.textContent = "Selected repo: '" + repo_selected + "'";                  
+      }
+
+
+      document.querySelector("#repo_selection_search_box_repo_1 input").addEventListener(
+          "keydown", function() {
+            if (event.key == "Enter") {
+              repo_1_selected = this.value;
+              update_label("selected_repo_mirror_repo_1", repo_1_selected);
+              check_and_create_pull_request_closing_times_histogram();
+            }
+        
+      })
+      document.querySelector("#repo_selection_search_box_repo_2 input").addEventListener(
+          "keydown", function() {
+            if (event.key == "Enter") {
+              repo_2_selected = this.value;
+              update_label("selected_repo_mirror_repo_2", repo_2_selected);
+              check_and_create_pull_request_closing_times_histogram();
+            }
+        
+      })
+
+    
+      function updateRepoAndIssuesClosingTimesInChartContainer(repo_name_1, repo_name_2) {
+          const issuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ repo_name_1 + '/vs/'+ repo_name_2;
+          fetch(issuesBarChartUrl)
+            .then(response => response.json())
+            .then(data => {
+              document.getElementById("repo_1_and_issue_closing_time_stringified_id").textContent = 
+                repo_name_1 + ": " + data["average_issue_closing_time_of_repo_1_stringified"];
+
+              document.getElementById("repo_2_and_issue_closing_time_stringified_id").textContent = 
+                repo_name_2 + ": " + data["average_issue_closing_time_of_repo_2_stringified"];
+
+          })
+        }  
+    
+
+      function check_and_create_pull_request_closing_times_histogram() {
+          
+        if (repo_1_selected && repo_2_selected) {
+
+            console.log("Creating pull-requests closing times histogram including repos:")
+            console.log(repo_1_selected);
+            console.log(repo_2_selected);  
+            
+            updatePullRequestsBarChart(repo_1_selected, repo_2_selected);
+            updateRepoAndPullRequestsClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
+
+            updateIssuesBarChart(repo_1_selected, repo_2_selected);
+            updateRepoAndIssuesClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
+        }
+      }
+      
+      // check_and_create_pull_request_closing_times_histogram(repo_1_selected, repo_2_selected);
+      
+      updatePullRequestsBarChart(repo_1_selected, repo_2_selected);
+      updateRepoAndPullRequestsClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
+
+      updateIssuesBarChart(repo_1_selected, repo_2_selected);
+      updateRepoAndIssuesClosingTimesInChartContainer(repo_1_selected, repo_2_selected);
+      
+      
+      // function initialize_create_pull_request_closing_times_histogram_upon_page_render() {
+      //   let repo_1_preselected = 'UTSAVS26/PyVerse';
+      //   let repo_2_preselected = 'eosnetworkfoundation/silkworm';
+
+      //   // let repo_1_preselected = 'microsoft/winget-pkgs';
+      //   // let repo_2_preselected = 'facebook/react';
+
+      //   document.addEventListener("DOMContentLoaded", () => {
+      //     create_pull_request_closing_times_histogram(repo_1_preselected, repo_2_preselected);
+      //   });
+      // }
+
+
+        
+    </script>
 
 
 
