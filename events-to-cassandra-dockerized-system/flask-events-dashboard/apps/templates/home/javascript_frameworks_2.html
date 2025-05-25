@@ -540,6 +540,24 @@
         </div>
       </div>
 
+      <!-- Create top contributors of js repos upon page render -->
+      <script>
+      
+          function update_mirror_of_selected_repo_for_issue_closing_times(label_to_mirror, repo_selected){
+            var selected_repo_mirror_array = document.getElementsByName(label_to_mirror);
+            for (let selected_mirror_array_index=0; selected_mirror_array_index<selected_repo_mirror_array.length; selected_mirror_array_index++){
+                selected_repo_mirror_array[selected_mirror_array_index].textContent = repo_selected ;
+            }
+          }
+
+        
+        // const repo_preselected = "preactjs/preact";
+        // update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
+        //   repo_preselected);
+        // update_top_js_repo_contributors_table(repo_preselected);
+        // updateTopJsContributorsDataTable(repo_preselected);
+      </script>
+      
       <script>
         
         $(document).ready(function() {
@@ -547,7 +565,6 @@
           const repo_preselected = "preactjs/preact";
           update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
             repo_preselected);
-          update_top_js_repo_contributors_table(repo_preselected);
           updateTopJsContributorsDataTable(repo_preselected);
 
 
@@ -556,7 +573,6 @@
                     let repo_selected = this.value;
                     update_mirror_of_selected_repo_for_issue_closing_times("top_js_repo_contributors_repo_mirror", 
                       repo_selected);
-                    update_top_js_repo_contributors_table(repo_selected);
                     updateTopJsContributorsDataTable(repo_selected);
                   });
 
