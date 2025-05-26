@@ -53,7 +53,7 @@
         <div class="card h-100">
           <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
             <!-- <h5>Selected month</h5><h6 class="mb-0 text-sm">Alexa Liras</h6> -->
-            <span class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+            <span class="text-dark font-weight-bold ms-sm-2">Select repository:</span>
             
             <div class="ms-md-auto pe-md-3 d-flex align-items-center">
               <div id="select_repo_to_get_issue_closing_times_per_labels" 
@@ -76,7 +76,7 @@
 
           <div class="card-header card-header-warning" >
             <h5 class="card-title">Average issue closing times by label</h5>
-            <span id="closing_time_by_label_repo_mirror">of selected repo: 
+            <span id="closing_time_by_label_repo_mirror">of selected repository: 
               <span id="preselected_repo_for_issue_closing_times_by_label">- - -</span>
             </span>
           </div>
@@ -89,7 +89,6 @@
                       <th>Order</th>
                       <th>Issue label</th>
                       <th>Count</th>
-                      <th>Seconds</th>
                       <th>Average issue closing time</th>
                   </tr>
               </thead>
@@ -98,21 +97,18 @@
                     <td>1</td>
                     <td>bug</td>
                     <td>10</td>
-                    <td>60</td>
                     <td>125</td>
                 </tr>
                 <tr>
                     <td>2</td>
                     <td>waiting triage</td>
                     <td>5</td>
-                    <td>600</td>
                     <td>125</td>
                 </tr>
                 <tr>
                     <td>3</td>
                     <td>to_fix</td>
                     <td>7</td>
-                    <td>125</td>
                     <td>125</td>
                 </tr>
             </tbody>
@@ -121,14 +117,12 @@
                   <th>Place</th>
                   <th>Issue label</th>
                   <th>Count</th>
-                  <th>Seconds</th>
                   <th>Average issue closing time</th>
                 </tr>
               </tfoot>
             </table> 
           </div>
           
-           <!-- TODO: Automate the retrieval of the number of issues and the 95% of data interval  -->
           <div class="card-body" style="margin-top: -2rem;">
                     
             <h6 class="mb-0"> Total number of issues:
@@ -228,12 +222,12 @@
                   // var issuesByLabelDataTableMirror = $('#example').DataTable({
                   // order: [[3, 'desc']],   
                   columnDefs: [
+                        // {
+                        //     targets: 3,
+                        //     render: DataTable.render.number(null, null, 0)
+                        // },
                         {
                             targets: 3,
-                            render: DataTable.render.number(null, null, 0)
-                        },
-                        {
-                            targets: 4,
                             render: DataTable.render.seconds_to_durations_string_formatted()
                         },
                         {
@@ -298,11 +292,11 @@
                   
                   // TODO: This is wrong - see console.log 
                   document.getElementById("repo_total_number_of_issues_id").textContent = total_number_of_issues_of_repo.toString();
-                  document.getElementById("repo_closing_times_interval_lower_lim_id").textContent = lower_closing_time_threshold.toString(); // Time cannot be lower than 0
-                  document.getElementById("repo_closing_times_interval_upper_lim_id").textContent = upper_closing_time_threshold.toString();
+                  // document.getElementById("repo_closing_times_interval_lower_lim_id").textContent = lower_closing_time_threshold.toString(); // Time cannot be lower than 0
+                  // document.getElementById("repo_closing_times_interval_upper_lim_id").textContent = upper_closing_time_threshold.toString();
 
-                  // document.getElementById("repo_closing_times_interval_lower_lim_id").textContent = seconds_to_formatted_string(Math.max(lower_closing_time_threshold, 0)); // Time cannot be lower than 0
-                  // document.getElementById("repo_closing_times_interval_upper_lim_id").textContent = seconds_to_formatted_string(upper_closing_time_threshold);
+                  document.getElementById("repo_closing_times_interval_lower_lim_id").textContent = seconds_to_formatted_string(Math.max(lower_closing_time_threshold, 0)); // Time cannot be lower than 0
+                  document.getElementById("repo_closing_times_interval_upper_lim_id").textContent = seconds_to_formatted_string(upper_closing_time_threshold);
 
                 });
 
@@ -337,92 +331,6 @@
       
 
       <script>
-        function create_ranking_table_of_closing_issues_per_label_html_body(element_id_to_assign_hmtl_onto, 
-          data_url, html_head, second_col, third_col, fourth_col
-        ) {
-          /*
-          Creates the table contents (html_body)
-          second_col: represents the 'winners' e.g most starred repos
-          third_col: represents the winners' performances e.g 459 stars 
-          
-          returns the html combining the head and the body of the table
-          */
-
-          var html_body_inside = `<tbody>`
-
-          //  Create the html_body of the table
-          fetch(data_url)
-            .then(response => response.json())
-            .then(data => {
-              
-              let days = null;
-              let hours = null;
-              let minutes = null;
-              let seconds = null;
-              let days_hours_mins_secs = null;
-              
-              const closing_times_per_label = data["closing_times_per_label"]
-              for (let data_index = 0; data_index < closing_times_per_label.length; data_index++){
-              
-
-                var largest_two_durations = 
-                    closing_times_per_label[data_index]['average_closing_time_formatted']
-                
-                var largest_two_durations_formatted = ''
-                
-                for (const [key, value] of Object.entries(
-                        largest_two_durations))
-                  largest_two_durations_formatted = 
-                      largest_two_durations_formatted + value + ' ' + key + ', '
-
-                largest_two_durations_formatted = largest_two_durations_formatted.slice(',', -2)
-                
-
-
-                html_body_inside = html_body_inside 
-                  + `<tr>`
-                  + `<td>${data_index+1}</td>`
-                  + `<td>${closing_times_per_label[data_index][second_col]}</td>`
-                  + `<td>${closing_times_per_label[data_index][third_col]}</td>`
-                  + `<td>${largest_two_durations_formatted}</td>`
-                  + `</tr>`
-              }
-              html_body_inside = html_body_inside + `</tbody>`;
-              
-              document.getElementById(element_id_to_assign_hmtl_onto).innerHTML = 
-                html_head + html_body_inside;    
-              // console.log(data)
-            }
-            );
-
-        }
-
-        function update_issue_closing_time_by_label_table(repo_selected){
-          // Arguments to create the table
-          var table_html_id = "issue_closing_times_by_label"
-          // Get the data URL 
-          let data_url = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' 
-                              + repo_selected;
-          var html_head = `<thead class="text-warning">
-                            <tr>
-                              <th>Place</th>
-                              <th>Issue label</th>
-                              <th>Count</th>
-                              <th>Average issue closing times</th>
-                            </tr>
-                          </thead>`
-          var second_column_name = 'issue_label'
-          var third_column_name = 'number_of_issues_with_this_label'
-          var fourth_column_name = 'average_closing_time_formatted'
-
-          // Create the table
-          create_ranking_table_of_closing_issues_per_label_html_body(table_html_id, data_url, html_head, 
-            second_column_name, third_column_name, fourth_column_name);
-          
-        }
-
-
-
         let repo_selected = null;
         document.querySelector("#select_repo_to_get_issue_closing_times_per_labels input").addEventListener(
             "keydown", function() {
@@ -456,7 +364,7 @@
       <!-- <div class="mb-xl-0 mb-4 p-5 pt-2"> -->
         <div class="card">
           <div class="card-header card-header-warning">
-            <h3 class="card-title">Deep Insights, comparison of repos</h4>
+            <h3 class="card-title">Deep Insights, comparison of repositories</h4>
             <p>Based on Github events on December 2024</p>
           </div>
         </div>
@@ -480,7 +388,7 @@
       <div class="col-lg-6 col-md-4">
         <div class="card h-100">
           <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-            <span id="selected_repo_mirror_repo_1" class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+            <span id="selected_repo_mirror_repo_1" class="text-dark font-weight-bold ms-sm-2">Select repository:</span>
             
             <div class="ms-md-auto pe-md-3 d-flex align-items-center">
               <div id="repo_selection_search_box_repo_1" class="input-group input-group-outline">
@@ -496,7 +404,7 @@
       <div class="col-lg-6 col-md-12">
         <div class="card h-100">
           <div class="card-header pb-0 py-3 d-flex align-items-center justify-content-between">
-            <span id="selected_repo_mirror_repo_2" class="text-dark font-weight-bold ms-sm-2">Select repo:</span>
+            <span id="selected_repo_mirror_repo_2" class="text-dark font-weight-bold ms-sm-2">Select repository:</span>
             <div class="ms-md-auto pe-md-3 d-flex align-items-center">
               <div id="repo_selection_search_box_repo_2" class="input-group input-group-outline">
                 <label  class="form-label">e.g. facebook/react</label>
@@ -1133,7 +1041,7 @@
 
     <script>      
       // Preselect repos
-      let repo_1_selected = 'freeCodeCamp/freeCodeCamp';
+      let repo_1_selected = 'openssl/openssl';
       let repo_2_selected = 'facebook/react';
 
       function update_label(label_to_mirror, repo_selected){
