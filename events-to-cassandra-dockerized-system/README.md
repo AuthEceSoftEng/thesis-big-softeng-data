@@ -119,7 +119,7 @@ cd usrlib
 
 ### Terminal 1: Compose kafka, cassandra, flink, expose server data, run the flask app
 ```sh
-docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-near-real-time 
+docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager-near-real-time taskmanager-near-real-time 
 ```
 
 

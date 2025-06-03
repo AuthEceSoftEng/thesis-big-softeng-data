@@ -488,7 +488,7 @@ def get_top_human_contributors_by_day_bot_like_committers_removed(day):
     result_sorted = sorted(result, key=lambda x: x["number_of_contributions"], reverse=True)
     
     # Remove committers with too many commits (more than 20 per hour)
-    max_num_of_commits_per_hour = 20
+    max_num_of_commits_per_hour = 10
     result_sorted_bot_like_committers_removed = [committer_dict for committer_dict \
         in result_sorted if committer_dict["number_of_contributions"] <= max_num_of_commits_per_hour*24]
     
