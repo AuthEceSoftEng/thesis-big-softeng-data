@@ -247,7 +247,7 @@
 
             function updateIssuesByLabelDataTable(repo_selected) {  
 
-              const issuesByLabelUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
+              const issuesByLabelUrl = 'http://localhost:3201/deep_insights_issues/issues_closing_times_by_label/' + repo_selected;
 
               fetch(issuesByLabelUrl)
                 .then(response => response.json())
@@ -365,7 +365,7 @@
         <div class="card">
           <div class="card-header card-header-warning">
             <h3 class="card-title">Deep Insights, comparison of repositories</h4>
-            <p>Based on Github events on December 2024</p>
+            <p>Based on Github events in December 2024</p>
           </div>
         </div>
       </div> 
@@ -672,7 +672,7 @@
               function updatePullRequestsBarChart(selected_repo_1, selected_repo_2) {
                 
                 
-                const pullRequestsBarChartUrl = 'http://localhost:3200/deep_insights_issues/pull_request_closing_times_bar_chart/'+ selected_repo_1+ '/vs/'+ selected_repo_2 ;
+                const pullRequestsBarChartUrl = 'http://localhost:3201/deep_insights_issues/pull_request_closing_times_bar_chart/'+ selected_repo_1+ '/vs/'+ selected_repo_2 ;
                 fetch(pullRequestsBarChartUrl)
                   .then(response => response.json())
                   .then(data => {
@@ -740,7 +740,7 @@
 
             <script>
               function updateRepoAndPullRequestsClosingTimesInChartContainer(repo_name_1, repo_name_2) {
-                  const pullRequestsBarChartUrl = 'http://localhost:3200/deep_insights_issues/pull_request_closing_times_bar_chart/'+ repo_name_1 + '/vs/'+ repo_name_2;
+                  const pullRequestsBarChartUrl = 'http://localhost:3201/deep_insights_issues/pull_request_closing_times_bar_chart/'+ repo_name_1 + '/vs/'+ repo_name_2;
                   fetch(pullRequestsBarChartUrl)
                     .then(response => response.json())
                     .then(data => {
@@ -955,7 +955,7 @@
               function updateIssuesBarChart(selected_repo_1, selected_repo_2) {
                 
                 
-                const IssuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ selected_repo_1+ '/vs/'+ selected_repo_2 ;
+                const IssuesBarChartUrl = 'http://localhost:3201/deep_insights_issues/issues_closing_times_bar_chart/'+ selected_repo_1+ '/vs/'+ selected_repo_2 ;
                 fetch(IssuesBarChartUrl)
                   .then(response => response.json())
                   .then(data => {
@@ -1071,7 +1071,7 @@
 
     
       function updateRepoAndIssuesClosingTimesInChartContainer(repo_name_1, repo_name_2) {
-          const issuesBarChartUrl = 'http://localhost:3200/deep_insights_issues/issues_closing_times_bar_chart/'+ repo_name_1 + '/vs/'+ repo_name_2;
+          const issuesBarChartUrl = 'http://localhost:3201/deep_insights_issues/issues_closing_times_bar_chart/'+ repo_name_1 + '/vs/'+ repo_name_2;
           fetch(issuesBarChartUrl)
             .then(response => response.json())
             .then(data => {
