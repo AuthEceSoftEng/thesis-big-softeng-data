@@ -123,7 +123,7 @@ def forks_and_stars_background_thread():
 # config_parser.read_file(args.config_file)
 count_events_per_sec_config = config
 
-count_events_per_sec_config.update(config_parser['num_of_raw_events_consumer_4'])
+count_events_per_sec_config.update(config_parser['num_of_raw_events_consumer'])
     
 # Create Consumer instance
 raw_events_consumer = Consumer(count_events_per_sec_config)
@@ -173,9 +173,7 @@ def num_of_raw_events_background_thread():
                 jsonBytes = msg.value()
                 # jsonBytes = str(msg.value()).replace("'", '"')
                 # print(f"From thread: 'num_of_raw_events_background_thread': jsonbytes type: {type(jsonBytes)}")
-                jsonDict = eval(jsonBytes)
-                
-                # Consumer gets the timestamp 
+                jsonDict = eval(jsonBytes)                
                 timestamp = jsonDict["created_at"]
                 
                 
