@@ -349,12 +349,15 @@ def filter_no_language_events(eventString):
     eventDict = eval(eventString)
     event_type = eventDict["type"]
     
-    if event_type in event_types_with_languages: 
-        # Filter out events of type that contain no info we need
-        return True
-    else:
+    # Filter out events without languages (non Pull request events)
+    if event_type not in event_types_with_languages: 
         return False
-    
+    else:
+        language = str(eventDict["payload"]["pull_request"]["base"]["repo"]["language"])
+        # Filter out pull request events without a language declaration
+        if language == 'None':
+            return False
+        return True
 
 # Function for the original raw-events datastream
 def extract_language_info_and_create_row(eventString):
