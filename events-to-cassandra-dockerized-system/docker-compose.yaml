@@ -36,7 +36,7 @@ services:
     container_name: kafka-ui
     image: provectuslabs/kafka-ui:latest
     ports:
-      - '8080:8080'
+      - '8180:8180'
     depends_on:
       - kafka
     environment:
@@ -182,73 +182,6 @@ services:
     networks:
       - data-network
 
-
-# Flink jobmanager
-  jobmanager:
-    image: pyflink:1.18.1
-    container_name: jobmanager
-    volumes:
-    # Screen 1  
-      - ./usrlib/near-real-time-stats-and-popularity-insights-via-flink.py:/opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py
-      - ./usrlib/create_raw_events_per_sec_datastream.py:/opt/flink/usrlib/create_raw_events_per_sec_datastream.py
-      - ./usrlib/near-real-time-stars-forks-via-flink.py:/opt/flink/usrlib/near-real-time-stars-forks-via-flink.py
-      
-    # Connectors
-      - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
-      - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
-
-    # User's pyflink jobs
-      - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
-      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
-      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
-    # # Multiple Screen 2 jobs instead of 1
-      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py
-      - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py
-
-
-    # User's legacy jobs
-      - ./usrlib/screen_2_q6_q8_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_backup_27_4.py
-      - ./usrlib/screen_3_q9_q10_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job_backup_27_4.py
-      - ./usrlib/screen_4_q11_q15_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job_backup_27_4.py
-    # # Multiple Screen 2 jobs instead of 1
-      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py
-      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py
-
-
-
-    # Cancel all jobs
-      - ./usrlib/cancel_all_flink_jobs.py:/opt/flink/usrlib/cancel_all_flink_jobs.py
-    
-
-    # Screen 2 screen accelerated
-      - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
-      - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
-      - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
-
-    
-
-
-    # Config file
-      - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
-    ports:
-      - "8081:8081"
-    command: jobmanager    
-    environment:
-      - |
-        FLINK_PROPERTIES=
-        jobmanager.rpc.address: jobmanager
-        parallelism.default: 1
-        rest.flamegraph.enabled: true
-        metrics.latency.interval: 1000
-      # jobmanager.memory.process.size: 1g
-      
-      # taskmanager.numberOfTaskSlots: 8
-      # taskmanager.memory.jvm-metaspace.size: 1728m
-      # python.operator-chaining.enabled: false
-    depends_on: 
-      - cassandra_stelios
-    networks:
-      - data-network
       
 # Cassandra 
   cassandra_stelios:
