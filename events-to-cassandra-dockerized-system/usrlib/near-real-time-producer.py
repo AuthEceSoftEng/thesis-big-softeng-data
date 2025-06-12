@@ -11,6 +11,7 @@ from thin_data import thin_data_of_file
 from check_job_status_multiple_jobs import check_if_job_is_busy
 
 import time
+import sys
 
 def get_newest_GHArchive_file_URL():
     print("Retrieving the latest GHArchive file")
@@ -72,11 +73,19 @@ def download_compressed_GHA_file(gha_file_url, folderpath):
     # and save it locally in "path_to_download_GHAFile"
     if not os.path.exists(filepath):
         r = requests.get(gha_file_url, stream=True)
+        r.raw.decode_content = False
+        
         print('Starting download of GHArchive file from URL: {}'.format(gha_file_url))
+        
+        
         with open(filepath, 'wb') as f:
-            for chunk in r.raw.stream(1024, decode_content=False):
-                if chunk:
-                    f.write(chunk)
+            # for chunk in r.raw.stream(1024, decode_content=False):
+            #     if chunk:
+            #         f.write(chunk)
+                    
+            for chunk in iter(lambda: r.raw.read(1024), b''):
+                f.write(chunk)
+                
         print("GHArchive file from URL {} finished downloading".format(gha_file_url))
     else:
         print(f"File {filename} already exists in folder {folderpath}.")
@@ -92,7 +101,6 @@ if __name__=='__main__':
 
     # Download latest gharchive file
     download_compressed_GHA_file(newest_URL, folderpath_to_download_into)
-
 
     # Thin data
     # Input
