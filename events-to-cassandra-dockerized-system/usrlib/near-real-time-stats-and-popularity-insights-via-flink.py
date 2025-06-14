@@ -162,7 +162,13 @@ def filter_no_statistics_events(eventString):
     
     # Acceleration attempt:
     if event_type == "PushEvent":
-        return True
+        # Keep PushEvents if number_of_conmmits <= 200 or if size == distinct_size
+        number_of_commits = eventDict["payload"]["distinct_size"]
+        if (number_of_commits <= 100) or (number_of_commits <= 200
+        and eventDict["payload"]["size"] == eventDict["payload"]["distinct_size"]):
+            return True
+        else:
+            return False
     elif event_type == "IssuesEvent":
         # Filter out IssueEvents that do not open or close issues
         if eventDict["payload"]["action"] == "opened" or \
@@ -203,11 +209,7 @@ def extract_statistics_and_create_row(eventString):
     pull_requests = 0
                             
     if event_type == "PushEvent":
-        commits = 0
-        # Keep regular events
-        if (commits <= 100) or (commits <= 200
-        and eventDict["payload"]["size"] == eventDict["payload"]["distinct_size"]):
-            commits = eventDict["payload"]["distinct_size"]
+        commits = eventDict["payload"]["distinct_size"]
     elif event_type == "IssuesEvent" and \
         eventDict["payload"]["action"] == "opened":
         open_issues = 1
