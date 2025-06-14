@@ -53,6 +53,12 @@ Now you should be able to see
 
 ### Terminal 4: Download events of the designated gharchive files, thin them and produce them to kafka
 ```sh
+docker compose up python-historical-events-thinner # (for a single downloaded and thinner)
+# For multiple downloaders and thinners running in parallel:
+docker compose up python-historical-events-thinner-2
+docker compose up python-historical-events-thinner-3
+docker compose up python-historical-events-thinner-4
+
 # Create the topic
 # Note: Ignore the error on the deletion of the topic as the topic has not been created yet
 ./delete_and_recreate_topic.sh
@@ -159,7 +165,7 @@ docker compose up event-data-exposing-server
 
 ### Terminal 8: Deploy the UI
 ```sh
-docker compose up events-flask-app event-data-exposing-server 
+docker compose up events-flask-app
 ```
 
 
