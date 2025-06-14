@@ -248,7 +248,27 @@ raw_events_consumer.subscribe([raw_events_topic_name], on_assign=reset_offset)
 
 
 def num_of_raw_events_background_thread():
-    timestamp_to_event_dict = dict()
+
+    # Stores {timestamp: number_of_events_on_timestamp} 
+    timestamp_queue = {}
+    queue_max_size = 10
+    
+    raw_events_consumer.assign([raw_events_topic])
+
+    # initial_offset = raw_events_consumer.committed([raw_events_topic])[0].offset
+
+
+    previous_timestamp = None
+    current_timestamp = None
+    previous_timestamp_stringified = None
+    current_timestamp_stringified = None
+    current_id = None
+    previous_id = None
+    
+    num_of_times_current_was_earlier_than_previous = 0
+    num_of_messages_parsed = 0
+    
+    
     last_msg_offset = None
     try:
         previous_timestamp = None
@@ -260,19 +280,66 @@ def num_of_raw_events_background_thread():
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
-                raw_events_consumer.assign([raw_events_topic])
-                committed_offset = raw_events_consumer.committed([raw_events_topic])[0].offset
-                last_offset = raw_events_consumer.get_watermark_offsets(raw_events_topic)[1]
+                
+                kafka_record = eval(msg.value())
+                timestamp = kafka_record["created_at"]
+                # Keep count of the coming timestamps
+                if timestamp in timestamp_queue:
+                    timestamp_queue[timestamp] += 1
+                else:
+                    timestamp_queue[timestamp] = 1
+                    
+                # Pop once queue becomes full
+                if len(timestamp_queue.items()) >= queue_max_size:
+                    earliest_inserted_key = next(iter(timestamp_queue))
+                    num_of_events_on_timestamp = timestamp_queue.pop(earliest_inserted_key)
+                    
+                    # Emit on the bar chart 
+                    socketio.emit("updateNumOfNearRealTimeRawEvents", {"num_of_events_per_sec": \
+                        num_of_events_on_timestamp, "timestamp": earliest_inserted_key})
                 
                 
-                # # Show committer lag
-                # print(f"Committed offset: {committed_offset}")
-                # print(f"Last offset: {last_offset}")
-                # print(f"Consumer lag: {last_offset - committed_offset}")
+                    print(f"Size of timestamp_queue: {len(timestamp_queue)}")
+                    
+            socketio.sleep(0.5)
                 
-                # Show kafka record
-                # Print message if the created at time is longer
-                print(f"Message at offset {committed_offset}: {eval(msg.value())}")
+                
+                
+                
+                # # Print all topics
+                # num_of_messages_parsed += 1
+                # kafka_record = eval(msg.value())
+                # print(kafka_record)
+                
+                # current_timestamp_stringified = kafka_record["created_at"]
+                # current_timestamp = datetime.fromisoformat(current_timestamp_stringified.rstrip('Z')).strftime('%H:%M:%S')
+                # current_id =  kafka_record["id"]
+                # # Print previous and current times if current
+                # # time is earlier than the previous 
+                # if previous_timestamp == None or \
+                # current_timestamp < previous_timestamp:
+                #     num_of_times_current_was_earlier_than_previous += 1 
+                #     print(f"Current \t Previous: {current_timestamp} < {previous_timestamp}")
+                #     print(f"Ids: \t {current_id} < {previous_id}")
+                #     print(f"Timestamps: \t {current_timestamp_stringified} < {previous_timestamp_stringified}")
+                #     time.sleep(1)
+                #     socketio.sleep(1)
+                
+                # previous_timestamp_stringified = current_timestamp_stringified
+                # previous_timestamp = current_timestamp
+                # previous_id = current_id
+                
+                # socketio.sleep(0.001)
+
+
+
+                
+                
+                # current_offset = raw_events_consumer.committed([raw_events_topic])[0].offset
+                # latest_offset = raw_events_consumer.get_watermark_offsets(raw_events_topic)[1]
+                # consumer_lag = last_offset - committed_offset
+                
+                # print(f"Message at offset {committed_offset}: {eval(msg.value())}")
                 
                 
                 
@@ -303,11 +370,10 @@ def num_of_raw_events_background_thread():
                 #     socketio.emit("updateNumOfNearRealTimeRawEvents", {"num_of_events_per_sec": \
                 #         timestamp_to_event_dict[previous_timestamp], "timestamp": previous_timestamp})
                 #     previous_timestamp = timestamp
-                socketio.sleep(1)
+                # socketio.sleep(1)
     except KeyboardInterrupt:
         pass
     finally:
-        print(f"Consumed messages up to offset: {last_msg_offset.offset()}")
         raw_events_consumer.close()
 
 
