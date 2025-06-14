@@ -15,13 +15,14 @@ import time
 
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
-from confluent_kafka import Consumer, OFFSET_BEGINNING
+from confluent_kafka import Consumer, OFFSET_BEGINNING, TopicPartition
 # from cassandra.cluster import Cluster
 from flask import Flask, render_template, request
 from random import random
 import json
 
 from   sys import exit
+import sys
 
 from numpy import empty
 
@@ -83,7 +84,7 @@ def forks_and_stars_background_thread():
                 # Initial message consumption may take up to
                 # `session.timeout.ms` for the consumer group to
                 # rebalance and start consuming
-                print("Waiting...")
+                print("Waiting... for stars and forks")
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
@@ -123,7 +124,7 @@ def forks_and_stars_background_thread():
 # config_parser.read_file(args.config_file)
 count_events_per_sec_config = config
 
-count_events_per_sec_config.update(config_parser['num_of_raw_events_consumer'])
+count_events_per_sec_config.update(config_parser['num_of_raw_events_consumer_4'])
     
 # Create Consumer instance
 raw_events_consumer = Consumer(count_events_per_sec_config)
@@ -137,16 +138,117 @@ def reset_offset(consumer, partitions):
 
 
 # Subscribe to topic near-real-time-raw-events to count the events per topic
-raw_events_topic = "near-real-time-raw-events"
-raw_events_consumer.subscribe([raw_events_topic], on_assign=reset_offset)
+raw_events_topic_name = "near-real-time-raw-events-ordered"
+raw_events_topic = TopicPartition(raw_events_topic_name, 0)
+raw_events_consumer.subscribe([raw_events_topic_name], on_assign=reset_offset)
+
+
+
+
+# def num_of_raw_events_background_thread():
+    
+#     # Create a kafka record dict of (timestamp, number of events with the timestamp) 
+#     # and expose it on socket emit
+    
+#     kafka_record = dict()
+#     last_msg_offset = None
+#     try:
+#         previous_timestamp = None
+#         while True:
+#             msg = raw_events_consumer.poll(1.0)
+#             last_msg_offset = msg
+#             if msg is None:
+#                 # Initial message consumption may take up to
+#                 # `session.timeout.ms` for the consumer group to
+#                 # rebalance and start consuming
+#                 print("Waiting...")
+#             elif msg.error():
+#                 print("ERROR: %s".format(msg.error()))
+#             else:
+#                 # On the first incoming non-None message print the offset
+#                 if previous_timestamp == None:
+#                     print(f'Started from offset: {msg.offset()}')
+                
+#                 ## Print consumed events upon receive
+#                 # print("\nConsumed an event from topic: {topic},  value = {value:12}".format( \
+#                 #     topic=msg.topic(), value=msg.value().decode('utf-8')))
+                
+                
+#                 jsonBytes = msg.value()
+#                 # jsonBytes = str(msg.value()).replace("'", '"')
+#                 # print(f"From thread: 'num_of_raw_events_background_thread': jsonbytes type: {type(jsonBytes)}")
+#                 jsonDict = eval(jsonBytes)                
+#                 timestamp = jsonDict["created_at"]
+                
+                
+                
+#                 # On the first timestamp, do not emit (timestamp, number of events on timestamp) 
+#                 if timestamp not in kafka_record.keys() \
+#                     and kafka_record == {}:
+#                     kafka_record[timestamp] = 1
+#                     previous_timestamp = timestamp
+                
+                
+#                 # If the consumed timestamp exists, increase its value by one
+#                 elif timestamp in kafka_record.keys():
+#                     kafka_record[timestamp] += 1
+                
+                
+#                 # If the timestamp does not exist and is not the first emitted timestamp,
+#                 # create a dict row with 'number of events on timestamp' = one
+#                 # and emit the number of events of the previous timestamp
+#                 # (Heuristic) Also, if the previous number of occurences is 1, then we omit it,
+#                 # as it is probably a not in-order message.
+#                 elif timestamp not in kafka_record.keys() \
+#                     and timestamp != None and \
+#                         kafka_record[previous_timestamp] != 1:
+                
+#                     # If the next timestamp is before the previous one, do not emit it and do not change 
+#                     # the previous timestamp with the new one
+#                     # (continue to the next iteration of the loop) (we want the emitted timestamps and 
+#                     # number of events to be sequential. This intρoduces a negligible error on the number of events 
+#                     # per timestamp)
+#                     # TODO: Possible problem is the fact that the consumer may start from a date much later
+#                     # than the first one. Example: if the first one is 
+#                     # 2024-08-23T14:00:00Z
+#                     # and the emitted one is 
+#                     time_only = datetime.fromisoformat(timestamp.rstrip('Z')).strftime('%H:%M:%S')
+#                     previous_time_only = datetime.fromisoformat(previous_timestamp.rstrip('Z')).\
+#                         strftime('%H:%M:%S')
+#                     if time_only < previous_time_only:
+#                         continue    
+                    
+                    
+#                     # Debugging: Print the new timestamp and its number of events
+#                     print(f"Previous timestamp: {previous_timestamp}, "
+#                         f"Num of events:"
+#                         f"{kafka_record[previous_timestamp]}")
+                    
+#                     # Add the new timestamp to the dictionary
+#                     kafka_record[timestamp] = 1
+                    
+#                     # Emit the old timestamp
+#                     socketio.emit("updateNumOfNearRealTimeRawEvents", {"num_of_events_per_sec": \
+#                         kafka_record[previous_timestamp], "timestamp": previous_timestamp})
+                    
+#                     # After emitting the previous timestamp, 
+#                     # turn the current timestamp into the previous one
+#                     previous_timestamp = timestamp
+#                     socketio.sleep(1)
+                
+#                 # time.sleep(2)
+                
+#     except KeyboardInterrupt:
+#         pass
+#     finally:
+#         print(f"Consumed messages up to offset: {last_msg_offset.offset()}")
+#         # Leave group and commit final offsets
+#         raw_events_consumer.close()
+
 
 
 def num_of_raw_events_background_thread():
-    
-    # Create a dict of (timestamp, number of events with the timestamp) 
-    # and expose it on socket emit
-    
-    timestamp_to_number_of_events_dict = dict()
+    timestamp_to_event_dict = dict()
     last_msg_offset = None
     try:
         previous_timestamp = None
@@ -154,93 +256,59 @@ def num_of_raw_events_background_thread():
             msg = raw_events_consumer.poll(1.0)
             last_msg_offset = msg
             if msg is None:
-                # Initial message consumption may take up to
-                # `session.timeout.ms` for the consumer group to
-                # rebalance and start consuming
-                print("Waiting...")
+                print("Waiting... for num of events")
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
-                # On the first incoming non-None message print the offset
-                if previous_timestamp == None:
-                    print(f'Started from offset: {msg.offset()}')
-                
-                ## Print consumed events upon receive
-                # print("\nConsumed an event from topic: {topic},  value = {value:12}".format( \
-                #     topic=msg.topic(), value=msg.value().decode('utf-8')))
+                raw_events_consumer.assign([raw_events_topic])
+                committed_offset = raw_events_consumer.committed([raw_events_topic])[0].offset
+                last_offset = raw_events_consumer.get_watermark_offsets(raw_events_topic)[1]
                 
                 
-                jsonBytes = msg.value()
-                # jsonBytes = str(msg.value()).replace("'", '"')
-                # print(f"From thread: 'num_of_raw_events_background_thread': jsonbytes type: {type(jsonBytes)}")
-                jsonDict = eval(jsonBytes)                
-                timestamp = jsonDict["created_at"]
+                # # Show committer lag
+                # print(f"Committed offset: {committed_offset}")
+                # print(f"Last offset: {last_offset}")
+                # print(f"Consumer lag: {last_offset - committed_offset}")
+                
+                # Show kafka record
+                # Print message if the created at time is longer
+                print(f"Message at offset {committed_offset}: {eval(msg.value())}")
                 
                 
                 
-                # On the first timestamp, do not emit (timestamp, number of events on timestamp) 
-                if timestamp not in timestamp_to_number_of_events_dict.keys() \
-                    and timestamp_to_number_of_events_dict == {}:
-                    timestamp_to_number_of_events_dict[timestamp] = 1
-                    previous_timestamp = timestamp
                 
-                
-                # If the consumed timestamp exists, increase its value by one
-                elif timestamp in timestamp_to_number_of_events_dict.keys():
-                    timestamp_to_number_of_events_dict[timestamp] += 1
-                
-                
-                # If the timestamp does not exist and is not the first emitted timestamp,
-                # create a dict row with 'number of events on timestamp' = one
-                # and emit the number of events of the previous timestamp
-                # (Heuristic) Also, if the previous number of occurences is 1, then we omit it,
-                # as it is probably a not in-order message.
-                elif timestamp not in timestamp_to_number_of_events_dict.keys() \
-                    and timestamp != None and \
-                        timestamp_to_number_of_events_dict[previous_timestamp] != 1:
-                
-                    # If the next timestamp is before the previous one, do not emit it and do not change 
-                    # the previous timestamp with the new one
-                    # (continue to the next iteration of the loop) (we want the emitted timestamps and 
-                    # number of events to be sequential. This intρoduces a negligible error on the number of events 
-                    # per timestamp)
-                    # TODO: Possible problem is the fact that the consumer may start from a date much later
-                    # than the first one. Example: if the first one is 
-                    # 2024-08-23T14:00:00Z
-                    # and the emitted one is 
-                    time_only = datetime.fromisoformat(timestamp.rstrip('Z')).strftime('%H:%M:%S')
-                    previous_time_only = datetime.fromisoformat(previous_timestamp.rstrip('Z')).\
-                        strftime('%H:%M:%S')
-                    if time_only < previous_time_only:
-                        continue    
-                    
-                    
-                    # Debugging: Print the new timestamp and its number of events
-                    print(f"Previous timestamp: {previous_timestamp}, "
-                        f"Num of events:"
-                        f"{timestamp_to_number_of_events_dict[previous_timestamp]}")
-                    
-                    # Add the new timestamp to the dictionary
-                    timestamp_to_number_of_events_dict[timestamp] = 1
-                    
-                    # Emit the old timestamp
-                    socketio.emit("updateNumOfNearRealTimeRawEvents", {"num_of_events_per_sec": \
-                        timestamp_to_number_of_events_dict[previous_timestamp], "timestamp": previous_timestamp})
-                    
-                    # After emitting the previous timestamp, 
-                    # turn the current timestamp into the previous one
-                    previous_timestamp = timestamp
-                    socketio.sleep(1)
-                
-                # time.sleep(2)
-                
+                # if previous_timestamp == None:
+                #     print(f'Started from offset: {msg.offset()}')
+                # jsonBytes = msg.value()
+                # jsonDict = eval(jsonBytes)                
+                # timestamp = jsonDict["created_at"]
+                # if timestamp not in timestamp_to_event_dict.keys() \
+                #     and timestamp_to_event_dict == {}:
+                #     timestamp_to_event_dict[timestamp] = 1
+                #     previous_timestamp = timestamp
+                # elif timestamp in timestamp_to_event_dict.keys():
+                #     timestamp_to_event_dict[timestamp] += 1
+                # elif timestamp not in timestamp_to_event_dict.keys() \
+                #     and timestamp != None and \
+                #         timestamp_to_event_dict[previous_timestamp] != 1:
+                #     time_only = datetime.fromisoformat(timestamp.rstrip('Z')).strftime('%H:%M:%S')
+                #     previous_time_only = datetime.fromisoformat(previous_timestamp.rstrip('Z')).\
+                #         strftime('%H:%M:%S')
+                #     if time_only < previous_time_only:
+                #         continue    
+                #     print(f"Previous timestamp: {previous_timestamp}, "
+                #         f"Num of events:"
+                #         f"{timestamp_to_event_dict[previous_timestamp]}")
+                #     timestamp_to_event_dict[timestamp] = 1
+                #     socketio.emit("updateNumOfNearRealTimeRawEvents", {"num_of_events_per_sec": \
+                #         timestamp_to_event_dict[previous_timestamp], "timestamp": previous_timestamp})
+                #     previous_timestamp = timestamp
+                socketio.sleep(1)
     except KeyboardInterrupt:
         pass
     finally:
         print(f"Consumed messages up to offset: {last_msg_offset.offset()}")
-        # Leave group and commit final offsets
         raw_events_consumer.close()
-
 
 
 
