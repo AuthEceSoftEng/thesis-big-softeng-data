@@ -165,8 +165,23 @@ def num_of_raw_events_background_thread():
                 timestamp = kafka_record["created_at"]
                 if timestamp in timestamp_queue:
                     timestamp_queue[timestamp] += 1
-                else:
+                elif timestamp not in timestamp_queue:
+                    
+                    if timestamp_queue != {}:
+                        earliest_timestamp_in_queue = next(iter(timestamp_queue))
+                        earliest_timestamp_in_queue_as_date = datetime.fromisoformat(earliest_timestamp_in_queue.rstrip('Z')).\
+                            strftime('%H:%M:%S')
+                        timestamp_as_date = datetime.fromisoformat(timestamp.rstrip('Z')).\
+                            strftime('%H:%M:%S')
+                        if timestamp_as_date < earliest_timestamp_in_queue_as_date:
+                            # # Comment out for debugging
+                            # print(f"Got timestamp {timestamp} earlier than earliest timestamp {earliest_timestamp_in_queue}. Ignoring it...")
+                            # socketio.sleep(5)
+                            
+                            continue # Not taking into account timestamps that are earlier than the earliest timestamp in queue
+                    
                     timestamp_queue[timestamp] = 1
+                    
                     
                 # Emit <number_of_timestamps_to_emit_at_once> records once queue is full
                 if len(timestamp_queue.items()) >= queue_max_size + number_of_timestamps_to_emit_at_once:                    
@@ -175,9 +190,10 @@ def num_of_raw_events_background_thread():
                         num_of_events_on_timestamp = timestamp_queue.pop(earliest_inserted_key)
                         socketio.emit("updateNumOfNearRealTimeRawEvents", {"num_of_events_per_sec": \
                             num_of_events_on_timestamp, "timestamp": earliest_inserted_key})
-                        print(f"Popping: 'timestamp: {earliest_inserted_key}, num_of_events_per_sec: {num_of_events_on_timestamp}")
+                        print(f"Popping: timestamp: {earliest_inserted_key}, num_of_events_per_sec: {num_of_events_on_timestamp}")
                         
                     socketio.sleep(number_of_timestamps_to_emit_at_once)
+                    
                     
                 
     except KeyboardInterrupt:
