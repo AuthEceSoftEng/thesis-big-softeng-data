@@ -6,11 +6,8 @@ import requests
 import os
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
-from create_topic_from_inside_the_container import create_topic_from_within_container
 
 from thin_data import thin_data_of_file
-
-from check_job_status_multiple_jobs import check_if_job_is_busy
 
 import time
 import sys
@@ -79,24 +76,27 @@ def download_compressed_GHA_file(gha_file_url, folderpath):
     # Stream the contents of the file from the newest_GHArchive_file_url in chunks
     # and save it locally in "path_to_download_GHAFile"
     if not os.path.exists(filepath):
-        r = requests.get(gha_file_url, stream=True)
-        r.raw.decode_content = False
         
-        print('Starting download of GHArchive file from URL: {}'.format(gha_file_url))
-        
-        
-        with open(filepath, 'wb') as f:
-            # for chunk in r.raw.stream(1024, decode_content=False):
-            #     if chunk:
-            #         f.write(chunk)
-                    
-            for chunk in iter(lambda: r.raw.read(1024), b''):
-                f.write(chunk)
+        with requests.get(gha_file_url, stream=True) as r:
+            r.raise_for_status()
+            r.raw.decode_content = False
+            
+            print('Starting download of GHArchive file from URL: {}'.format(gha_file_url))
+            
+            
+            with open(filepath, 'wb') as f:
+                for chunk in r.raw.stream(1024, decode_content=False):
+                    if chunk:
+                        f.write(chunk)
+                    else:
+                       break 
+                        
+                # for chunk in iter(lambda: r.raw.read(1024), b''):
+                #     f.write(chunk)
                 
         print("GHArchive file from URL {} finished downloading".format(gha_file_url))
     else:
         print(f"File {filename} already exists in folder {folderpath}.")
-
 
 
 def save_files_parsed(files_parsed=dict, filepath_to_store_files_parsed=str):
@@ -194,8 +194,6 @@ def extract_compressed_file_from_path(compressedFilePath, do_again=False):
         print("The decompressed file already exists in path {}\n".
         format(decompressed_file_filepath))
     return decompressed_file_filepath
-
-
 
   
 def produce_from_line_we_left_off(topic=str, filepath=str, \
@@ -436,14 +434,10 @@ def create_topic_if_not_exists(topic, bootstrap_servers, desired_number_of_parti
     
     
 if __name__=='__main__':
-    # Get the URL of the latest gharchive available 
-    newest_URL, newest_gharchive_file_date = get_newest_GHArchive_file_URL() 
-
-    # In docker 
-    folderpath_to_download_into = '/github_data_near_real_time'
     
-
     # Download latest gharchive file
+    newest_URL, newest_gharchive_file_date = get_newest_GHArchive_file_URL() 
+    folderpath_to_download_into = '/github_data_near_real_time'
     download_compressed_GHA_file(newest_URL, folderpath_to_download_into)
 
     # Thin data
@@ -465,19 +459,12 @@ if __name__=='__main__':
 
     # # The path to the file containing the state of the lines read from each file
     parsed_files_filepath = "/github_data_near_real_time/files_parsed.json"
-
     topic_to_produce_into = 'near-real-time-raw-events'
     
     # The topic 'near-real-time-raw-events', thus retaining the message order
     topic_that_retains_message_order = 'near-real-time-raw-events-ordered'
 
 
-    # # Path with custom events
-    # filepath = '/home/xeon/Thesis/local-kafka-flink-cassandra-integration/presentation-10-demo/task-1-preprocess-download-and-thin-data/og_vs_thinned_events/2024-01-01-0-thinned-oneliner-custom-events.json.gz'
-
-
-
-    # produce_from_last_line_of_file = create_topic_if_not_exists + produce_from_line_we_left_off
     # region
     def produce_from_last_line_of_file(topic=str, filepath=str, parsed_files_filepath=str):   
         # Parse the command line.
@@ -541,47 +528,3 @@ if __name__=='__main__':
     
     # endregion
 
-
-
-    # # Wait for the pyflink jobs to finish executing
-    # # The pyflink jobs derive stars, forks, daily stats and popularity insights
-    # stars_and_forks_busy_status = check_if_job_is_busy('Get stars and forks')
-    # stats_and_popularity_insights_busy_status = check_if_job_is_busy(\
-    #                         "Get real time stats and popularity insights")
-
-
-    # # If the whole latest gharchive file has been produced (or you can wait until transformation stops)
-    # if (the_whole_file_was_produced_already == True):
-    #     print("The whole latest gharchive file has been read.\n"
-    #           "Waiting for pyflink jobs to complete")
-    #     quit()
-
-    # # If the whole latest gharchive file has just been produced
-    # # Check if the jobs on the near-real-time-raw-events have terminated
-    # else:
-    #     if (stars_and_forks_busy_status == False and \
-    #         stats_and_popularity_insights_busy_status == False):
-            
-    #         # Wait until datastream transformation operators start working
-    #         while(stars_and_forks_busy_status == False or \
-    #             stats_and_popularity_insights_busy_status == False):
-                
-    #             print("Waiting for pyflink jobs to complete datastream transformation")
-    #             time.sleep(5)
-    #             stars_and_forks_busy_status = check_if_job_is_busy('Get stars and forks')
-    #             stats_and_popularity_insights_busy_status = check_if_job_is_busy(\
-    #                                 "Get real time stats and popularity insights")
-    #     else:
-    #         # Wait until transform stops
-    #         while(stars_and_forks_busy_status == True or \
-    #             stats_and_popularity_insights_busy_status == True):
-                
-    #             print("Waiting for transformation of data to stop")
-    #             time.sleep(5)
-    #             stars_and_forks_busy_status = check_if_job_is_busy('Get stars and forks')
-    #             stats_and_popularity_insights_busy_status = check_if_job_is_busy(\
-    #                                 "Get real time stats and popularity insights")
-
-
-    # # By this point, the execution must have stopped and 
-    # # data should now be able to be added into Cassandra through a consumer of the datastreams.
