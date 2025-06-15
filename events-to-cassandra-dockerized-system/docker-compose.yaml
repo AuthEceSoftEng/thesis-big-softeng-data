@@ -816,3 +816,23 @@ services:
     - PYTHONUNBUFFERED=1
     networks:
       - data-network
+
+
+
+  test_near_real_time_queries:
+    image: python:3.10-script-executing-image
+    container_name: test_near_real_time_queries
+    volumes: 
+      - ./usrlib/test_near_real_time_queries.py:/usrlib/test_near_real_time_queries.py
+      
+    command: ['python', 'test_near_real_time_queries.py']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+      - cassandra_stelios
+      - cassandra-ui
+
+    networks:
+      - data-network
