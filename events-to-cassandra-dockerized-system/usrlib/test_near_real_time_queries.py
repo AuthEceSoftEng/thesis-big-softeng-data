@@ -48,7 +48,7 @@ try:
         # session.execute(create_pop_topics_table)
 
 
-        most_popular_repos_table = "most_popular_repos"
+        most_popular_repos_table = "most_popular_repos_by_day"
         # create_most_popular_repos_table = \
         #         f"CREATE TABLE IF NOT EXISTS {keyspace}.{most_popular_repos_table} \
         #         (day text, repo text, stars counter, forks counter, PRIMARY KEY ((day), repo)) WITH CLUSTERING ORDER BY (repo desc);"
@@ -115,17 +115,17 @@ try:
 
 
 
-        select_stats_prepared_query = session.prepare(\
-                    f"SELECT day, commits, stars, forks, pull_requests "\
-                    f"FROM {keyspace}.{stats_table} WHERE day = ?")
-        stats_queried_res = session.execute(select_stats_prepared_query, [day])           
-        stats_queried_row = stats_queried_res.one()
-        print(f"Stats on {day}:\n"\
-                f"Commits\tStars\tForks\tPull requests\n"
-                f"{stats_queried_row.commits}\t"\
-                f"{stats_queried_row.stars}\t"
-                f"{stats_queried_row.forks}\t"
-                f"{stats_queried_row.pull_requests}")
+        # select_stats_prepared_query = session.prepare(\
+        #             f"SELECT day, commits, stars, forks, pull_requests "\
+        #             f"FROM {keyspace}.{stats_table} WHERE day = ?")
+        # stats_queried_res = session.execute(select_stats_prepared_query, [day])           
+        # stats_queried_row = stats_queried_res.one()
+        # print(f"Stats on {day}:\n"\
+        #         f"Commits\tStars\tForks\tPull requests\n"
+        #         f"{stats_queried_row.commits}\t"\
+        #         f"{stats_queried_row.stars}\t"
+        #         f"{stats_queried_row.forks}\t"
+        #         f"{stats_queried_row.pull_requests}")
         
 
 
@@ -155,25 +155,28 @@ try:
         # print()
         
         
-        # select_repos_prepared_query = session.prepare(\
-        #         f"SELECT day, repo, stars, forks "\
-        #         f"FROM {keyspace}.{most_popular_repos_table} WHERE day = ?")
-        # repos_queried_res = session.execute(select_repos_prepared_query, [day])            
-        # repos_queried_rows = repos_queried_res.all()
+        select_repos_prepared_query = session.prepare(\
+                f"SELECT day, repo, stars, forks "\
+                f"FROM {keyspace}.{most_popular_repos_table} WHERE day = ?")
+        repos_queried_res = session.execute(select_repos_prepared_query, [day])            
+        repos_queried_rows = repos_queried_res.all()
+        repos_queried_rows_sorted_by_stars = sorted(repos_queried_rows, key=lambda x: x.stars, reverse=True)
+        repos_queried_rows_sorted_by_forks = sorted(repos_queried_rows, key=lambda x: x.forks, reverse=True)
         
-        # repos_queried_rows_sorted_by_stars = sorted(repos_queried_rows, key=lambda x: x.stars, reverse=True)
-        # print(f"Most popular repos by stars on {day}:\n"\
-        #         "Repo\tStars")
-        # for i in range(len(repos_queried_rows_sorted_by_stars)):
-        #         print(f"{repos_queried_rows_sorted_by_stars[i].repo}\t{repos_queried_rows_sorted_by_stars[i].stars}")
-        # print()
+        max_number_of_repos_to_show = 5
         
-        # repos_queried_rows_sorted_by_forks = sorted(repos_queried_rows, key=lambda x: x.forks, reverse=True)
-        # print(f"Most popular repos by forks on {day}:\n"\
-        #         "Repo\nForks")
-        # for i in range(len(repos_queried_rows_sorted_by_forks)):
-        #         print(f"{repos_queried_rows_sorted_by_forks[i].repo}\t{repos_queried_rows_sorted_by_forks[i].forks}")
-        # print()
+        print(f"Most popular repos by stars on {day}:\n"\
+                "Repo\tStars")
+        for i in range(min(len(repos_queried_rows_sorted_by_stars), max_number_of_repos_to_show)):
+                print(f"{repos_queried_rows_sorted_by_stars[i].repo}\t{repos_queried_rows_sorted_by_stars[i].stars}")
+        print()
+        
+        
+        print(f"Most popular repos by forks on {day}:\n"\
+                "Repo\nForks")
+        for i in range(min(len(repos_queried_rows_sorted_by_forks), max_number_of_repos_to_show)):
+                print(f"{repos_queried_rows_sorted_by_forks[i].repo}\t{repos_queried_rows_sorted_by_forks[i].forks}")
+        print()
         
         # print("Check if the table is sorted")
         
