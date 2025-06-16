@@ -28,20 +28,15 @@ from cassandra.cluster import Cluster
 
 
 # Set up the flink execution environment
+# region
 env = StreamExecutionEnvironment.get_execution_environment()
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 env.set_parallelism(1)
 env.add_jars("file:///opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar")
 env.add_jars("file:///opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar")
-
-# env.set_restart_strategy(RestartStrategies.\
-#     fixed_delay_restart(restart_attempts=3, delay_between_attempts=1000))
-
 env.set_restart_strategy(RestartStrategies.\
-    fixed_delay_restart(restart_attempts=1, delay_between_attempts=1000))
-
+    fixed_delay_restart(restart_attempts=3, delay_between_attempts=1000))
 env.enable_checkpointing(1000)
-
 # Get the kafka bootstrap servers when deploying the job 
 parser = ArgumentParser(prog=f"python {os.path.basename(__file__)}",    
                             description="Warning on function usage: \n\n"
@@ -61,54 +56,46 @@ with open(args.config_file_path, 'r') as config_file:
     config_parser.read_file(config_file)
 config = dict(config_parser['default_consumer'])
 kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
-
+# endregion
 
 
 
 
 
 # stats_by_day
-stats_type_info = Types.ROW_NAMED(['commits', 'stars', 'forks', \
-            'pull_requests', 'day'], [Types.LONG(), Types.LONG(),  \
-            Types.LONG(), Types.LONG(), Types.STRING()])
-
+# region
+topic_to_consume_from = "near-real-time-raw-events"
 kafka_props = {'enable.auto.commit': 'true',
                'auto.commit.interval.ms': '1000',
                'auto.offset.reset': 'smallest'}
-def map_event_string_to_event_dict(event_string):
-    return eval(event_string)
-
-# Kafka consumer from kafka topic "near-real-time-raw-events"
-topic_to_consume_from = "near-real-time-raw-events"
+stats_consumer_group_id = 'raw_events_to_stats_by_day_consumer_group'
 kafka_consumer_stats = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id('raw_events_to_stats_by_day_consumer_group')\
+            .set_group_id(stats_consumer_group_id)\
             .set_topics(topic_to_consume_from) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
 
             
-# Consume original datastream
-print("Started reading data from kafka topic 'near-real-time-raw-events' to create "
-        "topic 'stats_by_day'")
+def map_event_string_to_event_dict(event_string):
+    return eval(event_string)
+
 raw_events_ds = env.from_source( source=kafka_consumer_stats, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="kafka_source")\
             .map(map_event_string_to_event_dict)\
                 # .set_parallelism(16)
+print("Started reading data from kafka topic 'near-real-time-raw-events' to create "
+        "topic 'stats_by_day'")
 
 
 
 
-# Filter out events of type that contain no info we need
 def filter_no_statistics_events(eventDict):
-    event_types_with_info = ["PushEvent", \
-    "WatchEvent", "ForkEvent", "PullRequestEvent"]
-    event_type = eventDict["type"]
     
-    # Acceleration attempt:
+    event_type = eventDict["type"]
     if event_type == "PushEvent":
         # Keep PushEvents if number_of_conmmits <= 200 or if size == distinct_size
         number_of_commits = eventDict["payload"]["distinct_size"]
@@ -128,27 +115,20 @@ def filter_no_statistics_events(eventDict):
             return True
     # If none of the above works, return False (filter the event out)
     return False
+    
 
-    
-# Function for the original raw-events datastream
 def extract_statistics_and_create_row(eventDict):
-    # eventDict = json.loads(eventString)
-    event_type = eventDict["type"]
-    
-    
-    # Removing trailing characters after T that gives us the time
-    # leaves us with the day 
-    # Split 2024-01-01T00:00:01Z into 2024-01-01 and T00:00:01Z 
-    # and keep only the first one
+
+    # (Example) From 2024-01-01T00:00:01Z get 2024-01-01  
     day = eventDict["created_at"].split('T', 1)[0]
-    # Initialize the statistics per day
+    # Initialize the statistics per day 
+    # for the cassandra update counter columns query
     commits = 0
-    # open_issues = 0
-    # closed_issues = 0
     stars = 0
     forks = 0
     pull_requests = 0
-                            
+    
+    event_type = eventDict["type"]                        
     if event_type == "PushEvent":
         commits = eventDict["payload"]["distinct_size"]
     elif event_type == "WatchEvent":
@@ -163,28 +143,31 @@ def extract_statistics_and_create_row(eventDict):
         raise ValueError(f"Event type {event_type} is not filtered")
          
     return Row(commits, stars, forks, pull_requests, day)
-    
 
-max_concurrent_requests = 1000
-cassandra_host = 'cassandra_stelios'
-cassandra_port = 9142
-cassandra_keyspace = "near_real_time_data"
-stats_table = 'stats_by_day'
-print(f"Inserting data from kafka topics into Cassandra tables:\n"
-        "T1: stats_by_day, T2_3: most_popular_repos_by_day,\n"
-        "T4: most_popular_languages_by_day, T5: most_popular_languages_by_day")
+stats_type_info = Types.ROW_NAMED(['commits', 'stars', 'forks', \
+            'pull_requests', 'day'], [Types.LONG(), Types.LONG(),  \
+            Types.LONG(), Types.LONG(), Types.STRING()])
+   
+
+
 
 stats_ds = raw_events_ds.filter(filter_no_statistics_events)\
                         .map(extract_statistics_and_create_row, \
-                           output_type=stats_type_info)\
-
-
+                           output_type=stats_type_info)
+cassandra_keyspace = "near_real_time_data"
+stats_table = 'stats_by_day'
 upsert_element_into_stats_by_day_q1 = \
             f"UPDATE {cassandra_keyspace}.{stats_table} \
                     SET commits = commits + ?, stars = stars + ?, \
                     forks = forks + ?, pull_requests = pull_requests + ? WHERE \
                     day = ?;"
-                    
+cassandra_host = 'cassandra_stelios'
+cassandra_port = 9142
+max_concurrent_requests = 1000
+
+print(f"Started inserting data from kafka topics into Cassandra tables:\n"
+        "T1: stats_by_day, T2_3: most_popular_repos_by_day,\n"
+        "T4: most_popular_languages_by_day, T5: most_popular_languages_by_day")
 cassandra_sink_q1 = CassandraSink.add_sink(stats_ds)\
     .set_query(upsert_element_into_stats_by_day_q1)\
     .set_host(host=cassandra_host, port=cassandra_port)\
