@@ -874,14 +874,14 @@ services:
     image: python:3.10-script-executing-image-with-requests_sse
     container_name: python-real-time-events-producer
     volumes: 
-      - ./usrlib/real-time-producer.py:/usrlib/real-time-producer.py
+      - ./usrlib/real_time_producer.py:/usrlib/real_time_producer.py
       
       - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
       - ./usrlib/github_data_near_real_time:/github_data_near_real_time
     
       - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
     
-    command: ['python', 'real-time-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
+    command: ['python', 'real_time_producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
     environment:
       - PYTHONUNBUFFERED=1
     depends_on:
