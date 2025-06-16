@@ -181,22 +181,6 @@ cassandra_sink_q1 = CassandraSink.add_sink(stats_ds)\
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Q2_3. most_popular_repos_by_day
 # region
 most_popular_repos_consumer_group_id = 'raw_events_to_most_popular_repos_by_day_consumer_group'
@@ -445,9 +429,76 @@ cassandra_sink_q5 = CassandraSink.add_sink(topics_ds)\
 
 
 
-# real time stars forks 
+# Real time stars forks 
+# region
 
 
+
+stars_and_forks_topic_info = Types.ROW_NAMED(['username', 'event_type', 'repo_name', 'timestamp'],\
+    [Types.STRING(), Types.STRING(), Types.STRING(), Types.STRING()])
+stars_and_forks_record_schema = JsonRowSerializationSchema.builder() \
+                    .with_type_info(stars_and_forks_topic_info) \
+                    .build()
+stars_and_forks_topic = 'near-real-time-stars-forks'
+stars_and_forks_record_serializer = KafkaRecordSerializationSchema.builder() \
+    .set_topic(stars_and_forks_topic) \
+    .set_value_serialization_schema(stars_and_forks_record_schema) \
+    .build()
+kafka_consumer_stars_forks = KafkaSource.builder() \
+            .set_bootstrap_servers(kafka_bootstrap_servers) \
+            .set_group_id('near_real_time_events_to_stars_forks_consumer_group') \
+            .set_topics(near_real_time_events_topic) \
+            .set_value_only_deserializer(SimpleStringSchema()) \
+            .set_properties(kafka_props)\
+            .set_starting_offsets(KafkaOffsetsInitializer.\
+                committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
+            .build()
+raw_events_to_stars_forks_ds = env.from_source( source=kafka_consumer_stars_forks, \
+            watermark_strategy=WatermarkStrategy.no_watermarks(),
+            source_name="kafka_source")\
+                .map(map_event_string_to_event_dict)
+
+
+
+# Filter out events not of type WatchEvent or ForkEvent
+def filter_non_star_and_fork_events(eventDict):
+    fork_and_watch_events = ["ForkEvent", \
+    "WatchEvent"]
+    event_type = eventDict["type"]
+    if event_type not in fork_and_watch_events:
+        return False
+    else:
+        return True
+    
+def extract_star_and_fork_event_info(eventDict):
+        username = eventDict["actor"]
+        repo_name = eventDict["repo"]["full_name"]
+        event_type = eventDict["type"]
+        timestamp = eventDict["created_at"]
+        
+        repo_row = Row(username, event_type, repo_name, timestamp)
+        return repo_row
+
+near_real_time_stars_forks_ds = raw_events_to_stars_forks_ds\
+        .filter(filter_non_star_and_fork_events)\
+        .map(extract_star_and_fork_event_info, \
+            output_type=stars_and_forks_topic_info)
+
+
+kafka_producer_stars_forks = KafkaSink.builder() \
+    .set_bootstrap_servers(kafka_bootstrap_servers) \
+    .set_record_serializer(stars_and_forks_record_serializer) \
+    .build()        
+near_real_time_stars_forks_ds.sink_to(kafka_producer_stars_forks)
+print(f"Started reading data from kafka topic {near_real_time_events_topic}\n "
+      f"into topic {stars_and_forks_topic}")
+
+
+# # Print transformed datastream
+# near_real_time_stars_forks_ds.print()
+
+
+# endregion
 
 
 
