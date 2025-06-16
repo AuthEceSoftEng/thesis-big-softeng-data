@@ -184,16 +184,7 @@ def delivery_callback(err, msg):
 
 if __name__=='__main__':
 	
-	# Pipeline steps
-	# Get the data 
-	# Thin incoming data 
-	# - keep only fields you need (see the jobs creating the extra topics)
-	# Produce data into topic
-	# (Optional) Monitor the jobs busy ratios to keep track of performance 
-
-
-	# topic_to_produce_into = 'near-real-time-raw-events'
-	# the_whole_file_was_produced_already = produce_from_last_line_of_file(topic_to_produce_into, filepath_of_thinned_file, parsed_files_filepath)
+	
 	event_counter = 0
 	max_num_of_events_to_print = 1000
 	st = time.time()
