@@ -134,7 +134,7 @@ def thin_near_real_time_json_event(event):
 	try:
 		new_event["id"] = event["id"]
 		new_event["type"] = event["type"]
-		new_event["repo"] = {"full_name" : event["repo"]["name"]} # Field ["repo"]["name"] 
+		new_event["repo"] = {"full_name" : event["repo"]["name"]} # Field ["repo"]["name"] is the field with the full repo name in the raw events
 		new_event["created_at"] = event["created_at"]
 		
 		if new_event["type"] == "PushEvent":
@@ -147,8 +147,8 @@ def thin_near_real_time_json_event(event):
 			new_event["actor"] = event["actor"]["login"]		
 			
 		elif new_event["type"] == "PullRequestEvent":
-			new_event["payload"] = {"action" : event["payload"]["action"]}
 			new_event["payload"] = {
+				"action" : event["payload"]["action"], 
        			"pull_request":{"base":{"repo":
        				{"language": event["payload"]["pull_request"]["base"]["repo"]["language"],
             		"topics": event["payload"]["pull_request"]["base"]["repo"]["topics"]
@@ -222,11 +222,7 @@ if __name__=='__main__':
 		with  EventSource('http://github-firehose.libraries.io/events', timeout=30) as event_source:
 			for event in event_source:
 				event_counter += 1
-				
-    
-				# sys.stdout.write("\r\033[KRaw events in firehose: {0}\n".format(event_counter))									
-				# sys.stdout.flush()
-    
+	
 				event_data = json.loads(event.data) 			
 				event_data_thinned = thin_near_real_time_json_event(event_data)
 				event_data_thinned_str = str(event_data_thinned)
@@ -242,8 +238,6 @@ if __name__=='__main__':
                     
 				producer.poll(0)
 				
-				# sys.stdout.write("\rEvents produced: {0}".format(event_counter))
-				# if event_counter % 100 == 0:
 				sys.stdout.write("\r\033[KEvents produced: {0}\n".format(event_counter))									
 				sys.stdout.flush()
 
