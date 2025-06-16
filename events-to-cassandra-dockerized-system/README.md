@@ -137,6 +137,14 @@ docker compose up python-near-real-time-events-producer
 Pyflink jobs to create the datastreams for screen 1 
 
 Deploy the near real time jobs:
+### Terminal 2.5: Pyflink job 1: Stats and popularity insights 
+```sh
+docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_1_q1_q5_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+```
+
+
+
+Deploy the near real time jobs:
 ### Terminal 3: Pyflink job 1: Stats and popularity insights 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
