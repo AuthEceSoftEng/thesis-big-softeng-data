@@ -27,6 +27,82 @@ from cassandra.cluster import Cluster
 
 
 
+# # Add the confluent_kafka module in the pyflink Dockerfile for the pyflink image
+# # of the taskmanager and jobmanager to use create_topic_if_not_exists
+# from confluent_kafka import Producer, Consumer, admin, TopicPartition, KafkaException
+# def create_topic_if_not_exists(topic, bootstrap_servers, desired_number_of_partitions):
+#     '''
+#     Checks if a topic exists and if it does not, it creates it
+#     `topic`: topic name 
+#     `config_port`: the port of the kafka cluster (e.g. localhost:44352)
+#     '''
+#     client = admin.AdminClient({"bootstrap.servers": bootstrap_servers})
+#     topic_metadata = client.list_topics(timeout=5)
+#     all_topics_list = topic_metadata.topics.keys()
+#     replication_factor = 1
+                    
+#     # If the topic does not exist, create it    
+#     if topic not in all_topics_list:
+        
+#         # Create topic
+#         print(f"Topic {topic} does not exist.\nCreating topic...")
+#         new_topic = admin.NewTopic(topic, num_partitions=desired_number_of_partitions, replication_factor=replication_factor)
+        
+#         # Wait until topic is created
+#         try:
+#             create_topic_to_future_dict = client.create_topics([new_topic], operation_timeout=5)
+#             for create_topic_future in create_topic_to_future_dict.values():
+#                 create_topic_future.result()
+            
+#         # Handle create-topic exceptions
+#         except KafkaException as e:
+#             err_obj = e.args[0]
+#             err_name = err_obj.name()
+#             # If exists, create partitions
+#             if err_name == 'TOPIC_ALREADY_EXISTS':
+#                 # Get current number of partitions
+#                 print(f"Topic {topic} already exists and has {desired_number_of_partitions} partition(s)")
+#                 topic_metadata = client.list_topics(timeout=5)
+#                 # If partitions are few, increase them
+#                 if current_number_of_partitions < desired_number_of_partitions:    
+#                     print(f"Increasing partitions of topic {topic} from {current_number_of_partitions} to {desired_number_of_partitions}...")
+#                     new_partitions = admin.NewPartitions(topic, new_total_count=desired_number_of_partitions)
+#                     # Wait until the number of the topic partitions is increased
+#                     create_partitions_futures = client.create_partitions([new_partitions])
+#                     for create_partition_future in create_partitions_futures.values():
+#                         create_partition_future.result()
+#                 # Else, do nothing
+#                 else:
+#                     print(f"Topic {topic} already exists and has {current_number_of_partitions} partitions")
+#                     pass
+                    
+#             # Catch other errors
+#             else:
+#                 raise Exception(e)
+#         print("Done")
+    
+    
+#     elif topic in all_topics_list:
+#         current_number_of_partitions = len(topic_metadata.topics[topic].partitions)
+#         if current_number_of_partitions != desired_number_of_partitions:
+#             new_partitions = admin.NewPartitions(topic, new_total_count=desired_number_of_partitions)
+#             # Wait until the number of the topic partitions is increased
+#             create_partitions_futures = client.create_partitions([new_partitions])
+#             for create_partition_future in create_partitions_futures.values():
+#                 try:
+#                     create_partition_future.result()
+#                 except KafkaException as e:
+#                     err_obj = e.args[0]
+#                     err_name = err_obj.name()
+#                     # If partitions are as many as they should be, do nothing
+#                     if err_name == 'INVALID_PARTITIONS':
+#                         print(f"Topic {topic} already exists and has {current_number_of_partitions} partitions")
+    
+#     else:
+#         raise Exception(f"Topic {topic} neither exists or is absent from the kafka cluster")
+
+
+
 # Set up the flink execution environment
 # region
 env = StreamExecutionEnvironment.get_execution_environment()
@@ -515,6 +591,17 @@ if __name__ =='__main__':
     session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
     session.execute(f'USE {cassandra_keyspace}')
 
+    # # Create topics 'near-real-time-raw-events' and
+    # # 'near-real-time-stars-forks' if they do not exist
+    # number_of_partitions = 4
+    # create_topic_if_not_exists(near_real_time_events_topic, kafka_bootstrap_servers, \
+    #     desired_number_of_partitions=number_of_partitions)
+    
+    # number_of_partitions = 1
+    # create_topic_if_not_exists(stars_and_forks_topic, kafka_bootstrap_servers, \
+    #     desired_number_of_partitions=number_of_partitions)
+    
+    
     
     # Screen 1
     # Statistics
