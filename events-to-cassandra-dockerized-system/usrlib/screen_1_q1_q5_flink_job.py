@@ -93,8 +93,7 @@ raw_events_to_stats_ds = env.from_source( source=kafka_consumer_stats, \
             source_name="kafka_source")\
             .map(map_event_string_to_event_dict)\
                 # .set_parallelism(16)
-print(f"Started reading data from kafka topic '{near_real_time_events_topic}' to create "
-        "topic 'stats_by_day'")
+
 
 
 
@@ -166,10 +165,8 @@ upsert_element_into_stats_by_day_q1 = \
                     SET commits = commits + ?, stars = stars + ?, \
                     forks = forks + ?, pull_requests = pull_requests + ? WHERE \
                     day = ?;"
-
-print(f"Started inserting data from kafka topics into Cassandra tables:\n"
-        "T1: stats_by_day, T2_3: most_popular_repos_by_day,\n"
-        "T4: most_popular_languages_by_day, T5: most_popular_topics_by_day")
+print(f"Started reading data from kafka topic '{near_real_time_events_topic}' "
+      f"into Cassandra table T1: '{stats_table}'")
 cassandra_sink_q1 = CassandraSink.add_sink(stats_ds)\
     .set_query(upsert_element_into_stats_by_day_q1)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -218,8 +215,6 @@ raw_events_to_most_pop_repos_ds = env.from_source(
             source_name="kafka_source")\
             .map(map_event_string_to_event_dict)\
                 # .set_parallelism(16)
-print(f"Started reading data from kafka topic '{near_real_time_events_topic}' to create "
-        "topic 'most_popular_repos_by_day'")
 
 
 
@@ -268,9 +263,11 @@ upsert_element_into_most_popular_repos_by_day_q2_3 = \
             f"UPDATE {cassandra_keyspace}.{most_popular_repos_table} \
                     SET stars = stars + ?, forks = forks + ? \
                     WHERE day = ? AND repo = ?;"
+print(f"Started reading data from kafka topic '{near_real_time_events_topic}' "
+      f"into Cassandra table T2_3: '{most_popular_repos_table}'")
 
-print(f"Started inserting data from {near_real_time_events_topic} into Cassandra table:\n"
-        f"T2_3: '{most_popular_repos_table}'")
+
+
 cassandra_sink_q2_3 = CassandraSink.add_sink(most_popular_repos_ds)\
     .set_query(upsert_element_into_most_popular_repos_by_day_q2_3)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -305,8 +302,6 @@ raw_events_to_langs_ds = env.from_source( source=kafka_consumer_langs, \
             source_name="kafka_source")\
             .map(map_event_string_to_event_dict)\
                 # .set_parallelism(16)
-print(f"Started reading data from kafka topic '{near_real_time_events_topic}' to create "
-        "topic 'most_popular_languages_by_day'")
 
 
 def filter_no_languages_events(eventDict):
@@ -346,8 +341,12 @@ upsert_element_into_pop_langs_by_day_q4 = \
                     SET num_of_occurrences = num_of_occurrences + ? WHERE \
                     day = ? AND language = ?;"
 
-print(f"Started inserting data from kafka topic {near_real_time_events_topic} into Cassandra table:\n"
-        "T4: most_popular_languages_by_day")
+
+
+print(f"Started reading data from kafka topic '{near_real_time_events_topic}' "
+      f"into Cassandra table T4: '{most_popular_languages_table}'")
+
+
 cassandra_sink_q4 = CassandraSink.add_sink(langs_ds)\
     .set_query(upsert_element_into_pop_langs_by_day_q4)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -383,8 +382,6 @@ raw_events_to_topics_ds = env.from_source( source=kafka_consumer_topics, \
             source_name="kafka_source")\
             .map(map_event_string_to_event_dict)\
                 # .set_parallelism(16)
-print(f"Started reading data from kafka topic '{near_real_time_events_topic}' to create "
-        "topic 'most_popular_topics_by_day'")
 
 
 def filter_no_topics_events(eventDict):
@@ -426,8 +423,11 @@ upsert_element_into_pop_topics_by_day_q5 = \
                     SET num_of_occurrences = num_of_occurrences + ? WHERE \
                     day = ? AND topic = ?;"
 
-print(f"Started inserting data from kafka topic {near_real_time_events_topic} into Cassandra table:\n"
-        "T5: 'most_popular_topics_by_day'")
+print(f"Started reading data from kafka topic '{near_real_time_events_topic}' "
+      f"into Cassandra table T5: '{most_popular_topics_table}'")
+
+
+
 cassandra_sink_q5 = CassandraSink.add_sink(topics_ds)\
     .set_query(upsert_element_into_pop_topics_by_day_q5)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -448,6 +448,9 @@ cassandra_sink_q5 = CassandraSink.add_sink(topics_ds)\
 # real time stars forks 
 
 
+
+
+
 if __name__ =='__main__':
     
     # Create cassandra keyspace if not exist
@@ -465,7 +468,6 @@ if __name__ =='__main__':
     # Screen 1
     # Statistics
     # Q1. stats_by_day
-    stats_table = 'stats_by_day'
     create_stats_table =  \
                 f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.{stats_table} \
                 (day text, commits counter, stars counter, pull_requests counter, \
@@ -474,7 +476,6 @@ if __name__ =='__main__':
 
     # Trending repos table
     # Q2_3. most_popular_repos_by_day
-    most_popular_repos_table = "most_popular_repos_by_day"
     create_most_popular_repos_table = \
             f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.{most_popular_repos_table} \
             (day text, repo text, stars counter, forks counter, PRIMARY KEY ((day), repo)) WITH CLUSTERING ORDER BY (repo desc);"
@@ -482,7 +483,6 @@ if __name__ =='__main__':
     
     # Trending languages table
     # Q4. most_popular_languages_by_day
-    most_popular_languages_table = "most_popular_languages_by_day"
     create_pop_langs_table = \
             f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.{most_popular_languages_table} \
             (day text, language text, num_of_occurrences counter, PRIMARY KEY ((day), language)) WITH CLUSTERING ORDER BY (language desc);"
@@ -490,16 +490,17 @@ if __name__ =='__main__':
 
     # Trending topics table 
     # Q5. most_popular_topics_by_day
-    popular_topics_table = "most_popular_topics_by_day"
     create_pop_topics_table = \
-            f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.{popular_topics_table} \
+            f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.{most_popular_topics_table} \
             (day text, topic text, num_of_occurrences counter, PRIMARY KEY ((day), topic)) WITH CLUSTERING ORDER BY (topic desc);"
     session.execute(create_pop_topics_table)
 
     # Note on "Number of events per second sliding bar graph":
-    # Near real time data per second are created from the producer producing into the one partitioned topic 'near-real-time-raw-events-ordered' which maintains its order by using a single partition  
+    # Near real time data per second is not created in this flink job.
+    # It is created from the near-real-time-producer producing into topic 'near-real-time-raw-events-ordered'.
+    # The topic 'near-real-time-raw-events-ordered' maintains its order by using a single partition  
     
-    # Note on "Near real time stars and forks":
+    # Note on "Near real time stars and forks sliding list":
     # No table to make for the near real time stars and forks section 
     # (all is done with the datastream transformation and reenter into kafka topic 
     # near-real-time-stars-forks)
