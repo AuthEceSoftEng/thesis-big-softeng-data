@@ -292,14 +292,95 @@ def map_event_string_to_event_dict(event_string):
 
 
 
-# most_popular_languages_by_day
+# Q4. most_popular_languages_by_day
+# # region
+# langs_consumer_group_id = 'raw_events_to_langs_by_day_consumer_group'
+# kafka_consumer_langs = KafkaSource.builder() \
+#             .set_bootstrap_servers(kafka_bootstrap_servers) \
+#             .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
+#             .set_group_id(langs_consumer_group_id)\
+#             .set_topics(near_real_time_events_topic) \
+#             .set_value_only_deserializer(SimpleStringSchema()) \
+#             .set_properties(kafka_props)\
+#             .build()
 
+            
+
+# raw_events_to_langs_ds = env.from_source( source=kafka_consumer_langs, \
+#             watermark_strategy=WatermarkStrategy.no_watermarks(),
+#             source_name="kafka_source")\
+#             .map(map_event_string_to_event_dict)\
+#                 # .set_parallelism(16)
+# print(f"Started reading data from kafka topic '{near_real_time_events_topic}' to create "
+#         "topic 'most_popular_languages_by_day'")
+
+
+# def filter_no_languages_events(eventDict):
+#     event_types_with_languages = ["PullRequestEvent", \
+#     "PullRequestReviewEvent", "PullRequestReviewCommentEvent", \
+#     "PullRequestReviewThreadEvent"]
+
+#     event_type = eventDict["type"]    
+#     # Filter out events without languages (non Pull request events)
+#     if event_type not in event_types_with_languages: 
+#         return False
+#     else:
+#         language = str(eventDict["payload"]["pull_request"]["base"]["repo"]["language"])
+#         # Filter out pull request events without a language declaration
+#         if language == 'None':
+#             return False
+#         return True
+
+# def extract_language_info_and_create_row(eventDict):
+#     day = eventDict["created_at"].split('T', 1)[0]
+#     num_of_occurrences = 1
+#     language = str(eventDict["payload"]["pull_request"]["base"]["repo"]["language"])
+#     return Row(num_of_occurrences, day, language)
+    
+    
+# popular_langs_type_info = Types.ROW_NAMED(['num_of_occurrences', 'day', 'language'], \
+#             [Types.LONG(), Types.STRING(), Types.STRING()])
+   
+
+
+# langs_ds = raw_events_to_langs_ds.filter(filter_no_languages_events)\
+#                         .map(extract_language_info_and_create_row, \
+#                            output_type=popular_langs_type_info)
+# cassandra_keyspace = "near_real_time_data"
+# most_popular_languages_table = 'most_popular_languages_by_day'
+# upsert_element_into_pop_langs_by_day_q4 = \
+#             f"UPDATE {cassandra_keyspace}.{most_popular_languages_table} \
+#                     SET num_of_occurrences = num_of_occurrences + ? WHERE \
+#                     day = ? AND language = ?;"
+# cassandra_host = 'cassandra_stelios'
+# cassandra_port = 9142
+# max_concurrent_requests = 1000
+
+# print(f"Started inserting data from kafka topic {near_real_time_events_topic} into Cassandra table:\n"
+#         "T4: most_popular_languages_by_day")
+# cassandra_sink_q4 = CassandraSink.add_sink(langs_ds)\
+#     .set_query(upsert_element_into_pop_langs_by_day_q4)\
+#     .set_host(host=cassandra_host, port=cassandra_port)\
+#     .set_max_concurrent_requests(max_concurrent_requests)\
+#     .enable_ignore_null_fields()\
+#     .build()
+
+# # # Print transformed datastream
+# # stats_ds.print()
+
+# # endregion
+
+
+
+
+
+# Q5. most_popular_topics_by_day
 # region
-langs_consumer_group_id = 'raw_events_to_langs_by_day_consumer_group'
-kafka_consumer_langs = KafkaSource.builder() \
+topics_consumer_group_id = 'raw_events_to_topics_by_day_consumer_group'
+kafka_consumer_topics = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-            .set_group_id(langs_consumer_group_id)\
+            .set_group_id(topics_consumer_group_id)\
             .set_topics(near_real_time_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
@@ -307,60 +388,62 @@ kafka_consumer_langs = KafkaSource.builder() \
 
             
 
-raw_events_to_langs_ds = env.from_source( source=kafka_consumer_langs, \
+raw_events_to_topics_ds = env.from_source( source=kafka_consumer_topics, \
             watermark_strategy=WatermarkStrategy.no_watermarks(),
             source_name="kafka_source")\
             .map(map_event_string_to_event_dict)\
                 # .set_parallelism(16)
 print(f"Started reading data from kafka topic '{near_real_time_events_topic}' to create "
-        "topic 'most_popular_languages_by_day'")
+        "topic 'most_popular_topics_by_day'")
 
 
-def filter_no_language_events(eventDict):
-    event_types_with_languages = ["PullRequestEvent", \
+def filter_no_topics_events(eventDict):
+    event_types_with_topics = ["PullRequestEvent", \
     "PullRequestReviewEvent", "PullRequestReviewCommentEvent", \
     "PullRequestReviewThreadEvent"]
 
     event_type = eventDict["type"]    
-    # Filter out events without languages (non Pull request events)
-    if event_type not in event_types_with_languages: 
+    # Filter out events without topics (non Pull request events)
+    if event_type not in event_types_with_topics: 
         return False
     else:
-        language = str(eventDict["payload"]["pull_request"]["base"]["repo"]["language"])
-        # Filter out pull request events without a language declaration
-        if language == 'None':
+        topics = str(eventDict["payload"]["pull_request"]["base"]["repo"]["topics"])
+        # Filter out pull request events without a topic declaration
+        if topics == 'None':
             return False
         return True
 
-def extract_language_info_and_create_row(eventDict):
+
+def extract_topic_info_and_create_row(eventDict):
     day = eventDict["created_at"].split('T', 1)[0]
     num_of_occurrences = 1
-    language = str(eventDict["payload"]["pull_request"]["base"]["repo"]["language"])
-    return Row(num_of_occurrences, day, language)
+    topics = eventDict["payload"]["pull_request"]["base"]["repo"]["topics"]
+    for topic in topics: 
+        yield Row(num_of_occurrences, day, topic)
     
     
-popular_langs_type_info = Types.ROW_NAMED(['num_of_occurrences', 'day', 'language'], \
+popular_topics_type_info = Types.ROW_NAMED(['num_of_occurrences', 'day', 'topic'], \
             [Types.LONG(), Types.STRING(), Types.STRING()])
    
 
 
-langs_ds = raw_events_to_langs_ds.filter(filter_no_language_events)\
-                        .map(extract_language_info_and_create_row, \
-                           output_type=popular_langs_type_info)
+topics_ds = raw_events_to_topics_ds.filter(filter_no_topics_events)\
+                        .flat_map(extract_topic_info_and_create_row, \
+                           output_type=popular_topics_type_info)
 cassandra_keyspace = "near_real_time_data"
-most_popular_languages_table = 'most_popular_languages_by_day'
-upsert_element_into_pop_langs_by_day_q4 = \
-            f"UPDATE {cassandra_keyspace}.{most_popular_languages_table} \
+most_popular_topics_table = 'most_popular_topics_by_day'
+upsert_element_into_pop_topics_by_day_q5 = \
+            f"UPDATE {cassandra_keyspace}.{most_popular_topics_table} \
                     SET num_of_occurrences = num_of_occurrences + ? WHERE \
-                    day = ? AND language = ?;"
+                    day = ? AND topic = ?;"
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
 max_concurrent_requests = 1000
 
 print(f"Started inserting data from kafka topic {near_real_time_events_topic} into Cassandra table:\n"
-        "T4: most_popular_languages_by_day")
-cassandra_sink_q4 = CassandraSink.add_sink(langs_ds)\
-    .set_query(upsert_element_into_pop_langs_by_day_q4)\
+        "T5: 'most_popular_topics_by_day'")
+cassandra_sink_q5 = CassandraSink.add_sink(topics_ds)\
+    .set_query(upsert_element_into_pop_topics_by_day_q5)\
     .set_host(host=cassandra_host, port=cassandra_port)\
     .set_max_concurrent_requests(max_concurrent_requests)\
     .enable_ignore_null_fields()\
@@ -373,7 +456,10 @@ cassandra_sink_q4 = CassandraSink.add_sink(langs_ds)\
 
 
 
-# most_popular_topics_by_day
+
+
+
+# real time stars forks 
 
 
 if __name__ =='__main__':
@@ -417,12 +503,12 @@ if __name__ =='__main__':
     session.execute(create_pop_langs_table)
 
 
-    # # most_popular_topics_by_day
-    # popular_topics_table = "popular_topics_by_day"
-    # create_pop_topics_table = \
-    #         f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.{popular_topics_table} \
-    #         (day text, topic text, num_of_occurrences counter, PRIMARY KEY ((day), topic)) WITH CLUSTERING ORDER BY (topic desc);"
-    # session.execute(create_pop_topics_table)
+    # most_popular_topics_by_day
+    popular_topics_table = "most_popular_topics_by_day"
+    create_pop_topics_table = \
+            f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.{popular_topics_table} \
+            (day text, topic text, num_of_occurrences counter, PRIMARY KEY ((day), topic)) WITH CLUSTERING ORDER BY (topic desc);"
+    session.execute(create_pop_topics_table)
 
         
     # No table to make for the near real time stars and forks section 
