@@ -373,33 +373,31 @@
       var socketio_real_time = io.connect();
       socketio_real_time.on("updateRealTimeStats", function (msg) {
         document.getElementById("todays-commits").textContent =
-          // msg.stats.commits;    
           msg["stats"]["commits"];
         document.getElementById("todays-stars").textContent =
-            // msg.stats.stars;
             msg["stats"]["stars"];
         document.getElementById("todays-forks").textContent =
-            // msg.stats.forks;
             msg["stats"]["forks"];
         document.getElementById("todays-pull-requests").textContent =
-            // msg.stats.pull_requests;
             msg["stats"]["pull_requests"];
       
         format_date("card-category", msg.day)
 
+        // Live data logs
         // console.log("Day: " + msg.day + " " +
         //             "Commits: " + msg.commits + " " +
         //             "Stars: " + msg.stars + " " +
         //             "Forks: " + msg.forks + " " +
         //             "Pull requests: " + msg.pull_requests);
 
+        // console.log(
+        //             "Most popular languages' names: "+ msg["most_popular_languages"]["lang_names"] + "\n" +
+        //             "Most popular languages' num of occurrences: "+ msg["most_popular_languages"]["num_of_occurrences"] + "\n" 
+        // )
+
         console.log(
-                    // "Most starred repos: "+ msg.most_starred_repos + "\n" +
-                    // "Most forked repos: "+ msg.most_forked_repos + "\n" +
-                    "Most popular languages names: "+ msg["most_popular_languages"]["lang_names"] + "\n" +
-                    "Most popular languages num of occurrences: "+ msg["most_popular_languages"]["num_of_occurrences"] + "\n" 
-                    
-                    // "Most popular topics: "+ msg.most_popular_topics + "\n" 
+                    "Most topic languages names: "+ msg["most_popular_topics"]["topic_names"] + "\n" +
+                    "Most popular topics' num of occurrences: "+ msg["most_popular_topics"]["num_of_occurrences"] + "\n" 
         )
 
         var popular_langs_table_head = `<thead class="text-warning">
@@ -412,6 +410,18 @@
 
 
         create_live_ranking_table_html_body('trending_languages_table', popular_langs_table_head, msg["most_popular_languages"]["lang_names"], msg["most_popular_languages"]["num_of_occurrences"])
+
+
+        var popular_topics_table_head = `<thead class="text-warning">
+                <tr>
+                  <th>Place</th>
+                  <th>Topic</th>
+                  <th>Number of pull requests</th>
+                </tr>
+              </thead>`
+
+
+        create_live_ranking_table_html_body('trending_topics_table', popular_topics_table_head, msg["most_popular_topics"]["topic_names"], msg["most_popular_topics"]["num_of_occurrences"])
 
       })
       

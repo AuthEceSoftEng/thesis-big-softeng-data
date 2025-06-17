@@ -250,20 +250,11 @@ def query_live_stats_background_thread():
             f"SELECT language, num_of_occurrences "\
             f"FROM {cassandra_keyspace}.{popular_languages_table} WHERE day = ?")
     
-    
-    # popular_topics_table = "most_popular_topics_by_day"    
-    # select_topics_prepared_query = session.prepare(\
-    #         f"SELECT day, topic, num_of_occurrences "\
-    #         f"FROM {cassandra_keyspace}.{popular_topics_table} WHERE day = ?")
-    # topics_queried_res = session.execute(select_topics_prepared_query, [day])            
-    # topics_queried_rows = topics_queried_res.all()
-    # topics_queried_rows_sorted = sorted(topics_queried_rows, key=lambda x: x.num_of_occurrences, reverse=True)
-    # print(f"Topics on {day}:\n"\
-    #         "Topic\tNumber of occurrences")
-    # max_num_of_topics_to_show = 5
-    # for i in range(min(len(topics_queried_rows_sorted), max_num_of_topics_to_show)):
-    #         print(f"{topics_queried_rows_sorted[i].topic}\t{topics_queried_rows_sorted[i].num_of_occurrences}")
-    # print()
+    popular_topics_table = "most_popular_topics_by_day"
+    select_topics_prepared_query = session.prepare(\
+                    f"SELECT day, topic, num_of_occurrences "\
+                    f"FROM {cassandra_keyspace}.{popular_topics_table} WHERE day = ?")
+   
     
     # most_popular_repos_table = "most_popular_repos_by_day"
 
@@ -275,36 +266,45 @@ def query_live_stats_background_thread():
     # repos_queried_rows_sorted_by_stars = sorted(repos_queried_rows, key=lambda x: x.stars, reverse=True)
     # repos_queried_rows_sorted_by_forks = sorted(repos_queried_rows, key=lambda x: x.forks, reverse=True)
     
-    # max_number_of_repos_to_show = 5
         
-        
-        
-        
-        
-        
-        
-        
-    
     try:
         while True:
             stats_queried_res = session.execute(select_stats_prepared_query, [day])           
             stats_queried_row = stats_queried_res.one()
+    
     
             langs_queried_res = session.execute(select_langs_prepared_query, [day])            
             langs_queried_rows = langs_queried_res.all()
             langs_queried_rows_sorted = sorted(langs_queried_rows, key=lambda x: x.num_of_occurrences, reverse=True)
             print(f"Languages on {day}:\n"\
                     "Language\tNumber of occurrences")
-            max_num_of_langs_to_show = 5
-            langs_queried_rows_sorted_keep_top_ranked = langs_queried_rows_sorted[0:max_num_of_langs_to_show]
             
-            for i in range(len(langs_queried_rows_sorted_keep_top_ranked)):
-                    print(f"{langs_queried_rows_sorted_keep_top_ranked[i].language}\t{langs_queried_rows_sorted_keep_top_ranked[i].num_of_occurrences}")
-            print()
-    
+            max_num_of_langs_to_emit = 5
+            langs_queried_rows_sorted_keep_top_ranked = langs_queried_rows_sorted[0:max_num_of_langs_to_emit]
             langs_queried_names = [lang_row.language for lang_row in langs_queried_rows_sorted_keep_top_ranked]
             langs_queried_num_of_occurrences = [lang_row.num_of_occurrences for lang_row in langs_queried_rows_sorted_keep_top_ranked]
+    
+    
+            topics_queried_res = session.execute(select_topics_prepared_query, [day])            
+            topics_queried_rows = topics_queried_res.all()
+            topics_queried_rows_sorted = sorted(topics_queried_rows, key=lambda x: x.num_of_occurrences, reverse=True)
             
+            max_num_of_topics_to_emit = 5
+            topics_queried_rows_sorted_keep_top_ranked = topics_queried_rows_sorted[0:max_num_of_topics_to_emit]
+            topics_queried_names = [topic_elem.topic for topic_elem in  topics_queried_rows_sorted_keep_top_ranked]
+            topics_queried_num_of_occurrences =[topic_elem.num_of_occurrences for topic_elem in  topics_queried_rows_sorted_keep_top_ranked]
+            
+            
+            
+            print(f"Topics on {day}:\n"\
+                    "Topic\tNumber of occurrences")
+            for i in range(len(topics_queried_rows_sorted_keep_top_ranked)):
+                    print(f"{topics_queried_rows_sorted_keep_top_ranked[i].topic}\t{topics_queried_rows_sorted_keep_top_ranked[i].num_of_occurrences}")
+            print()
+            
+    
+    
+            # Live data socketio.emitted logs 
             # print(f"Stats on {day}:\n"\
             #     f"Day:\tCommits\tStars\tForks\tPull requests\n"
             #     f"{stats_queried_row.day}\t"\
@@ -313,6 +313,11 @@ def query_live_stats_background_thread():
             #     f"{stats_queried_row.forks}\t"
             #     f"{stats_queried_row.pull_requests}\n")
             
+            # for i in range(len(langs_queried_rows_sorted_keep_top_ranked)):
+            #         print(f"{langs_queried_rows_sorted_keep_top_ranked[i].language}\t{langs_queried_rows_sorted_keep_top_ranked[i].num_of_occurrences}")
+            # print()
+    
+    
             # Socket emit the live data
             socketio.emit("updateRealTimeStats", 
                             {"day": day,
@@ -325,6 +330,10 @@ def query_live_stats_background_thread():
                                 "most_popular_languages": {
                                     "lang_names": langs_queried_names,
                                     "num_of_occurrences": langs_queried_num_of_occurrences
+                                },
+                                "most_popular_topics": {
+                                    "topic_names": topics_queried_names,
+                                    "num_of_occurrences": topics_queried_num_of_occurrences
                                 }
                             }
                         )
