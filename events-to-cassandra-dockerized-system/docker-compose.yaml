@@ -669,9 +669,9 @@ services:
 
 
 # Flink taskmanager near-real-time
-  taskmanager-near-real-time:
+  taskmanager-real-time:
     image: pyflink:1.18.1
-    container_name: taskmanager-near-real-time
+    container_name: taskmanager-real-time
     volumes:
       # Connectors in opt/flink/opt
       - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar

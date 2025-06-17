@@ -121,57 +121,32 @@ cd usrlib
 
 
 
-## Ingest near real time events 
+## Ingest real time events 
 
 ### Terminal 1: Compose kafka, cassandra, flink, expose server data, run the flask app
 ```sh
-docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager-near-real-time taskmanager-near-real-time 
+docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-real-time 
 ```
-
 
 ### Terminal 2: Producer
 ```sh
-docker compose up python-near-real-time-events-producer
+docker compose up python-real-time-events-producer
 ```
 
-Pyflink jobs to create the datastreams for screen 1 
+Pyflink job to store the data of screen 1 in the UI
 
-Deploy the near real time jobs:
-### Terminal 2.5: Pyflink job 1: Stats and popularity insights 
+Deploy the near real time job for screen 1:
+### Terminal 3: Pyflink job 1: Stats and popularity insights 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_1_q1_q5_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
 ```
 
-
-
-Deploy the near real time jobs:
-### Terminal 3: Pyflink job 1: Stats and popularity insights 
-```sh
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
-```
-
-
-### Terminal 4: Pyflink job 2: Number of events per timestamp
-```sh
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/create_raw_events_per_sec_datastream.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
-```
-
-### Terminal 5: Pyflink job 3: Forks and stars
-```sh
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/near-real-time-stars-forks-via-flink.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
-```
-
-### Terminal 6: Consume near real time stats and popularity insights
-```sh
-docker compose up python-near-real-time-stats-and-popularity-insights-consumer
-```
-
-### Terminal 7: Expose data to ingest in the UI
+### Terminal 4: Expose data to ingest in the UI
 ```sh
 docker compose up event-data-exposing-server 
 ```
 
-### Terminal 8: Deploy the UI
+### Terminal 5: Deploy the UI
 ```sh
 docker compose up events-flask-app
 ```
