@@ -421,8 +421,6 @@ cassandra_sink_q4 = CassandraSink.add_sink(langs_ds)\
 
 
 
-
-
 # Q5. most_popular_topics_by_day
 # region
 topics_consumer_group_id = 'raw_events_to_topics_by_day_consumer_group'
@@ -511,7 +509,6 @@ cassandra_sink_q5 = CassandraSink.add_sink(topics_ds)\
 
 # Real time stars forks 
 # region
-
 
 
 stars_and_forks_topic_info = Types.ROW_NAMED(['username', 'event_type', 'repo_name', 'timestamp'],\

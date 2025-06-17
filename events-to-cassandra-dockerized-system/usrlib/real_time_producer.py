@@ -83,48 +83,6 @@ def create_topic_if_not_exists(topic, bootstrap_servers, desired_number_of_parti
     else:
         raise Exception(f"Topic {topic} neither exists or is absent from the kafka cluster")
 
-# def thin_near_real_time_json_event(event):
-# 	"""
-# 	Function that receives as input an event and keeps only fields of interest.
-# 	"""
-	
-# 	new_event = defaultdict(dict)
-# 	try:
-# 		new_event = {
-# 			"type": event["type"],	
-# 			"repo": {
-# 	   			"full_name": event["repo"]["name"]
-# 		  	},
-# 			"created_at": event["created_at"]
-# 		}
-# 		if new_event["type"] == "PushEvent":
-# 			new_event["payload"] = {
-# 		   		"size": event["payload"]["size"],
-# 				"distinct_size": event["payload"]["distinct_size"],
-# 			}		
-			
-# 		elif new_event["type"] in ["WatchEvent", "ForkEvent"]:
-# 			new_event["username"] = {
-# 				"username": event["actor"]["login"]		
-# 			}
-# 		elif new_event["type"] in ["PullRequestEvent"]:
-# 			new_event["payload"] = {
-# 				"action": event["payload"]["action"],
-# 				"language": event["payload"]["pull_request"]["base"]["repo"]["language"],
-# 				"topics": event["payload"]["pull_request"]["base"]["repo"]["topics"]
-# 			}
-# 		elif new_event["type"] in ["PullRequestReviewEvent", \
-# 	  			"PullRequestReviewCommentEvent"]:
-# 			new_event["payload"] = {
-# 				"language": event["payload"]["pull_request"]["base"]["repo"]["language"],
-# 				"topics": event["payload"]["pull_request"]["base"]["repo"]["topics"]
-# 			}
-	
-# 	except KeyError as e:
-# 		raise KeyError(e)
-  
-# 	return new_event
-
 def thin_near_real_time_json_event(event):
 	"""
 	Function that receives as input an event and keeps only fields of interest.
