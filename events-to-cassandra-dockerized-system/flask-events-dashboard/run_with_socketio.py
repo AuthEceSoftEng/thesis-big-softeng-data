@@ -15,7 +15,7 @@ import time
 
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
-from confluent_kafka import Consumer, OFFSET_BEGINNING, TopicPartition
+from confluent_kafka import Consumer, OFFSET_BEGINNING, TopicPartition, OFFSET_END
 # from cassandra.cluster import Cluster
 from flask import Flask, render_template, request
 from random import random
@@ -63,24 +63,42 @@ config.update(config_parser['near_real_time_stars_forks_consumer_2'])
 # Create Consumer instance
 forks_and_stars_consumer = Consumer(config)
 
-# Set up a callback to handle the '--reset' flag.
-def reset_offset(consumer, partitions):
+
+# # Set up a callback to handle the '--reset' flag.
+def reset_offset_stars_forks(consumer, partitions):
     if args.reset:
         for p in partitions:
-            p.offset = OFFSET_BEGINNING
+            # p.offset = OFFSET_BEGINNING
+            p.offset = OFFSET_END
         consumer.assign(partitions)
+        
+
 
 # Subscribe to topic
-topic = "near-real-time-stars-forks"
-forks_and_stars_consumer.subscribe([topic], on_assign=reset_offset)
+near_real_time_stars_forks_topic = "near-real-time-stars-forks"
+forks_and_stars_consumer.subscribe([near_real_time_stars_forks_topic], 
+                on_assign=reset_offset_stars_forks)
+# Topic 'near-real-time-stars-forks' has a single partition 
+# (to ensure order of messages)
+stars_and_forks_partition = TopicPartition(near_real_time_stars_forks_topic, partition=0, offset=OFFSET_END)
+forks_and_stars_consumer.assign([stars_and_forks_partition])
 
 
 def forks_and_stars_background_thread():
 
     try:
+        end_offset = None
         while True:
+            # Consume latest star/fork record
+            new_end_offset = forks_and_stars_consumer.get_watermark_offsets(stars_and_forks_partition)[1]
+            # Seek updates the partition offset according to what is 
+            forks_and_stars_consumer.seek(stars_and_forks_partition)
+            # print(f"end_offset: {end_offset}, new_end_offset: {new_end_offset}")
+            
+            
             msg = forks_and_stars_consumer.poll(1.0)
-            if msg is None:
+            # Θπον initialization end_offset == None, print the first star/fork event
+            if msg is None or (new_end_offset == end_offset):
                 # Initial message consumption may take up to
                 # `session.timeout.ms` for the consumer group to
                 # rebalance and start consuming
@@ -88,9 +106,6 @@ def forks_and_stars_background_thread():
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
-                ## Print consumed events upon receive
-                # print("\nConsumed an event from topic {topic}: value = {value:12}".format(
-                #     topic=msg.topic(), value=msg.value().decode('utf-8')))
                 
                 jsonBytes = msg.value()
                 jsonDict = json.loads(jsonBytes)
@@ -101,10 +116,11 @@ def forks_and_stars_background_thread():
                 
                 socketio.emit("updateNearRealTimeStarsForks", {"username": username, "event_type": event_type, \
                                 "repo_name": repo_name, "timestamp": timestamp})
-                
-                socketio.sleep(1)
-                
+                socketio.sleep(1)    
                 time.sleep(2)
+
+            # The end offset becomes the "new" end offset
+            end_offset = new_end_offset
                 
     except KeyboardInterrupt:
         pass
