@@ -399,16 +399,15 @@
         //             "Most popular topics names: "+ msg["most_popular_topics"]["topic_names"] + "\n" +
         //             "Most popular topics' num of occurrences: "+ msg["most_popular_topics"]["num_of_occurrences"] + "\n" 
         // )
+        // console.log(
+        //             "Names of most popular repos by stars: "+ msg["most_popular_repos"]["by_stars"]["repo_names"] + "\n" +
+        //             "Number of stars of most popular repos by stars: "+ msg["most_popular_repos"]["by_stars"]["stars"] + "\n" 
+        //   )
 
-        console.log(
-                    "Names of most popular repos by stars: "+ msg["most_popular_repos"]["by_stars"]["repo_names"] + "\n" +
-                    "Number of stars of most popular repos by stars: "+ msg["most_popular_repos"]["by_stars"]["stars"] + "\n" 
-          )
-
-        console.log(
-                  "Names of most popular repos by forks: "+ msg["most_popular_repos"]["by_forks"]["repo_names"] + "\n" +
-                  "Number of forks of most popular repos by forks: "+ msg["most_popular_repos"]["by_forks"]["forks"] + "\n" 
-        )
+        // console.log(
+        //           "Names of most popular repos by forks: "+ msg["most_popular_repos"]["by_forks"]["repo_names"] + "\n" +
+        //           "Number of forks of most popular repos by forks: "+ msg["most_popular_repos"]["by_forks"]["forks"] + "\n" 
+        // )
 
 
 
@@ -432,7 +431,6 @@
                 </tr>
               </thead>`
 
-
         create_live_ranking_table_html_body('trending_topics_table', popular_topics_table_head, msg["most_popular_topics"]["topic_names"], msg["most_popular_topics"]["num_of_occurrences"])
 
 
@@ -444,8 +442,7 @@
                 </tr>
               </thead>`
 
-
-        create_live_ranking_table_html_body('stars_table', popular_topics_table_head, msg["most_popular_repos"]["by_stars"]["repo_names"], msg["most_popular_repos"]["by_stars"]["stars"])
+        create_live_ranking_table_html_body('stars_table', popular_repos_by_stars_table_head, msg["most_popular_repos"]["by_stars"]["repo_names"], msg["most_popular_repos"]["by_stars"]["stars"])
 
         var popular_repos_by_forks_table_head = `<thead class="text-warning">
                 <tr>
@@ -455,8 +452,7 @@
                 </tr>
               </thead>`
 
-
-        create_live_ranking_table_html_body('forks_table', popular_topics_table_head, msg["most_popular_repos"]["by_forks"]["repo_names"], msg["most_popular_repos"]["by_forks"]["forks"])
+        create_live_ranking_table_html_body('forks_table', popular_repos_by_forks_table_head, msg["most_popular_repos"]["by_forks"]["repo_names"], msg["most_popular_repos"]["by_forks"]["forks"])
 
 
       })
