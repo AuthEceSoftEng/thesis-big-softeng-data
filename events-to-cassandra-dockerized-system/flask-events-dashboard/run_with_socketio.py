@@ -16,7 +16,7 @@ import time
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING, TopicPartition, OFFSET_END
-# from cassandra.cluster import Cluster
+from cassandra.cluster import Cluster
 from flask import Flask, render_template, request
 from random import random
 import json
@@ -32,20 +32,23 @@ from apps import create_app, db
 
 
 
-"""
-Background Thread
-"""
+
+# Background Threads
+# region
 forks_and_stars_thread = None
 forks_and_stars_thread_lock = Lock()
 
 num_of_raw_events_thread = None
 num_of_raw_events_thread_lock = Lock()
 
+query_live_stats_thread = None
+query_live_stats_thread_lock = Lock()
+
+# endregion
 
 
-##############################################################################
-# Stars and forks 
-##############################################################################
+# Thread 1. Stars and forks 
+# region
 
 # Parse the command line.
 parser = ArgumentParser()
@@ -129,10 +132,12 @@ def forks_and_stars_background_thread():
         forks_and_stars_consumer.close()
 
 
+# endregion
 
-##############################################################################
-# Count the number of events per second
-##############################################################################
+
+
+# Thread 2. Count the number of events per second
+# region
 
 # Parse the configuration.
 # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
@@ -154,9 +159,9 @@ def reset_offset(consumer, partitions):
 
 
 # Subscribe to topic near-real-time-raw-events to count the events per topic
-raw_events_topic_name = "near-real-time-raw-events-ordered"
-raw_events_topic = TopicPartition(raw_events_topic_name, 0)
-raw_events_consumer.subscribe([raw_events_topic_name], on_assign=reset_offset)
+raw_events_ordered_topic_name = "near-real-time-raw-events-ordered"
+raw_events_topic = TopicPartition(raw_events_ordered_topic_name, 0)
+raw_events_consumer.subscribe([raw_events_ordered_topic_name], on_assign=reset_offset)
 
 
 def num_of_raw_events_background_thread():
@@ -217,6 +222,55 @@ def num_of_raw_events_background_thread():
     finally:
         raw_events_consumer.close()
 
+# endregion
+
+
+
+# Thread 3. Add live statistics every 5 seconds
+# region
+def query_live_stats_background_thread():
+
+    # Query the table for the commits
+    cassandra_host = 'cassandra_stelios'
+    cassandra_port = 9142
+    cluster = Cluster([cassandra_host],port=cassandra_port)
+    session = cluster.connect()
+    
+    cassandra_keyspace = "near_real_time_data"
+    stats_table = "stats_by_day"
+    select_stats_prepared_query = session.prepare(\
+                f"SELECT day, commits, stars, forks, pull_requests "\
+                f"FROM {cassandra_keyspace}.{stats_table} WHERE day = ?")
+    day = "2025-06-16"
+    
+    try:
+        while True:
+            stats_queried_res = session.execute(select_stats_prepared_query, [day])           
+            stats_queried_row = stats_queried_res.one()
+            print(f"Stats on {day}:\n"\
+                    f"Commits\tStars\tForks\tPull requests\n"
+                    f"{stats_queried_row.commits}\t"\
+                    f"{stats_queried_row.stars}\t"
+                    f"{stats_queried_row.forks}\t"
+                    f"{stats_queried_row.pull_requests}\n")
+            socketio.emit("updateRealTimeStats", {"commits": stats_queried_row.commits,
+                                                "stars":stats_queried_row.stars,
+                                                "forks":stats_queried_row.forks,
+                                                "pull_requests": stats_queried_row.pull_requests})
+            time_between_stats_emit = 5
+            socketio.sleep(time_between_stats_emit)
+            # Socket emit the commits
+            # Make login.html get the result and print it to see it in inspect
+            # Do the same in the same function for all other data one by one
+    finally:
+        cluster.shutdown()
+        print("Cluster was shutdown")
+        
+
+
+# endregion
+
+
 
 
 # # WARNING: Don't run with debug turned on in production!
@@ -270,6 +324,8 @@ Decorator for connect
 def connect():
     global forks_and_stars_thread
     global num_of_raw_events_thread
+    global query_live_stats_thread
+    
     print('Client connected')
 
     with num_of_raw_events_thread_lock:
@@ -282,6 +338,11 @@ def connect():
             forks_and_stars_thread = socketio\
                 .start_background_task(forks_and_stars_background_thread)
 
+    with query_live_stats_thread_lock:
+        if query_live_stats_thread is None:
+            query_live_stats_thread = socketio\
+                .start_background_task(query_live_stats_background_thread)
+    
     
 
 
