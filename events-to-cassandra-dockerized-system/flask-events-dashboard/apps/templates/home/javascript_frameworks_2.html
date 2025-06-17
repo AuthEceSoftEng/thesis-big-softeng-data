@@ -144,7 +144,7 @@
                 <!-- create_js_repo_star_history_graph -->
                 <script>
                   function create_js_repo_star_history_graph(){
-                    const data_url = 'http://localhost:3201/javascript_frameworks/number_of_stars_by_repo';
+                    const data_url = 'http://localhost:3200/javascript_frameworks/number_of_stars_by_repo';
                     //  Create the html_body of the table
                     fetch(data_url)
                       .then(response => response.json())
@@ -197,7 +197,7 @@
                 <!-- create_js_repo_star_history_graph_given_num_of_js_repos -->
                 <script>
                   function create_js_repo_star_history_graph_given_num_of_js_repos(num_of_js_repos_to_show){
-                    const data_url = 'http://localhost:3201/javascript_frameworks/number_of_stars_by_repo';
+                    const data_url = 'http://localhost:3200/javascript_frameworks/number_of_stars_by_repo';
                     //  Create the html_body of the table
                     fetch(data_url)
                       .then(response => response.json())
@@ -511,7 +511,7 @@
 
             function updateTopJsContributorsDataTable(repo_selected) {  
 
-              const topJsContributorsDataTableUrl = 'http://localhost:3201/javascript_frameworks/top_contributors_of_js_repo/' + repo_selected;
+              const topJsContributorsDataTableUrl = 'http://localhost:3200/javascript_frameworks/top_contributors_of_js_repo/' + repo_selected;
 
               fetch(topJsContributorsDataTableUrl)
                 .then(response => response.json())

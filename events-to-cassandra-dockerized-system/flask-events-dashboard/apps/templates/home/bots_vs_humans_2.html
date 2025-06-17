@@ -99,7 +99,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
       var third_column_name = 'number_of_contributions'
 
       // Get the data URL 
-      let data_url = 'http://localhost:3201/bots_vs_humans/top_contributing_humans_bot_like_committers_removed/' + day_selected;
+      let data_url = 'http://localhost:3200/bots_vs_humans/top_contributing_humans_bot_like_committers_removed/' + day_selected;
       // Create the table
       create_ranking_table_html_body(table_html_id, data_url, html_head, 
         second_column_name, third_column_name);
@@ -124,7 +124,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
 
       // Get the data URL 
       
-      let data_url = 'http://localhost:3201/bots_vs_humans/top_contributing_bots/' + day_selected;
+      let data_url = 'http://localhost:3200/bots_vs_humans/top_contributing_bots/' + day_selected;
       // Create the table
       create_ranking_table_html_body(table_html_id, data_url, html_head, 
         second_column_name, third_column_name);
@@ -341,7 +341,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                 var percentage_of_events_pie_chart = new ApexCharts(document.querySelector("#percentage_of_events_pie_chart_id"), percentage_of_events_pie_chart_options);
                 percentage_of_events_pie_chart.render();
 
-                const numberOfEventsUrl = 'http://localhost:3201/bots_vs_humans/number_of_events_by_humans_and_bots/' + day_selected;
+                const numberOfEventsUrl = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' + day_selected;
                 fetch(numberOfEventsUrl)
                   .then(response => response.json())
                   .then(data => {
@@ -675,8 +675,8 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                 toggleChart();
 
                 function getPullRequests(day_selected) {
-                  var humanUrl = 'http://localhost:3201/bots_vs_humans/pull_requests_by_humans/' + day_selected;
-                  var botUrl = 'http://localhost:3201/bots_vs_humans/pull_requests_by_bots/' + day_selected;
+                  var humanUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + day_selected;
+                  var botUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + day_selected;
 
                   Promise.all([fetch(humanUrl), fetch(botUrl)])
                     .then(responses => Promise.all(responses.map(res => res.json())))
@@ -698,8 +698,8 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                 };
 
                 function getPullRequestsRates(day_selected) {
-                  var humanUrl = 'http://localhost:3201/bots_vs_humans/pull_requests_by_humans/' + day_selected;
-                  var botUrl = 'http://localhost:3201/bots_vs_humans/pull_requests_by_bots/' + day_selected;
+                  var humanUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + day_selected;
+                  var botUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + day_selected;
 
                   Promise.all([fetch(humanUrl), fetch(botUrl)])
                     .then(responses => Promise.all(responses.map(res => res.json())))
@@ -1005,8 +1005,8 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                 toggleChart();
 
                 function getPullRequests(day_selected) {
-                  var humanUrl = 'http://localhost:3201/bots_vs_humans/pull_requests_by_humans/' + day_selected;
-                  var botUrl = 'http://localhost:3201/bots_vs_humans/pull_requests_by_bots/' + day_selected;
+                  var humanUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + day_selected;
+                  var botUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + day_selected;
 
                   Promise.all([fetch(humanUrl), fetch(botUrl)])
                     .then(responses => Promise.all(responses.map(res => res.json())))
@@ -1028,8 +1028,8 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                 };
 
                 function getPullRequestsRates(day_selected) {
-                  var humanUrl = 'http://localhost:3201/bots_vs_humans/pull_requests_by_humans/' + day_selected;
-                  var botUrl = 'http://localhost:3201/bots_vs_humans/pull_requests_by_bots/' + day_selected;
+                  var humanUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_humans/' + day_selected;
+                  var botUrl = 'http://localhost:3200/bots_vs_humans/pull_requests_by_bots/' + day_selected;
 
                   Promise.all([fetch(humanUrl), fetch(botUrl)])
                     .then(responses => Promise.all(responses.map(res => res.json())))
@@ -1260,7 +1260,7 @@ home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/flask-ev
                 var chart = new ApexCharts(document.querySelector("#percentage_of_events_horizontal_stacked_bar_graph"), options);
                 chart.render();
 
-                const numberOfEventsUrl = 'http://localhost:3201/bots_vs_humans/number_of_events_by_humans_and_bots/' + day_selected;
+                const numberOfEventsUrl = 'http://localhost:3200/bots_vs_humans/number_of_events_by_humans_and_bots/' + day_selected;
                 fetch(numberOfEventsUrl)
                   .then(response => response.json())
                   .then(data => {
