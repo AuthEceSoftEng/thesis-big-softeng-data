@@ -256,35 +256,33 @@ def query_live_stats_background_thread():
                     f"FROM {cassandra_keyspace}.{popular_topics_table} WHERE day = ?")
    
     
-    # most_popular_repos_table = "most_popular_repos_by_day"
-
-    # select_repos_prepared_query = session.prepare(\
-    #         f"SELECT day, repo, stars, forks "\
-    #         f"FROM {cassandra_keyspace}.{most_popular_repos_table} WHERE day = ?")
-    # repos_queried_res = session.execute(select_repos_prepared_query, [day])            
-    # repos_queried_rows = repos_queried_res.all()
-    # repos_queried_rows_sorted_by_stars = sorted(repos_queried_rows, key=lambda x: x.stars, reverse=True)
-    # repos_queried_rows_sorted_by_forks = sorted(repos_queried_rows, key=lambda x: x.forks, reverse=True)
+    most_popular_repos_table = "most_popular_repos_by_day"
+    select_repos_prepared_query = session.prepare(\
+                f"SELECT day, repo, stars, forks "\
+                f"FROM {cassandra_keyspace}.{most_popular_repos_table} WHERE day = ?")
+        
+        
     
+        
         
     try:
         while True:
+            # Stats
             stats_queried_res = session.execute(select_stats_prepared_query, [day])           
             stats_queried_row = stats_queried_res.one()
     
-    
+            # Languages 
             langs_queried_res = session.execute(select_langs_prepared_query, [day])            
             langs_queried_rows = langs_queried_res.all()
             langs_queried_rows_sorted = sorted(langs_queried_rows, key=lambda x: x.num_of_occurrences, reverse=True)
-            print(f"Languages on {day}:\n"\
-                    "Language\tNumber of occurrences")
+            
             
             max_num_of_langs_to_emit = 5
             langs_queried_rows_sorted_keep_top_ranked = langs_queried_rows_sorted[0:max_num_of_langs_to_emit]
             langs_queried_names = [lang_row.language for lang_row in langs_queried_rows_sorted_keep_top_ranked]
             langs_queried_num_of_occurrences = [lang_row.num_of_occurrences for lang_row in langs_queried_rows_sorted_keep_top_ranked]
     
-    
+            # Topics    
             topics_queried_res = session.execute(select_topics_prepared_query, [day])            
             topics_queried_rows = topics_queried_res.all()
             topics_queried_rows_sorted = sorted(topics_queried_rows, key=lambda x: x.num_of_occurrences, reverse=True)
@@ -294,17 +292,53 @@ def query_live_stats_background_thread():
             topics_queried_names = [topic_elem.topic for topic_elem in  topics_queried_rows_sorted_keep_top_ranked]
             topics_queried_num_of_occurrences =[topic_elem.num_of_occurrences for topic_elem in  topics_queried_rows_sorted_keep_top_ranked]
             
+            # print(f"Topics on {day}:\n"\
+            #         "Topic\tNumber of occurrences")
+            # for i in range(len(topics_queried_rows_sorted_keep_top_ranked)):
+            #         print(f"{topics_queried_rows_sorted_keep_top_ranked[i].topic}\t{topics_queried_rows_sorted_keep_top_ranked[i].num_of_occurrences}")
+            # print()
             
             
-            print(f"Topics on {day}:\n"\
-                    "Topic\tNumber of occurrences")
-            for i in range(len(topics_queried_rows_sorted_keep_top_ranked)):
-                    print(f"{topics_queried_rows_sorted_keep_top_ranked[i].topic}\t{topics_queried_rows_sorted_keep_top_ranked[i].num_of_occurrences}")
+            
+            
+            # Most popular repos
+            # by stars
+            repos_queried_res = session.execute(select_repos_prepared_query, [day])            
+            repos_queried_rows = repos_queried_res.all()
+            
+            repos_queried_rows_sorted_by_stars = sorted(repos_queried_rows, key=lambda x: x.stars, reverse=True)
+            max_number_of_repos_by_stars_to_emit = 5
+            repos_queried_rows_sorted_by_stars_keep_top_ranked =  repos_queried_rows_sorted_by_stars[0:max_number_of_repos_by_stars_to_emit]
+            pop_repos_by_stars_names = [pop_repo_elem.repo for pop_repo_elem in repos_queried_rows_sorted_by_stars_keep_top_ranked]
+            pop_repos_by_stars_num_of_stars = [pop_repo_elem.stars for pop_repo_elem in repos_queried_rows_sorted_by_stars_keep_top_ranked]
+            
+            
+            print(f"Most popular repos by stars on {day}:\n"\
+                    "Repo\tStars")
+            for i in range(len(repos_queried_rows_sorted_by_stars_keep_top_ranked)):
+                    print(f"{repos_queried_rows_sorted_by_stars_keep_top_ranked[i].repo}\t{repos_queried_rows_sorted_by_stars_keep_top_ranked[i].stars}")
             print()
             
+            
+            # by forks
+            repos_queried_rows_sorted_by_forks = sorted(repos_queried_rows, key=lambda x: x.forks, reverse=True)
+            max_number_of_repos_by_forks_to_emit = 5
+            repos_queried_rows_sorted_by_forks_keep_top_ranked =  repos_queried_rows_sorted_by_forks[0:max_number_of_repos_by_forks_to_emit]
+            pop_repos_by_forks_names = [pop_repo_elem.repo for pop_repo_elem in repos_queried_rows_sorted_by_forks_keep_top_ranked]
+            pop_repos_by_forks_num_of_forks = [pop_repo_elem.forks for pop_repo_elem in repos_queried_rows_sorted_by_forks_keep_top_ranked]
+            
+            print(f"Most popular repos by forks on {day}:\n"\
+                    "Repo\tForks")
+            for i in range(len(repos_queried_rows_sorted_by_forks_keep_top_ranked)):
+                    print(f"{repos_queried_rows_sorted_by_forks_keep_top_ranked[i].repo}\t{repos_queried_rows_sorted_by_forks_keep_top_ranked[i].forks}")
+            print()
+            
+            
+            
+            
+            
     
     
-            # Live data socketio.emitted logs 
             # print(f"Stats on {day}:\n"\
             #     f"Day:\tCommits\tStars\tForks\tPull requests\n"
             #     f"{stats_queried_row.day}\t"\
@@ -313,30 +347,46 @@ def query_live_stats_background_thread():
             #     f"{stats_queried_row.forks}\t"
             #     f"{stats_queried_row.pull_requests}\n")
             
+            # print(f"Languages on {day}:\n"\
+            #         "Language\tNumber of occurrences")
             # for i in range(len(langs_queried_rows_sorted_keep_top_ranked)):
             #         print(f"{langs_queried_rows_sorted_keep_top_ranked[i].language}\t{langs_queried_rows_sorted_keep_top_ranked[i].num_of_occurrences}")
             # print()
     
+           
+    
+    
     
             # Socket emit the live data
             socketio.emit("updateRealTimeStats", 
-                            {"day": day,
-                                "stats": {
-                                    "commits": stats_queried_row.commits,
-                                    "stars": stats_queried_row.stars,
-                                    "forks": stats_queried_row.forks,
-                                    "pull_requests": stats_queried_row.pull_requests    
-                                },
-                                "most_popular_languages": {
-                                    "lang_names": langs_queried_names,
-                                    "num_of_occurrences": langs_queried_num_of_occurrences
-                                },
-                                "most_popular_topics": {
-                                    "topic_names": topics_queried_names,
-                                    "num_of_occurrences": topics_queried_num_of_occurrences
-                                }
-                            }
-                        )
+                    {
+                        "day": day,
+                        "stats": {
+                            "commits": stats_queried_row.commits,
+                            "stars": stats_queried_row.stars,
+                            "forks": stats_queried_row.forks,
+                            "pull_requests": stats_queried_row.pull_requests    
+                        },
+                        "most_popular_repos": {
+                            "by_stars": {
+                                "repo_names": pop_repos_by_stars_names, 
+                                "stars" : pop_repos_by_stars_num_of_stars
+                            },
+                            "by_forks": {
+                                "repo_names": pop_repos_by_forks_names,
+                                "forks": pop_repos_by_forks_num_of_forks
+                            }  
+                        },
+                        "most_popular_languages": {
+                            "lang_names": langs_queried_names,
+                            "num_of_occurrences": langs_queried_num_of_occurrences
+                        },
+                        "most_popular_topics": {
+                            "topic_names": topics_queried_names,
+                            "num_of_occurrences": topics_queried_num_of_occurrences
+                        }
+                    }
+                )
             time_between_stats_emit = 5
             socketio.sleep(time_between_stats_emit)
             

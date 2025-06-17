@@ -395,10 +395,22 @@
         //             "Most popular languages' num of occurrences: "+ msg["most_popular_languages"]["num_of_occurrences"] + "\n" 
         // )
 
+        // console.log(
+        //             "Most popular topics names: "+ msg["most_popular_topics"]["topic_names"] + "\n" +
+        //             "Most popular topics' num of occurrences: "+ msg["most_popular_topics"]["num_of_occurrences"] + "\n" 
+        // )
+
         console.log(
-                    "Most topic languages names: "+ msg["most_popular_topics"]["topic_names"] + "\n" +
-                    "Most popular topics' num of occurrences: "+ msg["most_popular_topics"]["num_of_occurrences"] + "\n" 
+                    "Names of most popular repos by stars: "+ msg["most_popular_repos"]["by_stars"]["repo_names"] + "\n" +
+                    "Number of stars of most popular repos by stars: "+ msg["most_popular_repos"]["by_stars"]["stars"] + "\n" 
+          )
+
+        console.log(
+                  "Names of most popular repos by forks: "+ msg["most_popular_repos"]["by_forks"]["repo_names"] + "\n" +
+                  "Number of forks of most popular repos by forks: "+ msg["most_popular_repos"]["by_forks"]["forks"] + "\n" 
         )
+
+
 
         var popular_langs_table_head = `<thead class="text-warning">
                 <tr>
@@ -422,6 +434,30 @@
 
 
         create_live_ranking_table_html_body('trending_topics_table', popular_topics_table_head, msg["most_popular_topics"]["topic_names"], msg["most_popular_topics"]["num_of_occurrences"])
+
+
+        var popular_repos_by_stars_table_head = `<thead class="text-warning">
+                <tr>
+                  <th>Place</th>
+                  <th>Repository</th>
+                  <th>Number of stars</th>
+                </tr>
+              </thead>`
+
+
+        create_live_ranking_table_html_body('stars_table', popular_topics_table_head, msg["most_popular_repos"]["by_stars"]["repo_names"], msg["most_popular_repos"]["by_stars"]["stars"])
+
+        var popular_repos_by_forks_table_head = `<thead class="text-warning">
+                <tr>
+                  <th>Place</th>
+                  <th>Repository</th>
+                  <th>Number of forks</th>
+                </tr>
+              </thead>`
+
+
+        create_live_ranking_table_html_body('forks_table', popular_topics_table_head, msg["most_popular_repos"]["by_forks"]["repo_names"], msg["most_popular_repos"]["by_forks"]["forks"])
+
 
       })
       
