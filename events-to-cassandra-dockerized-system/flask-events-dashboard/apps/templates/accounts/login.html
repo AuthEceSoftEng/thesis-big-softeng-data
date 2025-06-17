@@ -166,31 +166,7 @@
         </div>
         <div class="card-body table-responsive">
           <table id="stars_table" class="table table-hover">
-            <script>
-              function format_date(element_class_for_date) {
-                var my_date_arg;
-
-                fetch('http://localhost:3200/stats_by_day')
-                  .then(response => response.json())
-                  .then(data => {
-                    
-                    my_date_arg = data[0].day;
-                    const date = new Date(my_date_arg);
-                    const day = date.getDate();
-                    const ordinal = (day === 1 || day === 21 || day === 31) ? 'st' : (day === 2 || day === 22) ? 'nd' : (day === 3 || day === 23) ? 'rd' : 'th';
-                    const formattedDate = `${day}${ordinal} ${date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}`;
-                    let elements = document.getElementsByClassName(element_class_for_date); 
-                    for (var elements_index = 0; elements_index < elements.length; elements_index++){
-                        elements[elements_index].textContent = formattedDate;
-                    }
-                  }
-                  );
-
-                
-              
-              }
-              format_date("card-category")
-            </script>
+            
 
 
             <script>
@@ -257,10 +233,6 @@
         <div class="card-body table-responsive">
           <table id="forks_table" class="table table-hover">
             
-            <script>
-            format_date("card-category")
-            </script>
-
           </table>
 
             <script>
@@ -295,9 +267,6 @@
         <div class="card-body table-responsive">
           <table id="trending_languages_table" class="table table-hover">
             <script>
-              format_date("card-category")
-            </script>
-            <script>
               var html_head = `<thead class="text-warning">
                 <tr>
                   <th>Place</th>
@@ -322,9 +291,6 @@
         </div>
         <div class="card-body table-responsive">
           <table id="trending_topics_table" class="table table-hover">
-            <script>
-              format_date("card-category")
-            </script>
             <script>
               var html_head = `<thead class="text-warning">
                 <tr>
@@ -358,6 +324,45 @@
           }
         }
     </script>
+    
+    <script>
+      function create_live_ranking_table_html_body(element_id_to_assign_hmtl_onto, 
+                html_head, second_col_list, third_col_list
+              ) {
+                  /*
+                Creates the table contents (html_body)
+                second_col: represents the 'winners' e.g most starred repos
+                third_col: represents the winners' performances e.g 459 stars 
+                
+                returns the html combining the head and the body of the table
+                */
+
+                if (second_col_list.length != third_col_list.length) {
+                  throw "In html table with id:'" + element_id_to_assign_hmtl_onto +
+                        "':\n" +
+                        "Second column length: " + second_col_list.length +"\n"
+                        "Third column length: " + third_col_list.length 
+                }
+
+                var html_body_inside = `<tbody>`
+
+               
+
+                for (let data_index = 0; data_index < second_col_list.length; data_index++){
+                  html_body_inside = html_body_inside 
+                    + `<tr>`
+                    + `<td>${data_index+1}</td>`
+                    + `<td>${second_col_list[data_index]}</td>`
+                    + `<td>${third_col_list[data_index]}</td>`
+                    + `</tr>`
+                }
+                html_body_inside = html_body_inside + `</tbody>`;
+                
+                document.getElementById(element_id_to_assign_hmtl_onto).innerHTML = 
+                html_head + html_body_inside;    
+
+              }
+    </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
             integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
@@ -367,23 +372,47 @@
 
       var socketio_real_time = io.connect();
       socketio_real_time.on("updateRealTimeStats", function (msg) {
-        // var commits = msg.commits;  
         document.getElementById("todays-commits").textContent =
-            msg.commits;
+          // msg.stats.commits;    
+          msg["stats"]["commits"];
         document.getElementById("todays-stars").textContent =
-            msg.stars;
+            // msg.stats.stars;
+            msg["stats"]["stars"];
         document.getElementById("todays-forks").textContent =
-            msg.forks;
+            // msg.stats.forks;
+            msg["stats"]["forks"];
         document.getElementById("todays-pull-requests").textContent =
-            msg.pull_requests;
+            // msg.stats.pull_requests;
+            msg["stats"]["pull_requests"];
       
         format_date("card-category", msg.day)
 
-        console.log("Day: " + msg.day + " " +
-                    "Commits: " + msg.commits + " " +
-                    "Stars: " + msg.stars + " " +
-                    "Forks: " + msg.forks + " " +
-                    "Pull requests: " + msg.pull_requests);
+        // console.log("Day: " + msg.day + " " +
+        //             "Commits: " + msg.commits + " " +
+        //             "Stars: " + msg.stars + " " +
+        //             "Forks: " + msg.forks + " " +
+        //             "Pull requests: " + msg.pull_requests);
+
+        console.log(
+                    // "Most starred repos: "+ msg.most_starred_repos + "\n" +
+                    // "Most forked repos: "+ msg.most_forked_repos + "\n" +
+                    "Most popular languages names: "+ msg["most_popular_languages"]["lang_names"] + "\n" +
+                    "Most popular languages num of occurrences: "+ msg["most_popular_languages"]["num_of_occurrences"] + "\n" 
+                    
+                    // "Most popular topics: "+ msg.most_popular_topics + "\n" 
+        )
+
+        var popular_langs_table_head = `<thead class="text-warning">
+                <tr>
+                  <th>Place</th>
+                  <th>Language</th>
+                  <th>Number of pull requests</th>
+                </tr>
+              </thead>`
+
+
+        create_live_ranking_table_html_body('trending_languages_table', popular_langs_table_head, msg["most_popular_languages"]["lang_names"], msg["most_popular_languages"]["num_of_occurrences"])
+
       })
       
       

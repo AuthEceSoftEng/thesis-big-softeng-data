@@ -230,38 +230,112 @@ def num_of_raw_events_background_thread():
 # region
 def query_live_stats_background_thread():
 
-    # Query the table for the commits
+    # Query Cassandra for the live statistics
     cassandra_host = 'cassandra_stelios'
     cassandra_port = 9142
     cluster = Cluster([cassandra_host],port=cassandra_port)
     session = cluster.connect()
-    
     cassandra_keyspace = "near_real_time_data"
     stats_table = "stats_by_day"
+    
     select_stats_prepared_query = session.prepare(\
                 f"SELECT day, commits, stars, forks, pull_requests "\
                 f"FROM {cassandra_keyspace}.{stats_table} WHERE day = ?")
     day = "2025-06-16"
     
+    
+    
+    popular_languages_table = "most_popular_languages_by_day"
+    select_langs_prepared_query = session.prepare(\
+            f"SELECT language, num_of_occurrences "\
+            f"FROM {cassandra_keyspace}.{popular_languages_table} WHERE day = ?")
+    
+    
+    # popular_topics_table = "most_popular_topics_by_day"    
+    # select_topics_prepared_query = session.prepare(\
+    #         f"SELECT day, topic, num_of_occurrences "\
+    #         f"FROM {cassandra_keyspace}.{popular_topics_table} WHERE day = ?")
+    # topics_queried_res = session.execute(select_topics_prepared_query, [day])            
+    # topics_queried_rows = topics_queried_res.all()
+    # topics_queried_rows_sorted = sorted(topics_queried_rows, key=lambda x: x.num_of_occurrences, reverse=True)
+    # print(f"Topics on {day}:\n"\
+    #         "Topic\tNumber of occurrences")
+    # max_num_of_topics_to_show = 5
+    # for i in range(min(len(topics_queried_rows_sorted), max_num_of_topics_to_show)):
+    #         print(f"{topics_queried_rows_sorted[i].topic}\t{topics_queried_rows_sorted[i].num_of_occurrences}")
+    # print()
+    
+    # most_popular_repos_table = "most_popular_repos_by_day"
+
+    # select_repos_prepared_query = session.prepare(\
+    #         f"SELECT day, repo, stars, forks "\
+    #         f"FROM {cassandra_keyspace}.{most_popular_repos_table} WHERE day = ?")
+    # repos_queried_res = session.execute(select_repos_prepared_query, [day])            
+    # repos_queried_rows = repos_queried_res.all()
+    # repos_queried_rows_sorted_by_stars = sorted(repos_queried_rows, key=lambda x: x.stars, reverse=True)
+    # repos_queried_rows_sorted_by_forks = sorted(repos_queried_rows, key=lambda x: x.forks, reverse=True)
+    
+    # max_number_of_repos_to_show = 5
+        
+        
+        
+        
+        
+        
+        
+        
+    
     try:
         while True:
             stats_queried_res = session.execute(select_stats_prepared_query, [day])           
             stats_queried_row = stats_queried_res.one()
-            print(f"Stats on {day}:\n"\
-                    f"Commits\tStars\tForks\tPull requests\n"
-                    f"{stats_queried_row.commits}\t"\
-                    f"{stats_queried_row.stars}\t"
-                    f"{stats_queried_row.forks}\t"
-                    f"{stats_queried_row.pull_requests}\n")
-            socketio.emit("updateRealTimeStats", {"commits": stats_queried_row.commits,
-                                                "stars":stats_queried_row.stars,
-                                                "forks":stats_queried_row.forks,
-                                                "pull_requests": stats_queried_row.pull_requests})
+    
+            langs_queried_res = session.execute(select_langs_prepared_query, [day])            
+            langs_queried_rows = langs_queried_res.all()
+            langs_queried_rows_sorted = sorted(langs_queried_rows, key=lambda x: x.num_of_occurrences, reverse=True)
+            print(f"Languages on {day}:\n"\
+                    "Language\tNumber of occurrences")
+            max_num_of_langs_to_show = 5
+            langs_queried_rows_sorted_keep_top_ranked = langs_queried_rows_sorted[0:max_num_of_langs_to_show]
+            
+            for i in range(len(langs_queried_rows_sorted_keep_top_ranked)):
+                    print(f"{langs_queried_rows_sorted_keep_top_ranked[i].language}\t{langs_queried_rows_sorted_keep_top_ranked[i].num_of_occurrences}")
+            print()
+    
+            langs_queried_names = [lang_row.language for lang_row in langs_queried_rows_sorted_keep_top_ranked]
+            langs_queried_num_of_occurrences = [lang_row.num_of_occurrences for lang_row in langs_queried_rows_sorted_keep_top_ranked]
+            
+            # print(f"Stats on {day}:\n"\
+            #     f"Day:\tCommits\tStars\tForks\tPull requests\n"
+            #     f"{stats_queried_row.day}\t"\
+            #     f"{stats_queried_row.commits}\t"\
+            #     f"{stats_queried_row.stars}\t"
+            #     f"{stats_queried_row.forks}\t"
+            #     f"{stats_queried_row.pull_requests}\n")
+            
+            # Socket emit the live data
+            socketio.emit("updateRealTimeStats", 
+                            {"day": day,
+                                "stats": {
+                                    "commits": stats_queried_row.commits,
+                                    "stars": stats_queried_row.stars,
+                                    "forks": stats_queried_row.forks,
+                                    "pull_requests": stats_queried_row.pull_requests    
+                                },
+                                "most_popular_languages": {
+                                    "lang_names": langs_queried_names,
+                                    "num_of_occurrences": langs_queried_num_of_occurrences
+                                }
+                            }
+                        )
             time_between_stats_emit = 5
             socketio.sleep(time_between_stats_emit)
-            # Socket emit the commits
-            # Make login.html get the result and print it to see it in inspect
-            # Do the same in the same function for all other data one by one
+            
+            
+        
+            
+            
+            
     finally:
         cluster.shutdown()
         print("Cluster was shutdown")
