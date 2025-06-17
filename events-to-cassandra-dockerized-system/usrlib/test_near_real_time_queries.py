@@ -9,8 +9,7 @@ import time
 # region
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-# keyspace = 'test_near_real_time_data'
-keyspace = 'near_real_time_data'
+keyspace = 'real_time_data'
 cluster = Cluster([cassandra_host],port=cassandra_port)
 session = cluster.connect() 
 

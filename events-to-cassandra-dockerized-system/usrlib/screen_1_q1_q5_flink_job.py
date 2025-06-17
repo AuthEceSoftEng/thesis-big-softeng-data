@@ -145,7 +145,7 @@ def map_event_string_to_event_dict(event_string):
     return eval(event_string)
 cassandra_host = 'cassandra_stelios'
 cassandra_port = 9142
-cassandra_keyspace = "near_real_time_data"
+cassandra_keyspace = "real_time_data"
 max_concurrent_requests = 1000
 
 

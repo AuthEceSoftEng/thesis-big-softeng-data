@@ -235,7 +235,7 @@ def query_live_stats_background_thread():
     cassandra_port = 9142
     cluster = Cluster([cassandra_host],port=cassandra_port)
     session = cluster.connect()
-    cassandra_keyspace = "near_real_time_data"
+    cassandra_keyspace = "real_time_data"
     stats_table = "stats_by_day"
     
     select_stats_prepared_query = session.prepare(\
