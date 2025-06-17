@@ -426,13 +426,17 @@ cassandra_sink_q4 = CassandraSink.add_sink(langs_ds)\
 # Q5. most_popular_topics_by_day
 # region
 topics_consumer_group_id = 'raw_events_to_topics_by_day_consumer_group'
+kafka_props_latest = {'enable.auto.commit': 'true',
+               'auto.commit.interval.ms': '1000',
+               'auto.offset.reset': 'latest'}
+
 kafka_consumer_topics = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
             .set_group_id(topics_consumer_group_id)\
             .set_topics(near_real_time_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
-            .set_properties(kafka_props)\
+            .set_properties(kafka_props_latest)\
             .build()
 
             
