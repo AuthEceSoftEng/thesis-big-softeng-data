@@ -3,7 +3,7 @@
 Copyright (c) 2019 - present AppSeed.us
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import os
 from   flask_migrate import Migrate
@@ -242,9 +242,23 @@ def query_live_stats_background_thread():
                 f"SELECT day, commits, stars, forks, pull_requests "\
                 f"FROM {cassandra_keyspace}.{stats_table} WHERE day = ?")
     
-    # TODO: Change the date (iteration)
-    day = "2025-06-16"
     
+    # Find the latest day for which stats are ingested in Cassandra 
+    day_to_query_live_stats_on_str = datetime.now().strftime("%Y-%m-%d")
+    stats_queried_row = None
+    while stats_queried_row == None:
+        stats_queried_res = session.execute(select_stats_prepared_query, [day_to_query_live_stats_on_str])           
+        stats_queried_row = stats_queried_res.one()
+        if stats_queried_row == None:
+            print(f"No stats were found in Cassandra on "
+                  f"{day_to_query_live_stats_on_str}.\n"
+                  f"Going back a day")
+        else:
+            print(f"Latest stats found in Cassandra found are of date: {day_to_query_live_stats_on_str}")
+            break
+        day_to_query_live_stats_on = datetime.strptime(day_to_query_live_stats_on_str, "%Y-%m-%d") - timedelta(days=1)
+        day_to_query_live_stats_on_str = day_to_query_live_stats_on.strftime("%Y-%m-%d")
+        
     
     
     popular_languages_table = "most_popular_languages_by_day"
@@ -257,7 +271,6 @@ def query_live_stats_background_thread():
                     f"SELECT day, topic, num_of_occurrences "\
                     f"FROM {cassandra_keyspace}.{popular_topics_table} WHERE day = ?")
    
-    
     most_popular_repos_table = "most_popular_repos_by_day"
     select_repos_prepared_query = session.prepare(\
                 f"SELECT day, repo, stars, forks "\
@@ -270,11 +283,11 @@ def query_live_stats_background_thread():
     try:
         while True:
             # Stats
-            stats_queried_res = session.execute(select_stats_prepared_query, [day])           
+            stats_queried_res = session.execute(select_stats_prepared_query, [day_to_query_live_stats_on_str])           
             stats_queried_row = stats_queried_res.one()
             
             # Languages 
-            langs_queried_res = session.execute(select_langs_prepared_query, [day])            
+            langs_queried_res = session.execute(select_langs_prepared_query, [day_to_query_live_stats_on_str])            
             langs_queried_rows = langs_queried_res.all()
             langs_queried_rows_sorted = sorted(langs_queried_rows, key=lambda x: x.num_of_occurrences, reverse=True)
             max_num_of_langs_to_emit = 5
@@ -283,7 +296,7 @@ def query_live_stats_background_thread():
             langs_queried_num_of_occurrences = [lang_row.num_of_occurrences for lang_row in langs_queried_rows_sorted_keep_top_ranked]
     
             # Topics    
-            topics_queried_res = session.execute(select_topics_prepared_query, [day])            
+            topics_queried_res = session.execute(select_topics_prepared_query, [day_to_query_live_stats_on_str])            
             topics_queried_rows = topics_queried_res.all()
             topics_queried_rows_sorted = sorted(topics_queried_rows, key=lambda x: x.num_of_occurrences, reverse=True)
             max_num_of_topics_to_emit = 5
@@ -294,7 +307,7 @@ def query_live_stats_background_thread():
             
             
             # Query all repos on specified day
-            repos_queried_res = session.execute(select_repos_prepared_query, [day])            
+            repos_queried_res = session.execute(select_repos_prepared_query, [day_to_query_live_stats_on_str])            
             repos_queried_rows = repos_queried_res.all()
             
             # Most popular repos by stars
@@ -317,7 +330,7 @@ def query_live_stats_background_thread():
             # Socket emit the live data
             socketio.emit("updateRealTimeStats", 
                     {
-                        "day": day,
+                        "day": day_to_query_live_stats_on_str,
                         "stats": {
                             "commits": stats_queried_row.commits,
                             "stars": stats_queried_row.stars,
