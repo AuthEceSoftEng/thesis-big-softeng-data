@@ -443,7 +443,7 @@ if __name__=='__main__':
     
     # Download latest gharchive file
     newest_URL, newest_gharchive_file_date = get_newest_GHArchive_file_URL() 
-    folderpath_to_download_into = '/github_data_near_real_time'
+    folderpath_to_download_into = '/github_data_real_time'
     download_compressed_GHA_file(newest_URL, folderpath_to_download_into)
 
     # Thin data
@@ -464,11 +464,11 @@ if __name__=='__main__':
     # Produce data from last file available:
 
     # # The path to the file containing the state of the lines read from each file
-    parsed_files_filepath = "/github_data_near_real_time/files_parsed.json"
-    topic_to_produce_into = 'near-real-time-raw-events'
+    parsed_files_filepath = "/github_data_real_time/files_parsed.json"
+    topic_to_produce_into = 'real-time-raw-events'
     
-    # The topic 'near-real-time-raw-events', thus retaining the message order
-    topic_that_retains_message_order = 'near-real-time-raw-events-ordered'
+    # The topic 'real-time-raw-events', thus retaining the message order
+    topic_that_retains_message_order = 'real-time-raw-events-ordered'
 
 
     # region

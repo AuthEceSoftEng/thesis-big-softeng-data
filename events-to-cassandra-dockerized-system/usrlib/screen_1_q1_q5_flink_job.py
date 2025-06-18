@@ -137,7 +137,7 @@ kafka_bootstrap_servers = config_parser['default_consumer']['bootstrap.servers']
 
 
 # Common configs for all datastream transformations
-near_real_time_events_topic = "near-real-time-raw-events"
+real_time_events_topic = "real-time-raw-events"
 kafka_props = {'enable.auto.commit': 'true',
                'auto.commit.interval.ms': '1000',
                'auto.offset.reset': 'smallest'}
@@ -157,7 +157,7 @@ kafka_consumer_stats = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
             .set_group_id(stats_consumer_group_id)\
-            .set_topics(near_real_time_events_topic) \
+            .set_topics(real_time_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
@@ -241,7 +241,7 @@ upsert_element_into_stats_by_day_q1 = \
                     SET commits = commits + ?, stars = stars + ?, \
                     forks = forks + ?, pull_requests = pull_requests + ? WHERE \
                     day = ?;"
-print(f"Started reading data from kafka topic '{near_real_time_events_topic}' "
+print(f"Started reading data from kafka topic '{real_time_events_topic}' "
       f"into Cassandra table T1: '{stats_table}'")
 cassandra_sink_q1 = CassandraSink.add_sink(stats_ds)\
     .set_query(upsert_element_into_stats_by_day_q1)\
@@ -264,7 +264,7 @@ kafka_consumer_most_popular_repos = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
             .set_group_id(most_popular_repos_consumer_group_id)\
-            .set_topics(near_real_time_events_topic) \
+            .set_topics(real_time_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
@@ -323,7 +323,7 @@ upsert_element_into_most_popular_repos_by_day_q2_3 = \
             f"UPDATE {cassandra_keyspace}.{most_popular_repos_table} \
                     SET stars = stars + ?, forks = forks + ? \
                     WHERE day = ? AND repo = ?;"
-print(f"Started reading data from kafka topic '{near_real_time_events_topic}' "
+print(f"Started reading data from kafka topic '{real_time_events_topic}' "
       f"into Cassandra table T2_3: '{most_popular_repos_table}'")
 
 
@@ -350,7 +350,7 @@ kafka_consumer_langs = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
             .set_group_id(langs_consumer_group_id)\
-            .set_topics(near_real_time_events_topic) \
+            .set_topics(real_time_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .build()
@@ -403,7 +403,7 @@ upsert_element_into_pop_langs_by_day_q4 = \
 
 
 
-print(f"Started reading data from kafka topic '{near_real_time_events_topic}' "
+print(f"Started reading data from kafka topic '{real_time_events_topic}' "
       f"into Cassandra table T4: '{most_popular_languages_table}'")
 
 
@@ -432,7 +432,7 @@ kafka_consumer_topics = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
             .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
             .set_group_id(topics_consumer_group_id)\
-            .set_topics(near_real_time_events_topic) \
+            .set_topics(real_time_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props_latest)\
             .build()
@@ -485,7 +485,7 @@ upsert_element_into_pop_topics_by_day_q5 = \
                     SET num_of_occurrences = num_of_occurrences + ? WHERE \
                     day = ? AND topic = ?;"
 
-print(f"Started reading data from kafka topic '{near_real_time_events_topic}' "
+print(f"Started reading data from kafka topic '{real_time_events_topic}' "
       f"into Cassandra table T5: '{most_popular_topics_table}'")
 
 
@@ -516,15 +516,15 @@ stars_and_forks_topic_info = Types.ROW_NAMED(['username', 'event_type', 'repo_na
 stars_and_forks_record_schema = JsonRowSerializationSchema.builder() \
                     .with_type_info(stars_and_forks_topic_info) \
                     .build()
-stars_and_forks_topic = 'near-real-time-stars-forks'
+stars_and_forks_topic = 'real-time-stars-forks'
 stars_and_forks_record_serializer = KafkaRecordSerializationSchema.builder() \
     .set_topic(stars_and_forks_topic) \
     .set_value_serialization_schema(stars_and_forks_record_schema) \
     .build()
 kafka_consumer_stars_forks = KafkaSource.builder() \
             .set_bootstrap_servers(kafka_bootstrap_servers) \
-            .set_group_id('near_real_time_events_to_stars_forks_consumer_group') \
-            .set_topics(near_real_time_events_topic) \
+            .set_group_id('real_time_events_to_stars_forks_consumer_group') \
+            .set_topics(real_time_events_topic) \
             .set_value_only_deserializer(SimpleStringSchema()) \
             .set_properties(kafka_props)\
             .set_starting_offsets(KafkaOffsetsInitializer.\
@@ -556,7 +556,7 @@ def extract_star_and_fork_event_info(eventDict):
         repo_row = Row(username, event_type, repo_name, timestamp)
         return repo_row
 
-near_real_time_stars_forks_ds = raw_events_to_stars_forks_ds\
+real_time_stars_forks_ds = raw_events_to_stars_forks_ds\
         .filter(filter_non_star_and_fork_events)\
         .map(extract_star_and_fork_event_info, \
             output_type=stars_and_forks_topic_info)
@@ -566,13 +566,13 @@ kafka_producer_stars_forks = KafkaSink.builder() \
     .set_bootstrap_servers(kafka_bootstrap_servers) \
     .set_record_serializer(stars_and_forks_record_serializer) \
     .build()        
-near_real_time_stars_forks_ds.sink_to(kafka_producer_stars_forks)
-print(f"Started reading data from kafka topic {near_real_time_events_topic}\n "
+real_time_stars_forks_ds.sink_to(kafka_producer_stars_forks)
+print(f"Started reading data from kafka topic {real_time_events_topic}\n "
       f"into topic {stars_and_forks_topic}")
 
 
 # # Print transformed datastream
-# near_real_time_stars_forks_ds.print()
+# real_time_stars_forks_ds.print()
 
 
 # endregion
@@ -592,10 +592,10 @@ if __name__ =='__main__':
     session = cluster.connect(cassandra_keyspace, wait_for_all_pools=True)
     session.execute(f'USE {cassandra_keyspace}')
 
-    # # Create topics 'near-real-time-raw-events' and
-    # # 'near-real-time-stars-forks' if they do not exist
+    # # Create topics 'real-time-raw-events' and
+    # # 'real-time-stars-forks' if they do not exist
     # number_of_partitions = 4
-    # create_topic_if_not_exists(near_real_time_events_topic, kafka_bootstrap_servers, \
+    # create_topic_if_not_exists(real_time_events_topic, kafka_bootstrap_servers, \
     #     desired_number_of_partitions=number_of_partitions)
     
     # number_of_partitions = 1
@@ -635,14 +635,14 @@ if __name__ =='__main__':
     session.execute(create_pop_topics_table)
 
     # Note on "Number of events per second sliding bar graph":
-    # Near real time data per second is not created in this flink job.
-    # It is created from the near-real-time-producer producing into topic 'near-real-time-raw-events-ordered'.
-    # The topic 'near-real-time-raw-events-ordered' maintains its order by using a single partition  
+    # Real time data per second is not created in this flink job.
+    # It is created from the real-time-producer producing into topic 'real-time-raw-events-ordered'.
+    # The topic 'real-time-raw-events-ordered' maintains its order by using a single partition  
     
-    # Note on "Near real time stars and forks sliding list":
-    # No table to make for the near real time stars and forks section 
+    # Note on "Real time stars and forks sliding list":
+    # No table to make for the real time stars and forks section 
     # (all is done with the datastream transformation and reenter into kafka topic 
-    # near-real-time-stars-forks)
+    # real-time-stars-forks)
     
 
     cluster.shutdown()
@@ -662,9 +662,9 @@ if __name__ =='__main__':
 # Consume from kafka datastream, store into Cassandra
 
 # Docker exec into cassandra to check if the data is inserted correctly
-# Use the docker service test_near_real_time_queries to get the ingested data in descending form (as shown in the login screen)
+# Use the docker service test_real_time_queries to get the ingested data in descending form (as shown in the login screen)
 
-# To run add this file in the volumes of the ;;;'taskmanager-near-real-time' and 'jobmanager' docker services. 
+# To run add this file in the volumes of the ;;;'taskmanager-real-time' and 'jobmanager' docker services. 
 
 
 # Repeat for tables language, topics, most starred 
