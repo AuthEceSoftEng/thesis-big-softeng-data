@@ -48,7 +48,7 @@ function insertNewEventInList(username, event_type, repo_name, timestamp) {
 var socket = io.connect();
 
 // Update the star and fork events shifting list 
-socket.on("updateNearRealTimeStarsForks", function (msg) {
+socket.on("updateRealTimeStarsForks", function (msg) {
     // // Console log for debugging purposes (see if it is printed in 
     // // the Console tab of the browser) 
     // console.log("Received new star or fork event :: " + msg.value);

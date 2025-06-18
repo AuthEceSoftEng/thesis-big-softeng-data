@@ -83,7 +83,7 @@ def create_topic_if_not_exists(topic, bootstrap_servers, desired_number_of_parti
     else:
         raise Exception(f"Topic {topic} neither exists or is absent from the kafka cluster")
 
-# def thin_near_real_time_json_event(event):
+# def thin_real_time_json_event(event):
 # 	"""
 # 	Function that receives as input an event and keeps only fields of interest.
 # 	"""
@@ -125,7 +125,7 @@ def create_topic_if_not_exists(topic, bootstrap_servers, desired_number_of_parti
   
 # 	return new_event
 
-def thin_near_real_time_json_event(event):
+def thin_real_time_json_event(event):
 	"""
 	Function that receives as input an event and keeps only fields of interest.
 	"""
@@ -200,11 +200,11 @@ if __name__=='__main__':
 	producer = Producer(config)
  
 	config_port = str(config['bootstrap.servers'])		
-	near_real_time_events_topic = "near-real-time-raw-events"
+	real_time_events_topic = "real-time-raw-events"
 	desired_number_of_partitions =  4
-	create_topic_if_not_exists(near_real_time_events_topic, config_port, desired_number_of_partitions)
+	create_topic_if_not_exists(real_time_events_topic, config_port, desired_number_of_partitions)
  
-	topic_that_retains_message_order = 'near-real-time-raw-events-ordered'
+	topic_that_retains_message_order = 'real-time-raw-events-ordered'
 	desired_number_of_partitions =  1
 	create_topic_if_not_exists(topic_that_retains_message_order, config_port, desired_number_of_partitions)
  
@@ -215,14 +215,14 @@ if __name__=='__main__':
 				event_counter += 1
 	
 				event_data = json.loads(event.data) 			
-				event_data_thinned = thin_near_real_time_json_event(event_data)
+				event_data_thinned = thin_real_time_json_event(event_data)
 				event_data_thinned_str = str(event_data_thinned)
 						
 				# print(f"Got event data No {event_counter}.: {event_data}")
     			# print(f"Got thinned event data No {event_counter}.: {event_data_thinned}")
 				
 
-				producer.produce(near_real_time_events_topic, value=event_data_thinned_str, callback=delivery_callback)
+				producer.produce(real_time_events_topic, value=event_data_thinned_str, callback=delivery_callback)
 				
 				jsonStrRetainingOrder = str({"id": event_data_thinned["id"], "created_at": event_data_thinned["created_at"]})
 				producer.produce(topic_that_retains_message_order, value=jsonStrRetainingOrder, callback=delivery_callback)

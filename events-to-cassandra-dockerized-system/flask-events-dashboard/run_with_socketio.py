@@ -61,7 +61,7 @@ args = parser.parse_args()
 config_parser = ConfigParser()
 config_parser.read_file(args.config_file)
 config = dict(config_parser['default_consumer'])
-config.update(config_parser['near_real_time_stars_forks_consumer_2'])
+config.update(config_parser['real_time_stars_forks_consumer_2'])
     
 # Create Consumer instance
 forks_and_stars_consumer = Consumer(config)
@@ -78,12 +78,12 @@ def reset_offset_stars_forks(consumer, partitions):
 
 
 # Subscribe to topic
-near_real_time_stars_forks_topic = "near-real-time-stars-forks"
-forks_and_stars_consumer.subscribe([near_real_time_stars_forks_topic], 
+real_time_stars_forks_topic = "real-time-stars-forks"
+forks_and_stars_consumer.subscribe([real_time_stars_forks_topic], 
                 on_assign=reset_offset_stars_forks)
-# Topic 'near-real-time-stars-forks' has a single partition 
+# Topic 'real-time-stars-forks' has a single partition 
 # (to ensure order of messages)
-stars_and_forks_partition = TopicPartition(near_real_time_stars_forks_topic, partition=0, offset=OFFSET_END)
+stars_and_forks_partition = TopicPartition(real_time_stars_forks_topic, partition=0, offset=OFFSET_END)
 forks_and_stars_consumer.assign([stars_and_forks_partition])
 
 
@@ -117,7 +117,7 @@ def forks_and_stars_background_thread():
                 repo_name = jsonDict["repo_name"]
                 timestamp = jsonDict["timestamp"]
                 
-                socketio.emit("updateNearRealTimeStarsForks", {"username": username, "event_type": event_type, \
+                socketio.emit("updateRealTimeStarsForks", {"username": username, "event_type": event_type, \
                                 "repo_name": repo_name, "timestamp": timestamp})
                 socketio.sleep(1)    
                 time.sleep(2)
@@ -158,8 +158,8 @@ def reset_offset(consumer, partitions):
         consumer.assign(partitions)
 
 
-# Subscribe to topic near-real-time-raw-events to count the events per topic
-raw_events_ordered_topic_name = "near-real-time-raw-events-ordered"
+# Subscribe to topic real-time-raw-events to count the events per topic
+raw_events_ordered_topic_name = "real-time-raw-events-ordered"
 raw_events_topic = TopicPartition(raw_events_ordered_topic_name, 0)
 raw_events_consumer.subscribe([raw_events_ordered_topic_name], on_assign=reset_offset)
 
