@@ -888,3 +888,21 @@ services:
       - kafka
     networks:
       - data-network
+
+
+  # Real time events producer using firehose
+  python-get-decompressed-size-of-downloaded-file:
+    image: python:3.10-script-executing-image-with-requests_sse
+    # image: python:3.10-script-executing-image
+    container_name: python-get-decompressed-size-of-downloaded-file
+    volumes: 
+      - ./usrlib/test_scripts/get_decompressed_size_of_downloaded_file.py:/usrlib/get_decompressed_size_of_downloaded_file.py
+      
+      - ./usrlib/github_data:/github_data
+      - ./usrlib/test_scripts:/test_scripts
+    
+    
+    command: ['python', 'get_decompressed_size_of_downloaded_file.py']
+    environment:
+      - PYTHONUNBUFFERED=1
+    
