@@ -52,9 +52,21 @@
 
                 <!-- Create star history chart -->
                 <script>
-                function getRandomColor() {
-                    return `#${Math.floor(Math.random()*16777215).toString(16)}`;
-                }
+                // Select a seed that is not 0 or k*pi or else random will return 0 only
+                // var myRandomSeed = 4310;
+                // var myRandomSeed = 23100;
+                // var myRandomSeed = 1100;
+                // function randomWithSeed(randomSeed) {
+                //     var x = Math.sin(randomSeed++) * 10000;
+                //     return x - Math.floor(x);
+                // }
+
+                // function getRandomColor(randomSeed) {
+                //     return `#${Math.floor(randomWithSeed(randomSeed)*16777215).toString(16)}`;
+                // }
+
+                
+                var historyGraphColors = [ "#f9fe71", "#5fea7f", "#3596ba", "#fea352", "#e96045", "#4b3561", "#426291", "#be2e30", "#48d7b3", "#b0ff89", "#ffe15d", "#e5ffb4", "#991919", "#ffcba5", "#e68f66", "#228c68", "#96341c", "#632819", "#201923", "#fcff5d", "#2f2aa0", "#b732cc", "#772b9d", "#f07cab", "#d30b94", "#edeff3", "#c3a5b4", "#946aa2" , "#5d4c86", "#ffffff", "#312031", "#6d2d4a"]
 
                 var ctx_js_repos = document.getElementById("star_history_chart").getContext("2d");
                 // const month_labels = // Take it from the server.py (2024-01, 2024-02 etc)
@@ -171,7 +183,10 @@
                           tension: 0,
                           borderWidth: 0,
                           pointRadius: 5,
-                          pointBackgroundColor: (color=getRandomColor()),
+                          // pointBackgroundColor: (color=getRandomColor(js_repo_index+myRandomSeed)),
+                          
+                          pointBackgroundColor: (color=historyGraphColors[js_repo_index]),
+                          
                           pointBorderColor: "transparent",
                           borderColor: color,
                           borderWidth: 4,
@@ -234,7 +249,11 @@
                           tension: 0,
                           borderWidth: 0,
                           pointRadius: 5,
-                          pointBackgroundColor: (color=getRandomColor()),
+                          // pointBackgroundColor: (color=getRandomColor(js_repo_index+myRandomSeed)),
+                          
+                          pointBackgroundColor: (color=historyGraphColors[js_repo_index]),
+                          
+
                           pointBorderColor: "transparent",
                           borderColor: color,
                           borderWidth: 4,
