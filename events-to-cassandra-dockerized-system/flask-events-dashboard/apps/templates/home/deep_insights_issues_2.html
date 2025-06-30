@@ -242,7 +242,6 @@
             });
 
       
-            
 
 
             function updateIssuesByLabelDataTable(repo_selected) {  
@@ -272,14 +271,20 @@
                     var rowAverageClosingTimesSeconds = data["closing_times_per_label"][rowIndex]["average_closing_time_in_seconds"];
                     
                     
-                    issuesByLabelDataTable.on('draw', function () {
+                    issuesByLabelDataTable.one('draw', function () {
                       issuesByLabelDataTable.rows().every(function () {
                         const data = this.data();
                         if (data[4] > upper_closing_time_threshold) {
                           console.log(data[4] + ">" + upper_closing_time_threshold);
+                          
+                          // console.log(data[1] + ", " + "( "+ rowSeconds + ", " + rowAverageClosingTimesSeconds + " )");
+                          
                           $(this.node()).css('background-color', '#ffeeba');
                         }
                       });
+
+                      console.log(issuesByLabelDataTable.rows().data().toArray());
+                      console.log("Upper limit: " + upper_closing_time_threshold);
                     });
                     issuesByLabelDataTable.row.add([rowOrder, rowIssueLabel, rowCount, rowSeconds, rowAverageClosingTimesSeconds]).draw();
                   };                 
@@ -350,7 +355,9 @@
         // const repo_whose_issue_closing_times_to_get = "Expensify/App";
         document.getElementById("preselected_repo_for_issue_closing_times_by_label").textContent = repo_whose_issue_closing_times_to_get; 
         
-        updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);        
+        updateIssuesByLabelDataTable(repo_whose_issue_closing_times_to_get);   
+        // console.log(issuesByLabelDataTable.rows().data().toArray());
+        // console.log(issuesByLabelDataTable.rows().data());
       </script>
 
 
