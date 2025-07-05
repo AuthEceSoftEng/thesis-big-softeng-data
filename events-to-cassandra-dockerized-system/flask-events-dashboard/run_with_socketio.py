@@ -270,7 +270,7 @@ def query_live_stats_background_thread():
     select_topics_prepared_query = session.prepare(\
                     f"SELECT day, topic, num_of_occurrences "\
                     f"FROM {cassandra_keyspace}.{popular_topics_table} WHERE day = ?")
-   
+    
     most_popular_repos_table = "most_popular_repos_by_day"
     select_repos_prepared_query = session.prepare(\
                 f"SELECT day, repo, stars, forks "\
