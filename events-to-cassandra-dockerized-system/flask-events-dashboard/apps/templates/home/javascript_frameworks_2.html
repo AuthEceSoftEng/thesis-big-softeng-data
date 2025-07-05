@@ -490,13 +490,19 @@
                 <tr>
                     <td>2</td>
                     <td>username2</td>
-                    <td>5</td>
+                    <td>0</td>
                 </tr>
                 <tr>
                     <td>3</td>
                     <td>username3</td>
                     <td>7</td>
                 </tr>
+                <tr>
+                  <td>4</td>
+                  <td>username4</td>
+                  <td>5</td>
+              </tr>
+              
             </tbody>
               <tfoot>
                 <tr>
@@ -546,7 +552,9 @@
                     var rowContributorUsername = data["top_contributors_of_js_repo"][rowIndex]["username"];
                     var rowNumberOfContributions = data["top_contributors_of_js_repo"][rowIndex]["number_of_contributions"];
                     
-                    topJsContributorsDataTable.row.add([rowOrder, rowContributorUsername, rowNumberOfContributions]).draw();
+                    if (rowNumberOfContributions > 0){
+                      topJsContributorsDataTable.row.add([rowOrder, rowContributorUsername, rowNumberOfContributions]).draw();
+                    }
                   };                 
 
                 });
