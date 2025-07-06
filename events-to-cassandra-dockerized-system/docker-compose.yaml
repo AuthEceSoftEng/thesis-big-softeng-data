@@ -890,36 +890,36 @@ services:
       - data-network
 
 
-  # Get the decompressed sizes of compressed files
-  python-get-decompressed-size-of-downloaded-file:
-    image: python:3.10-script-executing-image-with-requests_sse
-    # image: python:3.10-script-executing-image
-    container_name: python-get-decompressed-size-of-downloaded-file
-    volumes: 
-      - ./usrlib/test_scripts/get_decompressed_size_of_downloaded_file.py:/usrlib/get_decompressed_size_of_downloaded_file.py
+  # # Get the decompressed sizes of compressed files
+  # python-get-decompressed-size-of-downloaded-file:
+  #   image: python:3.10-script-executing-image-with-requests_sse
+  #   # image: python:3.10-script-executing-image
+  #   container_name: python-get-decompressed-size-of-downloaded-file
+  #   volumes: 
+  #     - ./usrlib/test_scripts/get_decompressed_size_of_downloaded_file.py:/usrlib/get_decompressed_size_of_downloaded_file.py
       
-      - ./usrlib/github_data:/github_data
-      - ./usrlib/test_scripts:/test_scripts
+  #     - ./usrlib/github_data:/github_data
+  #     - ./usrlib/test_scripts:/test_scripts
     
     
-    command: ['python', 'get_decompressed_size_of_downloaded_file.py']
-    environment:
-      - PYTHONUNBUFFERED=1
+  #   command: ['python', 'get_decompressed_size_of_downloaded_file.py']
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
     
 
-  # Get the number of lines in files
-  python-get-number-of-lines-in-downloaded-files:
-    image: python:3.10-script-executing-image-with-requests_sse
-    # image: python:3.10-script-executing-image
-    container_name: python-get-number-of-lines-in-downloaded-files
-    volumes: 
-      - ./usrlib/test_scripts/get_num_of_lines_of_compressed_file.py:/usrlib/get_num_of_lines_of_compressed_file.py
+  # # Get the number of lines in files
+  # python-get-number-of-lines-in-downloaded-files:
+  #   image: python:3.10-script-executing-image-with-requests_sse
+  #   # image: python:3.10-script-executing-image
+  #   container_name: python-get-number-of-lines-in-downloaded-files
+  #   volumes: 
+  #     - ./usrlib/test_scripts/get_num_of_lines_of_compressed_file.py:/usrlib/get_num_of_lines_of_compressed_file.py
       
-      - ./usrlib/github_data:/github_data
-      - ./usrlib/test_scripts:/test_scripts
+  #     - ./usrlib/github_data:/github_data
+  #     - ./usrlib/test_scripts:/test_scripts
     
     
-    command: ['python', 'get_num_of_lines_of_compressed_file.py']
-    environment:
-      - PYTHONUNBUFFERED=1
+  #   command: ['python', 'get_num_of_lines_of_compressed_file.py']
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
   
