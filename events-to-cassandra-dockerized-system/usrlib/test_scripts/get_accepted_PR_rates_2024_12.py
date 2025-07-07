@@ -84,11 +84,11 @@ if __name__ == '__main__':
         
     
     starting_datetime = datetime(year=2024, month=12, day=1)
-    ending_datetime = datetime(year=2024, month=12, day=5)
+    ending_datetime = datetime(year=2024, month=12, day=31)
     
     
     avg_accepted_PR_rates_files = \
-        "/test_scripts/avg_accepted_PR_rates_2024_12.txt"
+        "/test_scripts/accepted_PR_rates_2024_12.txt"
     with open(avg_accepted_PR_rates_files, 'a') as file_obj:
         file_obj.write("Day\t\tAccepted human PRs\t\tRejected human PRs\t\t"
                        "Accepted bot PRs\t\tRejected bot PRs\n")
@@ -130,7 +130,7 @@ if __name__ == '__main__':
         file_obj.write("-------------------------------------------------------------------\n")
         
         file_obj.write("Total human accepted\t\tTotal human rejected\t\tTotal human PRs\t\t"
-                       "Average human accepted rate\n")
+                       "Human accepted rate\n")
         total_human_PRs = total_accepted_human_PRs+total_rejected_human_PRs
         avg_accepted_human_PRs = round((total_accepted_human_PRs/total_human_PRs)*100, 2)
         line_formatted = f"{total_accepted_human_PRs}\t\t{total_rejected_human_PRs}\t\t"\
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         
         file_obj.write("-------------------------------------------------------------------\n")
         file_obj.write("Total bot accepted\t\tTotal bot rejected\t\tRejected bot PRs\t\t"
-                       "Average bot accepted rate\n")
+                       "Bot accepted rate\n")
         total_bot_PRs = total_accepted_bot_PRs+total_rejected_bot_PRs
         avg_accepted_bot_PRs = round((total_accepted_bot_PRs/total_bot_PRs)*100, 2)
         line_formatted = f"{total_accepted_bot_PRs}\t\t{total_rejected_bot_PRs}\t\t"\
