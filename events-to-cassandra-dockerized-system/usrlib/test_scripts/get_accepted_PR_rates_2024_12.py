@@ -147,7 +147,7 @@ if __name__ == '__main__':
                 f"{total_bot_PRs}\t\t{avg_accepted_bot_PRs}%\n"        
         file_obj.write(line_formatted)
         
-    
+    cluster.shutdown()
 
     
     # For one day, get the accepted, rejected humans and bots number of pull requests and print it using a function

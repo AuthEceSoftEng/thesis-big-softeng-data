@@ -83,7 +83,7 @@ services:
     image:  python:3.10-script-executing-image-with-requests_sse
     container_name: get-accepted-pull-requests-from-Cassandra
     volumes: 
-      - ./usrlib/test_scripts/get_avg_accepted_PR_rates_2024_12.py:/usrlib/get_avg_accepted_PR_rates_2024_12.py
+      - ./usrlib/test_scripts/get_accepted_PR_rates_2024_12.py:/usrlib/get_accepted_PR_rates_2024_12.py
       - ./usrlib/test_scripts:/test_scripts
     networks:
       - data-network
@@ -91,8 +91,23 @@ services:
       cassandra_stelios:
         condition: service_healthy
 
-    command: ['python', 'get_avg_accepted_PR_rates_2024_12.py']
+    command: ['python', 'get_accepted_PR_rates_2024_12.py']
     environment:
       - PYTHONUNBUFFERED=1
   
-    
+  # Get number of bot events for all dates from Cassandra
+  get-number-of-bot-events-from-cassandra:
+    image:  python:3.10-script-executing-image-with-requests_sse
+    container_name: get-number-of-bot-events-from-cassandra
+    volumes: 
+      - ./usrlib/test_scripts/get_bot_events_2024_12.py:/usrlib/get_bot_events_2024_12.py
+      - ./usrlib/test_scripts:/test_scripts
+    networks:
+      - data-network
+    depends_on:
+      cassandra_stelios:
+        condition: service_healthy
+
+    command: ['python', 'get_bot_events_2024_12.py']
+    environment:
+      - PYTHONUNBUFFERED=1
