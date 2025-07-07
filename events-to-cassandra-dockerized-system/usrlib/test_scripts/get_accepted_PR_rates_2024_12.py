@@ -85,21 +85,25 @@ if __name__ == '__main__':
     
     starting_datetime = datetime(year=2024, month=12, day=1)
     ending_datetime = datetime(year=2024, month=12, day=31)
-    
+    total_accepted_human_PRs = 0
+    total_rejected_human_PRs = 0
+    total_accepted_bot_PRs = 0
+    total_rejected_bot_PRs = 0
     
     avg_accepted_PR_rates_files = \
         "/test_scripts/accepted_PR_rates_2024_12.txt"
     with open(avg_accepted_PR_rates_files, 'a') as file_obj:
-        file_obj.write("Day\t\tAccepted human PRs\t\tRejected human PRs\t\t"
-                       "Accepted bot PRs\t\tRejected bot PRs\n")
+        file_obj.write("Day\t\t"
+                       f"Accepted human PRs (% of all human PRs)\t\t"
+                       f"Rejected human PRs (% of all human PRs)\t\t"
+                       f"Accepted bot PRs (% of all bot PRs)\t\t"
+                       f"Rejected bot PRs (% of all bot PRs)\n")
         
-        total_accepted_human_PRs = 0
-        total_rejected_human_PRs = 0
-        total_accepted_bot_PRs = 0
-        total_rejected_bot_PRs = 0
+        
         
         current_datetime = starting_datetime
         while current_datetime <= ending_datetime:
+            
             current_day_string = datetime.strftime(current_datetime, "%Y-%m-%d")
             accepted_human_PRs, rejected_human_PRs, \
                 accepted_bot_PRs, rejected_bot_PRs = \
@@ -108,14 +112,27 @@ if __name__ == '__main__':
             
             
             
+            human_PRs = accepted_human_PRs + rejected_human_PRs
+            bot_PRs = accepted_bot_PRs + rejected_bot_PRs
+            # Avoid division by 0 in case there are no PRs
+            accepted_human_PR_rate = \
+                round((accepted_human_PRs/(max(human_PRs, 1))*100), 2)
+            rejected_human_PR_rate = \
+                round((rejected_human_PRs/max(human_PRs, 1))*100, 2)
+            accepted_bot_PR_rate = \
+                round((accepted_bot_PRs/max(bot_PRs, 1))*100, 2)
+            rejected_bot_PR_rate = \
+                round((rejected_bot_PRs/max(bot_PRs, 1))*100, 2)
+            
             
             print(current_day_string, 
                 accepted_human_PRs, rejected_human_PRs,
                 accepted_bot_PRs, rejected_bot_PRs)
-            line_formatted = f"{current_day_string}\t\t{accepted_human_PRs}\t\t"\
-                f"{rejected_human_PRs}\t\t"\
-                f"{accepted_bot_PRs}\t\t{rejected_bot_PRs}\n"
-                
+            line_formatted = f"{current_day_string}\t\t"\
+                f"{accepted_human_PRs}  ({accepted_human_PR_rate}%)\t\t"\
+                f"{rejected_human_PRs} ({rejected_human_PR_rate}%)\t\t"\
+                f"{accepted_bot_PRs}  ({accepted_bot_PR_rate}%)\t\t"\
+                f"{rejected_bot_PRs} ({rejected_bot_PR_rate}%)\n"
             file_obj.write(line_formatted)
             
             
@@ -127,25 +144,35 @@ if __name__ == '__main__':
             
             current_datetime += timedelta(days=1)
     
-        file_obj.write("-------------------------------------------------------------------\n")
-        
-        file_obj.write("Total human accepted\t\tTotal human rejected\t\tTotal human PRs\t\t"
-                       "Human accepted rate\n")
+    
+        file_obj.write("-------------------------------------------------------------------\n")    
+        file_obj.write("Total human PRs\t\t"
+                       "Total human accepted (%% of all human PRs)\t\t"
+                       "Total human rejected (%% of all human PRS)\n")                   
         total_human_PRs = total_accepted_human_PRs+total_rejected_human_PRs
-        avg_accepted_human_PRs = round((total_accepted_human_PRs/total_human_PRs)*100, 2)
-        line_formatted = f"{total_accepted_human_PRs}\t\t{total_rejected_human_PRs}\t\t"\
-                f"{total_human_PRs}\t\t{avg_accepted_human_PRs}%\n"        
+        accepted_human_PRs_rate = round((total_accepted_human_PRs/total_human_PRs)*100, 2)
+        rejected_human_PRs_rate = round((total_rejected_human_PRs/total_human_PRs)*100, 2)
+        line_formatted = f"{total_human_PRs}\t\t"\
+                        f"{total_accepted_human_PRs} ({accepted_human_PRs_rate}%)\t\t"\
+                        f"{total_rejected_human_PRs} ({rejected_human_PRs_rate}%)\n"        
         file_obj.write(line_formatted)
         
+    
         
         file_obj.write("-------------------------------------------------------------------\n")
-        file_obj.write("Total bot accepted\t\tTotal bot rejected\t\tRejected bot PRs\t\t"
-                       "Bot accepted rate\n")
+        
+        file_obj.write("Total bot PRs\t\t"
+                       "Total bot accepted (%% of all bot PRs)\t\t"
+                       "Total bot rejected (%% of all bot PRS)\n")
         total_bot_PRs = total_accepted_bot_PRs+total_rejected_bot_PRs
-        avg_accepted_bot_PRs = round((total_accepted_bot_PRs/total_bot_PRs)*100, 2)
-        line_formatted = f"{total_accepted_bot_PRs}\t\t{total_rejected_bot_PRs}\t\t"\
-                f"{total_bot_PRs}\t\t{avg_accepted_bot_PRs}%\n"        
+        accepted_bot_PRs_rate = round((total_accepted_bot_PRs/total_bot_PRs)*100, 2)
+        rejected_bot_PRs_rate = round((total_rejected_bot_PRs/total_bot_PRs)*100, 2)
+        line_formatted = f"{total_bot_PRs}\t\t"\
+                        f"{total_accepted_bot_PRs} ({accepted_bot_PRs_rate}%)\t\t"\
+                        f"{total_rejected_bot_PRs} ({rejected_bot_PRs_rate}%)\n"
+                        
         file_obj.write(line_formatted)
+        
         
     cluster.shutdown()
 

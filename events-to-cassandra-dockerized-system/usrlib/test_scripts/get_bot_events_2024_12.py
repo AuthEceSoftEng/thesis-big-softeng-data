@@ -57,12 +57,14 @@ if __name__ == '__main__':
 
     
     starting_datetime = datetime(year=2024, month=12, day=1)
-    ending_datetime = datetime(year=2024, month=12, day=12)
+    ending_datetime = datetime(year=2024, month=12, day=31)
     
     days_counter = 0
     bot_events_filepath = '/test_scripts/bot_events_2024_12.txt'
     with open(bot_events_filepath, 'a') as file_obj:
-        file_obj.write("Day\t\t\tHuman events\t\t\tBot events\n")
+        file_obj.write("Day\t\t\t"
+                       f"Human events (% of all events)\t\t\t"
+                       f"Bot events (% of all events)\n")
     
         human_events_for_all_days = 0
         bot_events_for_all_days = 0
@@ -74,29 +76,47 @@ if __name__ == '__main__':
             
             number_of_human_events_on_day, number_of_bot_events_on_day = get_bot_events_on_day(cassandra_keyspace, session, current_day_string)
             
-            human_events_for_all_days += number_of_human_events_on_day
-            bot_events_for_all_days += number_of_bot_events_on_day
-            
-            line_formatted = f"{current_day_string}\t\t{number_of_human_events_on_day}\t\t{number_of_bot_events_on_day}\n"
+            total_events_on_day = number_of_human_events_on_day + \
+                number_of_bot_events_on_day
+            human_events_percentage = round(number_of_human_events_on_day/max(1, total_events_on_day)*100, 2)
+            bot_events_percentage = round(number_of_bot_events_on_day/max(1, total_events_on_day)*100, 2)
+            line_formatted = f"{current_day_string}\t\t"\
+                    f"{number_of_human_events_on_day} ({human_events_percentage}%)\t\t"\
+                    f"{number_of_bot_events_on_day} ({bot_events_percentage}%)\n"
             print(line_formatted)
             file_obj.write(line_formatted)
+            
+            
+            human_events_for_all_days += number_of_human_events_on_day
+            bot_events_for_all_days += number_of_bot_events_on_day
             current_datetime += timedelta(days=1)
     
-        file_obj.write("-----------------------------------\n")
-        file_obj.write(f"Total events\t\tTotal human events\t\tTotal bot events\n")
-        file_obj.write(f"{human_events_for_all_days+bot_events_for_all_days}\t\t{human_events_for_all_days}\t\t{bot_events_for_all_days}\n")
         
+        total_events_for_all_days = human_events_for_all_days+bot_events_for_all_days
+        total_human_events_percentage = round(human_events_for_all_days/total_events_for_all_days*100, 2)
+        total_bot_events_percentage = round(bot_events_for_all_days/total_events_for_all_days*100, 2)
         file_obj.write("-----------------------------------\n")
-        file_obj.write(f"Average human events per file\t\tAverage bot events per file\n")
+        file_obj.write(f"Total events\t\t"
+                       f"Total human events (% of all events)\t\t"
+                       f"Total bot events (% of all events)\n")
+        file_obj.write(f"{total_events_for_all_days}\t\t"
+                       f"{human_events_for_all_days} ({total_human_events_percentage}%)\t\t"
+                       f"{bot_events_for_all_days} ({total_bot_events_percentage}%)\n")
+        
+        
         avg_human_events = round(human_events_for_all_days/days_counter)
         avg_bot_events = round(bot_events_for_all_days/days_counter)
-        file_obj.write(f"{avg_human_events}\t\t{avg_bot_events}\n")
-        
+        avg_total_events = avg_human_events + avg_bot_events
+        avg_human_events_percentage = round(avg_human_events/max(avg_total_events, 1)*100, 2)
+        avg_bot_events_percentage = round(avg_bot_events/max(avg_total_events, 1)*100, 2)
         file_obj.write("-----------------------------------\n")
-        file_obj.write(f"Percentage human events\t\tPercentage bot events\n")
-        total_events_for_all_days = human_events_for_all_days+bot_events_for_all_days
-        human_events_percentage = round(human_events_for_all_days/total_events_for_all_days*100, 2)
-        bot_events_percentage = round(bot_events_for_all_days/total_events_for_all_days*100, 2)
-        file_obj.write(f"{human_events_percentage}%\t\t{bot_events_percentage}%\n")
+        file_obj.write(f"Average human events per file (% of all events)\t\t"
+                       f"Average bot events per file (% of all events)\n")
+        file_obj.write(f"{avg_human_events} ({avg_human_events_percentage}%)\t\t"
+                       f"{avg_bot_events} ({avg_bot_events_percentage}%)\n")
+        
+        # file_obj.write("-----------------------------------\n")
+        # file_obj.write(f"Percentage human events\t\tPercentage bot events\n")
+        # file_obj.write(f"{human_events_percentage}%\t\t{bot_events_percentage}%\n")
         
     cluster.shutdown()
