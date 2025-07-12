@@ -125,12 +125,12 @@ cd usrlib
 
 ### Terminal 1: Compose kafka, cassandra, flink, expose server data, run the flask app
 ```sh
-docker compose up kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-real-time 
+docker compose up (-d) kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-real-time 
 ```
 
 ### Terminal 2: Producer
 ```sh
-docker compose up python-real-time-events-producer
+docker compose up (-d) python-real-time-events-producer
 ```
 
 Pyflink job to store the data of screen 1 in the UI
@@ -138,17 +138,17 @@ Pyflink job to store the data of screen 1 in the UI
 Deploy the near real time job for screen 1:
 ### Terminal 3: Pyflink job 1: Stats and popularity insights 
 ```sh
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_1_q1_q5_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+docker exec (-d) -i  jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_1_q1_q5_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
 ```
 
 ### Terminal 4: Expose data to ingest in the UI
 ```sh
-docker compose up event-data-exposing-server 
+docker compose up (-d) event-data-exposing-server 
 ```
 
 ### Terminal 5: Deploy the UI
 ```sh
-docker compose up events-flask-app
+docker compose up (-d) events-flask-app
 ```
 
 
