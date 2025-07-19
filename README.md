@@ -5,11 +5,11 @@ The running app consists of the real time data analysis and the historical data 
 
 ## Contents
 [Ingest real time GitHub events](#Ingest-real-time-events)
-- [Step 1: Pull and build the docker images](#Step-1:-Pull-and-build-the-docker-images)
-- [Step 2: Compose Kafka, Flink and Cassandra](Step-2:-Compose-Kafka,-Flink-and-Cassandra)
-- [Step 3: Compose the real time GitHub events Kafka Producer](Step-3:-Compose-the-real-time-GitHub-events-Kafka-Producer)
-- [Step 4: Ingest real GitHub events using a Pyflink job](Step-4:-Ingest-real-GitHub-events-using-a-Pyflink-job)
-- [Step 5: Expose GitHub events to the UI and deploy it](Step-5:-Expose-GitHub-events-to-the-UI-and-deploy-it)
+- [Step 1: Pull and build the docker images](#step-1-pull-and-build-the-docker-images)
+- [Step 2: Compose Kafka, Flink and Cassandra](#step-2-compose-kafka-flink-and-cassandra)
+- [Step 3: Compose the real time GitHub events Kafka Producer](#step-3-compose-the-real-time-gitHub-events-kafka-producer)
+- [Step 4: Ingest real GitHub events using a Pyflink job](#step-4-ingest-real-github-events-using-a-pyflink-job)
+- [Step 5: Expose GitHub events to the UI and deploy it](#step-5-expose-github-events-to-the-ui-and-deploy-it)
 
 
 <!-- 2. [Ingest historical GitHub events](#Ingest-historical-events) -->

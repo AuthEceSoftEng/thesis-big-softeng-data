@@ -7,7 +7,7 @@ networks:
 services:
 # 1. Real time events ingestion
 
-        
+  
 # Kafka broker 
   kafka:
     image: bitnami/kafka:3.9
@@ -235,9 +235,9 @@ services:
 
 
 
-# # Historical events ingestion
+# 2. Historical events ingestion
 
-# # Historical events files thinner 1
+# Historical events files thinner 1
   python-historical-events-thinner:
     image: python:3.10-script-executing-image
     container_name: python-historical-events-thinner
@@ -253,7 +253,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
 
-# # Historical events files thinner 2
+# Historical events files thinner 2
   python-historical-events-thinner-2:
     image: python:3.10-script-executing-image
     container_name: python-historical-events-thinner-2
@@ -269,7 +269,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
 
-# # Historical events files thinner 3
+# Historical events files thinner 3
   python-historical-events-thinner-3:
     image: python:3.10-script-executing-image
     container_name: python-historical-events-thinner-3
@@ -285,7 +285,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
 
-# # Historical events files thinner 4
+# Historical events files thinner 4
   python-historical-events-thinner-4:
     image: python:3.10-script-executing-image
     container_name: python-historical-events-thinner-4
@@ -300,7 +300,6 @@ services:
     command: ['python', 'historical-events-file-thinner-4.py']    
     environment:
       - PYTHONUNBUFFERED=1
-
 
 # Flink taskmanager 1
   taskmanager-1:
@@ -379,6 +378,9 @@ services:
 
 
 
+
+# 3. Helper services
+
 # Cancel all running jobs
   cancel-all-flink-jobs:
     image: python:3.10-script-executing-image
@@ -411,10 +413,7 @@ services:
     networks:
       - data-network
       
-
-
-
-# Delete .json.gz file (to free up space)
+# Delete .json.gz files (to free up space)
   python-delete-json-gz-file:
     image: python:3.10-script-executing-image
     container_name: python-delete-json-gz-file
