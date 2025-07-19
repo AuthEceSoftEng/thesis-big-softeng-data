@@ -1,8 +1,19 @@
 # Design and implementation of streaming and static data analysis platform for software process data
 Diploma thesis for processing Big Data from software processes. Incorporates Apache Kafka, Flink and Cassandra to handle real time and historical GitHub events for software processes analyses.
 
-1. [Ingest real time GitHub events](#Ingest-real-time-events)
+The running app consists of the real time data analysis and the historical data analysis.
+
+## Contents
+[Ingest real time GitHub events](#Ingest-real-time-events)
+- [Step 1: Pull and build the docker images](#Step-1:-Pull-and-build-the-docker-images)
+- [Step 2: Compose Kafka, Flink and Cassandra](Step-2:-Compose-Kafka,-Flink-and-Cassandra)
+- [Step 3: Compose the real time GitHub events Kafka Producer](Step-3:-Compose-the-real-time-GitHub-events-Kafka-Producer)
+- [Step 4: Pyflink job 1: Stats and popularity insights](Step-4:-Ingest-real-GitHub-events-using-a-Pyflink-job)
+- [Step 5: Expose GitHub events to the UI and deploy the latter](Step-5:-Expose-GitHub-events-to-the-UI-and-deploy-the-latter)
+
+
 <!-- 2. [Ingest historical GitHub events](#Ingest-historical-events) -->
+
 
 ## Ingest real time events 
 
@@ -32,25 +43,25 @@ docker build -f Dockerfile-python -t python:3.10-script-executing-image-with-req
 ```
 
 
-### Step 2: Compose kafka, cassandra, flink, expose server data, run the flask app
+### Step 2: Compose Kafka, Flink and Cassandra
 ```sh
-docker compose up -d kafka kafka-ui cassandra_host cassandra-ui jobmanager taskmanager-real-time 
+docker compose up -d kafka kafka-ui jobmanager taskmanager-real-time cassandra_host cassandra-ui 
 ```
 
-### Step 3: Producer
+### Step 3: Compose the real time GitHub events Kafka Producer
 ```sh
 docker compose up -d python-real-time-events-producer
 ```
 
 Pyflink job to store the data of screen 1 in the UI
 
-Deploy the near real time job for screen 1:
-### Step 4: Pyflink job 1: Stats and popularity insights 
+Deploy the real time job for screen 1:
+### Step 4: Ingest real GitHub events using a Pyflink job
 ```sh
 docker exec -d -i  jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_1_q1_q5_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
 ```
 
-### Step 5: Expose data to ingest in the UI and deploy it
+### Step 5: Expose GitHub events to the UI and deploy the latter
 ```sh
 docker compose up -d event-data-exposing-server events-flask-app
 ```
