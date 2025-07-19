@@ -8,8 +8,8 @@ The running app consists of the real time data analysis and the historical data 
 - [Step 1: Pull and build the docker images](#Step-1:-Pull-and-build-the-docker-images)
 - [Step 2: Compose Kafka, Flink and Cassandra](Step-2:-Compose-Kafka,-Flink-and-Cassandra)
 - [Step 3: Compose the real time GitHub events Kafka Producer](Step-3:-Compose-the-real-time-GitHub-events-Kafka-Producer)
-- [Step 4: Pyflink job 1: Stats and popularity insights](Step-4:-Ingest-real-GitHub-events-using-a-Pyflink-job)
-- [Step 5: Expose GitHub events to the UI and deploy the latter](Step-5:-Expose-GitHub-events-to-the-UI-and-deploy-the-latter)
+- [Step 4: Ingest real GitHub events using a Pyflink job](Step-4:-Ingest-real-GitHub-events-using-a-Pyflink-job)
+- [Step 5: Expose GitHub events to the UI and deploy it](Step-5:-Expose-GitHub-events-to-the-UI-and-deploy-it)
 
 
 <!-- 2. [Ingest historical GitHub events](#Ingest-historical-events) -->
@@ -61,7 +61,7 @@ Deploy the real time job for screen 1:
 docker exec -d -i  jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_1_q1_q5_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
 ```
 
-### Step 5: Expose GitHub events to the UI and deploy the latter
+### Step 5: Expose GitHub events to the UI and deploy it
 ```sh
 docker compose up -d event-data-exposing-server events-flask-app
 ```

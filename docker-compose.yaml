@@ -5,6 +5,9 @@ networks:
   
 
 services:
+# 1. Real time events ingestion
+
+        
 # Kafka broker 
   kafka:
     image: bitnami/kafka:3.9
@@ -45,6 +48,259 @@ services:
       - ./kafka-ui/config.yml:/etc/kafkaui/dynamic_config.yaml
     networks:
       - data-network
+
+# Flink jobmanager
+  jobmanager:
+    image: pyflink:1.18.1
+    container_name: jobmanager
+    volumes:
+    # Pyflink jobs for screens 1-4
+      - ./usrlib/screen_1_q1_q5_flink_job.py:/opt/flink/usrlib/screen_1_q1_q5_flink_job.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py
+      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
+      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
+      
+    # Connectors
+      - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
+      - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
+      
+
+    # Cancel all jobs
+      - ./usrlib/cancel_all_flink_jobs.py:/opt/flink/usrlib/cancel_all_flink_jobs.py
+    
+    # Config file
+      - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
+    ports:
+      - "8081:8081"
+    command: jobmanager    
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        parallelism.default: 1
+        rest.flamegraph.enabled: true
+        metrics.latency.interval: 1000
+      # jobmanager.memory.process.size: 1g
+      
+      # taskmanager.numberOfTaskSlots: 8
+      # taskmanager.memory.jvm-metaspace.size: 1728m
+      # python.operator-chaining.enabled: false
+    depends_on: 
+      - cassandra_host
+    networks:
+      - data-network
+
+# Flink taskmanager real-time
+  taskmanager-real-time:
+    image: pyflink:1.18.1
+    container_name: taskmanager-real-time
+    volumes:
+      # Connectors in opt/flink/opt
+      - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
+      - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/lib/flink-connector-cassandra_2.12-3.2.0-1.18.jar
+
+      # Pyflink jobs: Screen 1-4 in the UI
+      - ./usrlib/screen_1_q1_q5_flink_job.py:/opt/flink/usrlib/screen_1_q1_q5_flink_job.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py
+      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
+      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
+      
+
+      # Config file
+      - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    environment:
+      - | 
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        parallelism.default: 4
+        taskmanager.numberOfTaskSlots: 8
+
+      # taskmanager.rpc.port: 36429
+      # taskmanager.data.port: 36430
+    
+    deploy:
+      # mode: replicated-job
+      # replicas: 4
+      resources:
+        limits:
+          cpus: '2.0'   # Limit this container to 4 CPUs
+          memory: 2g
+
+    # ports: 
+    #   - 36429:36429
+    #   - 36430:36430
+    
+    networks:
+      - data-network
+      
+# Cassandra 
+  cassandra_host:
+    image: cassandra:4.1.7
+    ports:
+      - "9142:9142"
+    container_name: cassandra_host
+    hostname: cassandra_host
+    volumes:
+      - /var/lib/cassandra:/var/lib/cassandra
+      - ./cassandra.yaml:/etc/cassandra/cassandra.yaml
+    networks:
+      - data-network
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh cassandra_host 9142 -e 'describe keyspaces'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+# Cassandra UI
+  cassandra-ui:
+    image: ipushc/cassandra-web
+    container_name: cassandra-ui
+    ports:
+      - "8083:8083"
+    depends_on:
+      cassandra_host:
+        condition: service_healthy
+    networks:
+      - data-network
+    environment: 
+      - CASSANDRA_HOST=cassandra_host
+      - CASSANDRA_PORT=9142
+
+
+# Real time events producer using GitHub firehose
+  python-real-time-events-producer:
+    image: python:3.10-script-executing-image-with-requests_sse
+    container_name: python-real-time-events-producer
+    volumes: 
+      - ./usrlib/real_time_producer.py:/usrlib/real_time_producer.py
+      
+      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
+    
+      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
+    
+    command: ['python', 'real_time_producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+
+
+# Python server exposing data 
+  event-data-exposing-server:
+    image: python:3.10-script-executing-image
+    container_name: event-data-exposing-server
+    volumes: 
+      - ./flask-events-dashboard/server.py:/usrlib/server.py
+    ports: 
+      # - "127.0.0.1:3100:3100"
+      - "3200:3200"
+    command: ['python', 'server.py']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - cassandra_host
+    networks:
+      - data-network
+
+# Python flask UI for a single month
+  events-flask-app:
+    image: python:3.10-script-executing-image
+    container_name: events-flask-app
+    volumes: 
+      - ./flask-events-dashboard:/usrlib/flask-events-dashboard
+      - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
+    ports: 
+      - "5100:5100"
+    
+    command: ['python', 'flask-events-dashboard/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - kafka
+    networks:
+      - data-network
+
+
+
+
+
+
+# # Historical events ingestion
+
+# # Historical events files thinner 1
+  python-historical-events-thinner:
+    image: python:3.10-script-executing-image
+    container_name: python-historical-events-thinner
+    volumes: 
+      # /usrlib
+      - ./usrlib/historical-events-file-thinner.py:/usrlib/historical-events-file-thinner.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
+      # github_data
+      - ./usrlib/github_data:/github_data      
+    command: ['python', 'historical-events-file-thinner.py']    
+    environment:
+      - PYTHONUNBUFFERED=1
+
+# # Historical events files thinner 2
+  python-historical-events-thinner-2:
+    image: python:3.10-script-executing-image
+    container_name: python-historical-events-thinner-2
+    volumes: 
+      # /usrlib
+      - ./usrlib/historical-events-file-thinner-2.py:/usrlib/historical-events-file-thinner-2.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
+      # github_data
+      - ./usrlib/github_data:/github_data      
+    command: ['python', 'historical-events-file-thinner-2.py']    
+    environment:
+      - PYTHONUNBUFFERED=1
+
+# # Historical events files thinner 3
+  python-historical-events-thinner-3:
+    image: python:3.10-script-executing-image
+    container_name: python-historical-events-thinner-3
+    volumes: 
+      # /usrlib
+      - ./usrlib/historical-events-file-thinner-3.py:/usrlib/historical-events-file-thinner-3.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
+      # github_data
+      - ./usrlib/github_data:/github_data      
+    command: ['python', 'historical-events-file-thinner-3.py']    
+    environment:
+      - PYTHONUNBUFFERED=1
+
+# # Historical events files thinner 4
+  python-historical-events-thinner-4:
+    image: python:3.10-script-executing-image
+    container_name: python-historical-events-thinner-4
+    volumes: 
+      # /usrlib
+      - ./usrlib/historical-events-file-thinner-4.py:/usrlib/historical-events-file-thinner-4.py
+      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
+
+      # github_data
+      - ./usrlib/github_data:/github_data      
+    command: ['python', 'historical-events-file-thinner-4.py']    
+    environment:
+      - PYTHONUNBUFFERED=1
+
 
 # Flink taskmanager 1
   taskmanager-1:
@@ -91,124 +347,6 @@ services:
     networks:
       - data-network
 
-# Flink jobmanager
-  jobmanager:
-    image: pyflink:1.18.1
-    container_name: jobmanager
-    volumes:
-    # Pyflink jobs for screens 1-4
-      - ./usrlib/screen_1_q1_q5_flink_job.py:/opt/flink/usrlib/screen_1_q1_q5_flink_job.py
-      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py
-      - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py
-      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
-      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
-      
-    # Connectors
-      - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
-      - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
-      
-
-    # Cancel all jobs
-      - ./usrlib/cancel_all_flink_jobs.py:/opt/flink/usrlib/cancel_all_flink_jobs.py
-    
-    # Config file
-      - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
-    ports:
-      - "8081:8081"
-    command: jobmanager    
-    environment:
-      - |
-        FLINK_PROPERTIES=
-        jobmanager.rpc.address: jobmanager
-        parallelism.default: 1
-        rest.flamegraph.enabled: true
-        metrics.latency.interval: 1000
-      # jobmanager.memory.process.size: 1g
-      
-      # taskmanager.numberOfTaskSlots: 8
-      # taskmanager.memory.jvm-metaspace.size: 1728m
-      # python.operator-chaining.enabled: false
-    depends_on: 
-      - cassandra_host
-    networks:
-      - data-network
-
-
-# Cassandra 
-  cassandra_host:
-    image: cassandra:4.1.7
-    ports:
-      - "9142:9142"
-    container_name: cassandra_host
-    hostname: cassandra_host
-    volumes:
-      - /var/lib/cassandra:/var/lib/cassandra
-      - ./cassandra.yaml:/etc/cassandra/cassandra.yaml
-    networks:
-      - data-network
-    healthcheck:
-      test: ["CMD-SHELL", "cqlsh cassandra_host 9142 -e 'describe keyspaces'"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
-
-# Cassandra UI
-  cassandra-ui:
-    image: ipushc/cassandra-web
-    container_name: cassandra-ui
-    ports:
-      - "8083:8083"
-    depends_on:
-      cassandra_host:
-        condition: service_healthy
-    networks:
-      - data-network
-    environment: 
-      - CASSANDRA_HOST=cassandra_host
-      - CASSANDRA_PORT=9142
-
-
-# Python server exposing data for a single month
-  event-data-exposing-server:
-    image: python:3.10-script-executing-image
-    container_name: event-data-exposing-server
-    volumes: 
-      - ./flask-events-dashboard/server.py:/usrlib/server.py
-    ports: 
-      # - "127.0.0.1:3100:3100"
-      - "3200:3200"
-    command: ['python', 'server.py']
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - cassandra_host
-    networks:
-      - data-network
-
-# Python flask UI for a single month
-  events-flask-app:
-    image: python:3.10-script-executing-image
-    container_name: events-flask-app
-    volumes: 
-      - ./flask-events-dashboard:/usrlib/flask-events-dashboard
-      - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
-    ports: 
-      - "5100:5100"
-    
-    command: ['python', 'flask-events-dashboard/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
-
-
-
-# # 1. Historical events ingestion
 # Historical events producer
   python-historical-events-producer:
     image: python:3.10-script-executing-image
@@ -231,113 +369,6 @@ services:
       
     command: ['python', 'historical-events-file-rotating-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
     
-
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
-
-
-
-
-
-# # Historical events files thinner 1
-  python-historical-events-thinner:
-    image: python:3.10-script-executing-image
-    container_name: python-historical-events-thinner
-    volumes: 
-      # /usrlib
-      - ./usrlib/historical-events-file-thinner.py:/usrlib/historical-events-file-thinner.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
-      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
-
-      # github_data
-      - ./usrlib/github_data:/github_data      
-    command: ['python', 'historical-events-file-thinner.py']    
-    environment:
-      - PYTHONUNBUFFERED=1
-
-
-# # Historical events files thinner 2
-  python-historical-events-thinner-2:
-    image: python:3.10-script-executing-image
-    container_name: python-historical-events-thinner-2
-    volumes: 
-      # /usrlib
-      - ./usrlib/historical-events-file-thinner-2.py:/usrlib/historical-events-file-thinner-2.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
-      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
-
-      # github_data
-      - ./usrlib/github_data:/github_data      
-    command: ['python', 'historical-events-file-thinner-2.py']    
-    environment:
-      - PYTHONUNBUFFERED=1
-
-
-# # Historical events files thinner 3
-  python-historical-events-thinner-3:
-    image: python:3.10-script-executing-image
-    container_name: python-historical-events-thinner-3
-    volumes: 
-      # /usrlib
-      - ./usrlib/historical-events-file-thinner-3.py:/usrlib/historical-events-file-thinner-3.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
-      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
-
-      # github_data
-      - ./usrlib/github_data:/github_data      
-    command: ['python', 'historical-events-file-thinner-3.py']    
-    environment:
-      - PYTHONUNBUFFERED=1
-
-# # Historical events files thinner 4
-  python-historical-events-thinner-4:
-    image: python:3.10-script-executing-image
-    container_name: python-historical-events-thinner-4
-    volumes: 
-      # /usrlib
-      - ./usrlib/historical-events-file-thinner-4.py:/usrlib/historical-events-file-thinner-4.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
-      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
-
-      # github_data
-      - ./usrlib/github_data:/github_data      
-    command: ['python', 'historical-events-file-thinner-4.py']    
-    environment:
-      - PYTHONUNBUFFERED=1
-
-
-# Producer of a small sample of the events of a file (Used for ingestion speed testing)
-  python-100.000-events-producer:
-    image: python:3.10-script-executing-image
-    container_name: python-100.000-events-producer
-    volumes: 
-      # /usrlib
-      - ./usrlib/100.000-events-producer.py:/usrlib/100.000-events-producer.py
-      - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
-      - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py     
-      
-      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
-
-      - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
-      
-      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
-      
-      
-      # usrlib/helpers
-      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-
-      # github_data
-      - ./usrlib/github_data_for_speed_testing:/github_data_for_speed_testing
-      - ./usrlib/github_data_for_speed_testing/files_parsed.json:/github_data_for_speed_testing/files_parsed.json
-
-
-      
-    command: ['python', '100.000-events-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
 
     environment:
       - PYTHONUNBUFFERED=1
@@ -382,54 +413,6 @@ services:
       
 
 
-# # 2. Real time events ingestion
-# Flink taskmanager real-time
-  taskmanager-real-time:
-    image: pyflink:1.18.1
-    container_name: taskmanager-real-time
-    volumes:
-      # Connectors in opt/flink/opt
-      - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
-      - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/lib/flink-connector-cassandra_2.12-3.2.0-1.18.jar
-
-      # Pyflink jobs: Screen 1-4 in the UI
-      - ./usrlib/screen_1_q1_q5_flink_job.py:/opt/flink/usrlib/screen_1_q1_q5_flink_job.py
-      - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
-      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
-      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
-      
-
-      # Config file
-      - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
-    depends_on:
-      - jobmanager
-    command: taskmanager
-    environment:
-      - | 
-        FLINK_PROPERTIES=
-        jobmanager.rpc.address: jobmanager
-        parallelism.default: 4
-        taskmanager.numberOfTaskSlots: 8
-
-      # taskmanager.rpc.port: 36429
-      # taskmanager.data.port: 36430
-    
-    deploy:
-      # mode: replicated-job
-      # replicas: 4
-      resources:
-        limits:
-          cpus: '2.0'   # Limit this container to 4 CPUs
-          memory: 2g
-
-    # ports: 
-    #   - 36429:36429
-    #   - 36430:36430
-    
-    networks:
-      - data-network
-      
-        
 
 # Delete .json.gz file (to free up space)
   python-delete-json-gz-file:
@@ -448,21 +431,3 @@ services:
       
   
   
-  # Real time events producer using firehose
-  python-real-time-events-producer:
-    image: python:3.10-script-executing-image-with-requests_sse
-    container_name: python-real-time-events-producer
-    volumes: 
-      - ./usrlib/real_time_producer.py:/usrlib/real_time_producer.py
-      
-      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-    
-      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
-    
-    command: ['python', 'real_time_producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
