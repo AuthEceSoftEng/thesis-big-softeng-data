@@ -1,11 +1,12 @@
-# thesis-big-softeng-data
-Diploma Thesis on Mining Big Software Engineering Data
+# Design and implementation of streaming and static data analysis platform for software process data
+Diploma thesis for processing Big Data from software processes. Incorporates Apache Kafka, Flink and Cassandra to handle real time and historical GitHub events for software processes analyses.
 
+1. [Ingest real time GitHub events](#Ingest-real-time-events)
+<!-- 2. [Ingest historical GitHub events](#Ingest-historical-events) -->
 
-## Ingest historical events 
-All terminals below are in the project root directory
+## Ingest real time events 
 
-### Terminal 1: Pull and build docker images 
+### Step 1: Pull and build docker images 
 
 ```sh
 # For services: 
@@ -29,6 +30,40 @@ docker build -f Dockerfile-python -t python:3.10-script-executing-image .
 # or
 docker build -f Dockerfile-python -t python:3.10-script-executing-image-with-requests_sse . 
 ```
+
+
+### Step 2: Compose kafka, cassandra, flink, expose server data, run the flask app
+```sh
+docker compose up -d kafka kafka-ui cassandra_host cassandra-ui jobmanager taskmanager-real-time 
+```
+
+### Step 3: Producer
+```sh
+docker compose up -d python-real-time-events-producer
+```
+
+Pyflink job to store the data of screen 1 in the UI
+
+Deploy the near real time job for screen 1:
+### Step 4: Pyflink job 1: Stats and popularity insights 
+```sh
+docker exec -d -i  jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_1_q1_q5_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
+```
+
+### Step 5: Expose data to ingest in the UI and deploy it
+```sh
+docker compose up -d event-data-exposing-server events-flask-app
+```
+
+
+
+
+
+<!-- 
+
+## Ingest historical events 
+All terminals below are in the project root directory
+
 
 
 ### Terminal 2: Run bash script to create directories for the kafka docker container
@@ -119,44 +154,4 @@ cd usrlib
 
 
 
-
-
-## Ingest real time events 
-
-### Terminal 1: Compose kafka, cassandra, flink, expose server data, run the flask app
-```sh
-docker compose up (-d) kafka kafka-ui cassandra_host cassandra-ui jobmanager taskmanager-real-time 
-```
-
-### Terminal 2: Producer
-```sh
-docker compose up (-d) python-real-time-events-producer
-```
-
-Pyflink job to store the data of screen 1 in the UI
-
-Deploy the near real time job for screen 1:
-### Terminal 3: Pyflink job 1: Stats and popularity insights 
-```sh
-docker exec (-d) -i  jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_1_q1_q5_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
-```
-
-### Terminal 4: Expose data to ingest in the UI
-```sh
-docker compose up (-d) event-data-exposing-server 
-```
-
-### Terminal 5: Deploy the UI
-```sh
-docker compose up (-d) events-flask-app
-```
-
-
-
-
-
-
-
-
-
-
+ -->
