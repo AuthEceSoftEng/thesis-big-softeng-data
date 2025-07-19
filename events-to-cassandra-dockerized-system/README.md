@@ -38,9 +38,9 @@ docker build -f Dockerfile-python -t python:3.10-script-executing-image-with-req
 ### Terminal 3: Start services kafka, cassandra and flask app ui
 ```sh
 # Start the services
-docker compose up kafka kafka-ui jobmanager taskmanager-1 cassandra_stelios cassandra-ui python-flask-app
+docker compose up kafka kafka-ui jobmanager taskmanager-1 cassandra_host cassandra-ui python-flask-app
 # Stop the services
-docker compose down kafka kafka-ui jobmanager taskmanager-1 cassandra_stelios cassandra-ui python-flask-app
+docker compose down kafka kafka-ui jobmanager taskmanager-1 cassandra_host cassandra-ui python-flask-app
 ```
 
 Now you should be able to see 
@@ -125,7 +125,7 @@ cd usrlib
 
 ### Terminal 1: Compose kafka, cassandra, flink, expose server data, run the flask app
 ```sh
-docker compose up (-d) kafka kafka-ui cassandra_stelios cassandra-ui jobmanager taskmanager-real-time 
+docker compose up (-d) kafka kafka-ui cassandra_host cassandra-ui jobmanager taskmanager-real-time 
 ```
 
 ### Terminal 2: Producer

@@ -79,7 +79,7 @@ def query_distinct_results(cassandra_session, select_query=str, number_of_result
     """
     
     near_real_time_keyspace = 'near_real_time_gharchive'    
-    cluster = Cluster(['cassandra_stelios'], port=9142)
+    cluster = Cluster(['cassandra_host'], port=9142)
     session = cluster.connect(f'{near_real_time_keyspace}')
 
     # Get the field index returned by the query corresponding to the 
@@ -151,7 +151,7 @@ initial_query_limit = 10
 def get_stats_of_day():
     
     near_real_time_keyspace = 'near_real_time_gharchive'    
-    cluster = Cluster(['cassandra_stelios'], port=9142)
+    cluster = Cluster(['cassandra_host'], port=9142)
     session = cluster.connect(f'{near_real_time_keyspace}')
 
     # Figure the latest date for which data is available (either today or yesterday)
@@ -201,7 +201,7 @@ def get_most_starred_repos_by_day():
         WHERE day = '{latest_date_available}' \
         ORDER BY stars DESC LIMIT 1;\
     "
-    cluster = Cluster(['cassandra_stelios'], port=9142)
+    cluster = Cluster(['cassandra_host'], port=9142)
     session = cluster.connect(f'{near_real_time_keyspace}')
 
     # Query to figure out the latest day for which data is available
@@ -237,7 +237,7 @@ def get_most_forked_repos_by_day():
     distinct_field_name = 'repo_name'
 
     near_real_time_keyspace = 'near_real_time_gharchive'    
-    cluster = Cluster(['cassandra_stelios'], port=9142)
+    cluster = Cluster(['cassandra_host'], port=9142)
     session = cluster.connect(f'{near_real_time_keyspace}')
 
     # Figure the latest date for which data is available (either today or yesterday)
@@ -281,7 +281,7 @@ def get_languages_by_day():
     distinct_field_name = 'language'
     
     near_real_time_keyspace = 'near_real_time_gharchive'    
-    cluster = Cluster(['cassandra_stelios'], port=9142)
+    cluster = Cluster(['cassandra_host'], port=9142)
     session = cluster.connect(f'{near_real_time_keyspace}')
 
     # Figure the latest date for which data is available (either today or yesterday)
@@ -323,7 +323,7 @@ def get_languages_by_day():
 def get_topics_by_day():
     distinct_field_name = 'topic'
     near_real_time_keyspace = 'near_real_time_gharchive'    
-    cluster = Cluster(['cassandra_stelios'], port=9142)
+    cluster = Cluster(['cassandra_host'], port=9142)
     session = cluster.connect(f'{near_real_time_keyspace}')
 
     # Figure the latest date for which data is available (either today or yesterday)
@@ -399,7 +399,7 @@ def get_top_human_contributors_by_day(day):
     day_datetime_formatted = datetime.strptime(day, "%d")
     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
@@ -461,7 +461,7 @@ def get_top_human_contributors_by_day_bot_like_committers_removed(day):
     day_datetime_formatted = datetime.strptime(day, "%d")
     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
@@ -526,7 +526,7 @@ def get_top_bot_contributors_by_day(day):
     day_only = datetime.strftime(day_datetime_formatted, "2024-12-%d")
     
     
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
@@ -565,7 +565,7 @@ def get_number_of_all_pull_requests_by_humans_by_day(day):
         "number_of_rejected_pull_requests": 626
     }
     """
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
@@ -621,7 +621,7 @@ def get_number_of_all_pull_requests_by_bots_by_day(day):
         "number_of_rejected_pull_requests": 166
     }
     """
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
@@ -714,7 +714,7 @@ def get_number_of_events_for_humans_and_bots_by_day(day):
     number_of_events_per_type = []
     total_number_of_events = 0
     
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
@@ -793,7 +793,7 @@ def get_number_of_stars_of_js_repo_by_day():
     """
     
     
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
@@ -883,7 +883,7 @@ def get_top_js_repo_contributors_given_js_repo_name(js_repo):
     }
     """
     unquoted_js_repo = unquote(js_repo)
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)
@@ -1132,7 +1132,7 @@ def compare_pull_request_closing_times_bar_chart(repo_name_1, repo_name_2):
     
 
     # Create histograms keyspace and table 
-    cassandra_host = 'cassandra_stelios'
+    cassandra_host = 'cassandra_host'
     cassandra_port = 9142
     histograms_keyspace = 'histograms'
     create_histogram_keyspace(cassandra_host, cassandra_port, histograms_keyspace)
@@ -1326,7 +1326,7 @@ def compare_pull_request_closing_times(repo_name_1, repo_name_2):
         f"Repo 1: {repo_name_1}\n"
         f"Repo 2: {repo_name_2}\n")
     
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect()
     histogram_keyspace = 'histograms'
@@ -1552,7 +1552,7 @@ def compare_issue_closing_times_bar_chart(repo_name_1, repo_name_2):
 
 
     # Create histograms keyspace and table 
-    cassandra_host = 'cassandra_stelios'
+    cassandra_host = 'cassandra_host'
     cassandra_port = 9142
     histograms_keyspace = 'histograms'
     create_histogram_keyspace(cassandra_host, cassandra_port, histograms_keyspace)
@@ -1843,7 +1843,7 @@ def compare_issues_closing_times(repo_name_1, repo_name_2):
         f"Repo 2: {repo_name_2}\n")
     
     
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect()
     histogram_keyspace = 'histograms'
@@ -2072,7 +2072,7 @@ def get_issues_closing_times_by_label(repo_name):
     """
     
     # Query Cassandra
-    cassandra_container_name = 'cassandra_stelios'
+    cassandra_container_name = 'cassandra_host'
     keyspace = 'prod_gharchive'
     cluster = Cluster([cassandra_container_name],port=9142)
     session = cluster.connect(keyspace)

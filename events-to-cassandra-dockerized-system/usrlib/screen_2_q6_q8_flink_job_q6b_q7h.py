@@ -132,7 +132,7 @@ pull_request_events_ds = env.from_source(source=pull_request_events_source, \
 #region 
 
 max_concurrent_requests = 1000
-cassandra_host = 'cassandra_stelios'
+cassandra_host = 'cassandra_host'
 cassandra_port = 9142
 cassandra_keyspace = "prod_gharchive_backup"
 print(f"Insert data from kafka topics into Cassandra tables:\n"

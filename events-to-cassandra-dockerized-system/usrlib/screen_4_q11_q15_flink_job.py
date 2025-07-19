@@ -133,7 +133,7 @@ issue_events_ds = env.from_source(source=issue_events_source, \
 #region 
 
 max_concurrent_requests = 1000
-cassandra_host = 'cassandra_stelios'
+cassandra_host = 'cassandra_host'
 cassandra_port = 9142
 cassandra_keyspace = "prod_gharchive_backup"
 print(f"Start reading data from kafka topics to create "

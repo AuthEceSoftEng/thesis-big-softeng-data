@@ -142,7 +142,7 @@ pull_request_events_ds = env.from_source(source=pull_request_events_source, \
 # IV. Transform datastreams, extract fields and store into Cassandra tables
 #region 
 
-cassandra_host = 'cassandra_stelios'
+cassandra_host = 'cassandra_host'
 cassandra_port = 9142
 cassandra_keyspace = "prod_gharchive_backup"
 max_concurrent_requests = 1000

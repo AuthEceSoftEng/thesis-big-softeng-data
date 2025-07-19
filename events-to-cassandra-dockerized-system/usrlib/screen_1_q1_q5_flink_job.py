@@ -143,7 +143,7 @@ kafka_props = {'enable.auto.commit': 'true',
                'auto.offset.reset': 'smallest'}
 def map_event_string_to_event_dict(event_string):
     return eval(event_string)
-cassandra_host = 'cassandra_stelios'
+cassandra_host = 'cassandra_host'
 cassandra_port = 9142
 cassandra_keyspace = "real_time_data"
 max_concurrent_requests = 1000

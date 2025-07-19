@@ -55,30 +55,12 @@ services:
       - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
       - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/lib/flink-connector-cassandra_2.12-3.2.0-1.18.jar
       
-      # User's pyflink jobs
-      - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
+      # Pyflink jobs for screen 2, 3 and 4
       - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
-      # # Multiple Screen 2 jobs instead of 1
       - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py
       - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py
-
-
-      # User's legacy jobs
-      - ./usrlib/screen_2_q6_q8_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_backup_27_4.py
-      - ./usrlib/screen_3_q9_q10_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job_backup_27_4.py
-      - ./usrlib/screen_4_q11_q15_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job_backup_27_4.py
-      # # Multiple Screen 2 jobs instead of 1
-      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py
-      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py
-
-
-      # Screen 2 screen accelerated
-      - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
-      - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
-      - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
-
-      
+   
 
       # Config file
       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
@@ -93,13 +75,7 @@ services:
         parallelism.default: 1
         rest.flamegraph.enabled: true
         metrics.latency.interval: 1000
-    # taskmanager.memory.jvm-metaspace.size: 1728m
-        
-    # python.operator-chaining.enabled: false
-    # taskmanager.rpc.port: 36329
-    # taskmanager.data.port: 36330
 
-    # # Increase resources for the taskmanager-1
     deploy:
       mode: replicated-job
       replicas: 4
@@ -120,48 +96,21 @@ services:
     image: pyflink:1.18.1
     container_name: jobmanager
     volumes:
-    # Screen 1  
-      - ./usrlib/near-real-time-stats-and-popularity-insights-via-flink.py:/opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py
-      - ./usrlib/create_raw_events_per_sec_datastream.py:/opt/flink/usrlib/create_raw_events_per_sec_datastream.py
-      - ./usrlib/near-real-time-stars-forks-via-flink.py:/opt/flink/usrlib/near-real-time-stars-forks-via-flink.py
-
+    # Pyflink jobs for screens 1-4
       - ./usrlib/screen_1_q1_q5_flink_job.py:/opt/flink/usrlib/screen_1_q1_q5_flink_job.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py
+      - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py
+      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
+      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
       
     # Connectors
       - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
       - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
-
-    # User's pyflink jobs
-      - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
-      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
-      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
-    # # Multiple Screen 2 jobs instead of 1
-      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py
-      - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py
-
-
-    # User's legacy jobs
-      - ./usrlib/screen_2_q6_q8_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_backup_27_4.py
-      - ./usrlib/screen_3_q9_q10_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job_backup_27_4.py
-      - ./usrlib/screen_4_q11_q15_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job_backup_27_4.py
-    # # Multiple Screen 2 jobs instead of 1
-      - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py
-      - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py
-
-
+      
 
     # Cancel all jobs
       - ./usrlib/cancel_all_flink_jobs.py:/opt/flink/usrlib/cancel_all_flink_jobs.py
     
-
-    # Screen 2 screen accelerated
-      - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
-      - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
-      - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
-
-    
-
-
     # Config file
       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
     ports:
@@ -180,92 +129,25 @@ services:
       # taskmanager.memory.jvm-metaspace.size: 1728m
       # python.operator-chaining.enabled: false
     depends_on: 
-      - cassandra_stelios
+      - cassandra_host
     networks:
       - data-network
 
 
-# # Flink jobmanager
-#   jobmanager:
-#     image: pyflink:1.18.1
-#     container_name: jobmanager
-#     volumes:
-#     # Screen 1  
-#       - ./usrlib/near-real-time-stats-and-popularity-insights-via-flink.py:/opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py
-#       - ./usrlib/create_raw_events_per_sec_datastream.py:/opt/flink/usrlib/create_raw_events_per_sec_datastream.py
-#       - ./usrlib/near-real-time-stars-forks-via-flink.py:/opt/flink/usrlib/near-real-time-stars-forks-via-flink.py
-      
-#     # Connectors
-#       - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
-#       - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
-
-#     # User's pyflink jobs
-#       - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
-#       - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
-#       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
-#     # # Multiple Screen 2 jobs instead of 1
-#       - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py
-#       - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py
-
-
-#     # User's legacy jobs
-#       - ./usrlib/screen_2_q6_q8_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_backup_27_4.py
-#       - ./usrlib/screen_3_q9_q10_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job_backup_27_4.py
-#       - ./usrlib/screen_4_q11_q15_flink_job_backup_27_4.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job_backup_27_4.py
-#     # # Multiple Screen 2 jobs instead of 1
-#       - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py
-#       - ./usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py
-
-
-
-#     # Cancel all jobs
-#       - ./usrlib/cancel_all_flink_jobs.py:/opt/flink/usrlib/cancel_all_flink_jobs.py
-    
-
-#     # Screen 2 screen accelerated
-#       - ./usrlib/screen_2_q6_q8_flink_job_one_datastream.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_one_datastream.py
-#       - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
-#       - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
-
-    
-
-
-#     # Config file
-#       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
-#     ports:
-#       - "8081:8081"
-#     command: jobmanager    
-#     environment:
-#       - |
-#         FLINK_PROPERTIES=
-#         jobmanager.rpc.address: jobmanager
-#         parallelism.default: 1
-#         rest.flamegraph.enabled: true
-#         metrics.latency.interval: 1000
-#       # jobmanager.memory.process.size: 1g
-      
-#       # taskmanager.numberOfTaskSlots: 8
-#       # taskmanager.memory.jvm-metaspace.size: 1728m
-#       # python.operator-chaining.enabled: false
-#     depends_on: 
-#       - cassandra_stelios
-#     networks:
-#       - data-network
-      
 # Cassandra 
-  cassandra_stelios:
+  cassandra_host:
     image: cassandra:4.1.7
     ports:
       - "9142:9142"
-    container_name: cassandra_stelios
-    hostname: cassandra_stelios
+    container_name: cassandra_host
+    hostname: cassandra_host
     volumes:
       - /var/lib/cassandra:/var/lib/cassandra
       - ./cassandra.yaml:/etc/cassandra/cassandra.yaml
     networks:
       - data-network
     healthcheck:
-      test: ["CMD-SHELL", "cqlsh cassandra_stelios 9142 -e 'describe keyspaces'"]
+      test: ["CMD-SHELL", "cqlsh cassandra_host 9142 -e 'describe keyspaces'"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -278,52 +160,13 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      cassandra_stelios:
+      cassandra_host:
         condition: service_healthy
     networks:
       - data-network
     environment: 
-      - CASSANDRA_HOST=cassandra_stelios
+      - CASSANDRA_HOST=cassandra_host
       - CASSANDRA_PORT=9142
-
-
-# Python server exposing data
-  python-data-exposing-server:
-    image: python:3.10-script-executing-image
-    container_name: python-data-exposing-server
-    volumes: 
-      - ./flask-material-dashboard/server.py:/usrlib/server.py
-    ports: 
-      # - "127.0.0.1:3100:3100"
-      - "3100:3100"
-    command: ['python', 'server.py']
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - cassandra_stelios
-    networks:
-      - data-network
-
-# Python flask UI
-  python-flask-app:
-    image: python:3.10-script-executing-image
-    container_name: python-flask-app
-    volumes: 
-      - ./flask-material-dashboard:/usrlib/flask-material-dashboard
-      - ./usrlib/getting-started-in-docker.ini:/helpers/getting-started-in-docker.ini
-    ports: 
-      - "5000:5000"
-    
-    command: ['python', 'flask-material-dashboard/run_with_socketio.py', '/helpers/getting-started-in-docker.ini']
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
-
 
 
 # Python server exposing data for a single month
@@ -340,7 +183,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     depends_on:
-      - cassandra_stelios
+      - cassandra_host
     networks:
       - data-network
 
@@ -376,12 +219,7 @@ services:
       - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
       - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
       - ./usrlib/thin_data.py:/usrlib/thin_data.py      
-
-      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
-
-      - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
-      - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
-      
+      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py      
       - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
       
 
@@ -390,7 +228,6 @@ services:
 
       # github_data
       - ./usrlib/github_data:/github_data
-      - ./usrlib/github_data/files_parsed.json:/github_data/files_parsed.json
       
     command: ['python', 'historical-events-file-rotating-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
     
@@ -401,42 +238,6 @@ services:
       - kafka
     networks:
       - data-network
-
-# Historical events producer legacy
-  python-historical-events-producer_backup_27_4:
-    image: python:3.10-script-executing-image
-    container_name: python-historical-events-producer_backup_27_4
-    volumes: 
-      # /usrlib
-      - ./usrlib/historical-events-file-rotating-producer_backup_27_4.py:/usrlib/historical-events-file-rotating-producer_backup_27_4.py
-      - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
-      - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
-
-      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
-
-      - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
-      - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
-      
-      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
-      
-
-      # usrlib/helpers
-      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-
-      # github_data
-      - ./usrlib/github_data:/github_data
-      - ./usrlib/github_data/files_parsed.json:/github_data/files_parsed.json
-      
-    command: ['python', 'historical-events-file-rotating-producer_backup_27_4.py', '/usrlib/helpers/getting-started-in-docker.ini']
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
-
 
 
 
@@ -523,7 +324,6 @@ services:
       - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
 
       - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
-      - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
       
       - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
       
@@ -546,44 +346,6 @@ services:
     networks:
       - data-network
 
-
-
-# Producer of a small sample of the events of a file (Used for ingestion speed testing)
-  python-100.000-events-producer-legacy:
-    image: python:3.10-script-executing-image
-    container_name: python-100.000-events-producer-legacy
-    volumes: 
-      # /usrlib
-      - ./usrlib/100.000-events-producer_backup_27_4.py:/usrlib/100.000-events-producer_backup_27_4.py
-      - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
-      - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py     
-      
-      - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
-
-      - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
-      - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
-      
-      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
-      
-      
-      # usrlib/helpers
-      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-
-      # github_data
-      - ./usrlib/github_data_for_speed_testing:/github_data_for_speed_testing
-      - ./usrlib/github_data_for_speed_testing/files_parsed.json:/github_data_for_speed_testing/files_parsed.json
-
-
-      
-    command: ['python', '100.000-events-producer_backup_27_4.py', '/usrlib/helpers/getting-started-in-docker.ini']
-
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
 
 
 # Cancel all running jobs
@@ -620,55 +382,8 @@ services:
       
 
 
-# # 2. Near real time events ingestion
-
-# Near real time events producer
-  python-near-real-time-events-producer-firehose:
-    image: python:3.10-script-executing-image-with-requests_sse
-    container_name: python-near-real-time-events-producer
-    volumes: 
-      - ./usrlib/near-real-time-producer-firehose.py:/usrlib/near-real-time-producer-firehose.py
-      
-      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-      - ./usrlib/github_data_near_real_time:/github_data_near_real_time
-    
-      - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
-    
-    command: ['python', 'near-real-time-producer-firehose.py', '/usrlib/helpers/getting-started-in-docker.ini']
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
-
-  python-near-real-time-events-producer:
-      image: python:3.10-script-executing-image
-      container_name: python-near-real-time-events-producer
-      volumes: 
-        - ./usrlib/near-real-time-producer.py:/usrlib/near-real-time-producer.py
-        - ./usrlib/thin_data.py:/usrlib/thin_data.py
-        - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
-        - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
-
-        - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-        - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
-        - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
-        - ./usrlib/github_data_near_real_time:/github_data_near_real_time
-      
-        - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
-        
-
-      command: ['python', 'near-real-time-producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
-      environment:
-        - PYTHONUNBUFFERED=1
-      depends_on:
-        - kafka
-      networks:
-        - data-network
-
-
-# Flink taskmanager near-real-time
+# # 2. Real time events ingestion
+# Flink taskmanager real-time
   taskmanager-real-time:
     image: pyflink:1.18.1
     container_name: taskmanager-real-time
@@ -676,24 +391,13 @@ services:
       # Connectors in opt/flink/opt
       - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
       - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/lib/flink-connector-cassandra_2.12-3.2.0-1.18.jar
-      
 
-      # Screen 1  
-      - ./usrlib/near-real-time-stats-and-popularity-insights-via-flink.py:/opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py
-      - ./usrlib/create_raw_events_per_sec_datastream.py:/opt/flink/usrlib/create_raw_events_per_sec_datastream.py
-      - ./usrlib/near-real-time-stars-forks-via-flink.py:/opt/flink/usrlib/near-real-time-stars-forks-via-flink.py
-
+      # Pyflink jobs: Screen 1-4 in the UI
       - ./usrlib/screen_1_q1_q5_flink_job.py:/opt/flink/usrlib/screen_1_q1_q5_flink_job.py
-      
-      # User's pyflink jobs
       - ./usrlib/screen_2_q6_q8_flink_job.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job.py
       - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
       - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
       
-      # Screen 2 screen accelerated
-      - ./usrlib/screen_2_q6_q8_flink_job_execute_async.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_async.py
-      - ./usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_execute_concurrent_with_args.py
-
 
       # Config file
       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
@@ -724,69 +428,8 @@ services:
     
     networks:
       - data-network
-
-# Flink jobmanager
-  jobmanager-near-real-time:
-    image: pyflink:1.18.1
-    container_name: jobmanager-near-real-time
-    volumes:
-    # Screen 1  
-      - ./usrlib/near-real-time-stats-and-popularity-insights-via-flink.py:/opt/flink/usrlib/near-real-time-stats-and-popularity-insights-via-flink.py
-      - ./usrlib/create_raw_events_per_sec_datastream.py:/opt/flink/usrlib/create_raw_events_per_sec_datastream.py
-      - ./usrlib/near-real-time-stars-forks-via-flink.py:/opt/flink/usrlib/near-real-time-stars-forks-via-flink.py
       
-    # Connectors
-      - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
-      - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
-
-    # Config file
-      - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
-    ports:
-      - "8081:8081"
-    command: jobmanager    
-    environment:
-      - |
-        FLINK_PROPERTIES=
-        jobmanager.rpc.address: jobmanager
-        parallelism.default: 1
-        rest.flamegraph.enabled: true
-        metrics.latency.interval: 1000
-      # jobmanager.memory.process.size: 1g
-      
-      # taskmanager.numberOfTaskSlots: 8
-      # taskmanager.memory.jvm-metaspace.size: 1728m
-      # python.operator-chaining.enabled: false
-    depends_on: 
-      - cassandra_stelios
-    networks:
-      - data-network
-      
-      
-      
-# Near real time stats and popularity insights consumer
-  python-near-real-time-stats-and-popularity-insights-consumer:
-    image: python:3.10-script-executing-image
-    container_name: near-real-time-stats-and-popularity-insights-consumer
-    volumes: 
-      - ./usrlib/near-real-time-stats-and-popularity-insights-consumer.py:/usrlib/near-real-time-stats-and-popularity-insights-consumer.py
-      # - ./usrlib/thin_data.py:/usrlib/thin_data.py
-      # - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
-      # - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
-
-      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-      # - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
-      # - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
-      # - ./usrlib/github_data_near_real_time:/github_data_near_real_time
-    
-    command: ['python', 'near-real-time-stats-and-popularity-insights-consumer.py', '/usrlib/helpers/getting-started-in-docker.ini']
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-    networks:
-      - data-network
-      
-
+        
 
 # Delete .json.gz file (to free up space)
   python-delete-json-gz-file:
@@ -803,70 +446,6 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       
-
-
-
-      
-  plot_histogram_data:
-    image: python:3.10-script-executing-image
-    container_name: plot_histogram_data
-    volumes:
-      # Script getting the histogram data and plotting it
-      - ./usrlib/plot_histogram_data.py:/usrlib/plot_histogram_data.py
-      - ./usrlib/matplotlib_plots:/usrlib/matplotlib_plots
-
-    command: ['python', 'plot_histogram_data.py']
-    environment: 
-    - PYTHONUNBUFFERED=1
-    networks:
-      - data-network
-
-
-
-  test_near_real_time_queries:
-    image: python:3.10-script-executing-image
-    container_name: test_near_real_time_queries
-    volumes: 
-      - ./usrlib/test_near_real_time_queries.py:/usrlib/test_near_real_time_queries.py
-      
-    command: ['python', 'test_near_real_time_queries.py']
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - kafka
-      - cassandra_stelios
-      - cassandra-ui
-
-    networks:
-      - data-network
-
-
-  python-near-real-time-events-producer-slow-mock-data:
-      image: python:3.10-script-executing-image
-      container_name: python-near-real-time-events-producer-slow-mock-data
-      volumes: 
-        - ./usrlib/near-real-time-producer-slow-mock-data.py:/usrlib/near-real-time-producer-slow-mock-data.py
-        - ./usrlib/thin_data.py:/usrlib/thin_data.py
-        - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
-        - ./usrlib/check_job_status_multiple_jobs.py:/usrlib/check_job_status_multiple_jobs.py
-
-        - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-        - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
-        - ./usrlib/create_topic_from_inside_the_container.py:/usrlib/create_topic_from_inside_the_container.py
-        - ./usrlib/github_data_near_real_time:/github_data_near_real_time
-      
-        - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
-        
-
-      command: ['python', 'near-real-time-producer-slow-mock-data.py', '/usrlib/helpers/getting-started-in-docker.ini']
-      environment:
-        - PYTHONUNBUFFERED=1
-      depends_on:
-        - kafka
-      networks:
-        - data-network
-
   
   
   # Real time events producer using firehose
@@ -877,7 +456,6 @@ services:
       - ./usrlib/real_time_producer.py:/usrlib/real_time_producer.py
       
       - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-      - ./usrlib/github_data_near_real_time:/github_data_near_real_time
     
       - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
     
@@ -888,38 +466,3 @@ services:
       - kafka
     networks:
       - data-network
-
-
-  # # Get the decompressed sizes of compressed files
-  # python-get-decompressed-size-of-downloaded-file:
-  #   image: python:3.10-script-executing-image-with-requests_sse
-  #   # image: python:3.10-script-executing-image
-  #   container_name: python-get-decompressed-size-of-downloaded-file
-  #   volumes: 
-  #     - ./usrlib/test_scripts/get_decompressed_size_of_downloaded_file.py:/usrlib/get_decompressed_size_of_downloaded_file.py
-      
-  #     - ./usrlib/github_data:/github_data
-  #     - ./usrlib/test_scripts:/test_scripts
-    
-    
-  #   command: ['python', 'get_decompressed_size_of_downloaded_file.py']
-  #   environment:
-  #     - PYTHONUNBUFFERED=1
-    
-
-  # # Get the number of lines in files
-  # python-get-number-of-lines-in-downloaded-files:
-  #   image: python:3.10-script-executing-image-with-requests_sse
-  #   # image: python:3.10-script-executing-image
-  #   container_name: python-get-number-of-lines-in-downloaded-files
-  #   volumes: 
-  #     - ./usrlib/test_scripts/get_num_of_lines_of_compressed_file.py:/usrlib/get_num_of_lines_of_compressed_file.py
-      
-  #     - ./usrlib/github_data:/github_data
-  #     - ./usrlib/test_scripts:/test_scripts
-    
-    
-  #   command: ['python', 'get_num_of_lines_of_compressed_file.py']
-  #   environment:
-  #     - PYTHONUNBUFFERED=1
-  

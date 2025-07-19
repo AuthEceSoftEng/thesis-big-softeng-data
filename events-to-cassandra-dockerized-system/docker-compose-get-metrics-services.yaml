@@ -4,7 +4,7 @@ networks:
     driver: bridge
 
 # To compose from a docker-compose-get-metrics-services.yaml:
-# docker compose -f docker-compose-get-metrics-services.yaml run cassandra_stelios cassandra-ui (or other service)
+# docker compose -f docker-compose-get-metrics-services.yaml run cassandra_host cassandra-ui (or other service)
 
 
 services:
@@ -18,7 +18,6 @@ services:
       - ./usrlib/test_scripts/get_decompressed_size_of_downloaded_file.py:/usrlib/get_decompressed_size_of_downloaded_file.py
       
       - ./usrlib/github_data:/github_data
-      - ./usrlib/test_scripts:/test_scripts
     
     
     command: ['python', 'get_decompressed_size_of_downloaded_file.py']
@@ -45,19 +44,19 @@ services:
 
 
   # Cassandra 
-  cassandra_stelios:
+  cassandra_host:
     image: cassandra:4.1.7
     ports:
       - "9142:9142"
-    container_name: cassandra_stelios
-    hostname: cassandra_stelios
+    container_name: cassandra_host
+    hostname: cassandra_host
     volumes:
       - /var/lib/cassandra:/var/lib/cassandra
       - ./cassandra.yaml:/etc/cassandra/cassandra.yaml
     networks:
       - data-network
     healthcheck:
-      test: ["CMD-SHELL", "cqlsh cassandra_stelios 9142 -e 'describe keyspaces'"]
+      test: ["CMD-SHELL", "cqlsh cassandra_host 9142 -e 'describe keyspaces'"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -70,12 +69,12 @@ services:
       ports:
         - "8083:8083"
       depends_on:
-        cassandra_stelios:
+        cassandra_host:
           condition: service_healthy
       networks:
         - data-network
       environment: 
-        - CASSANDRA_HOST=cassandra_stelios
+        - CASSANDRA_HOST=cassandra_host
         - CASSANDRA_PORT=9142
 
   # Get number of accepted pull requests for all dates from Cassandra
@@ -88,7 +87,7 @@ services:
     networks:
       - data-network
     depends_on:
-      cassandra_stelios:
+      cassandra_host:
         condition: service_healthy
 
     command: ['python', 'get_accepted_PR_rates_2024_12.py']
@@ -105,7 +104,7 @@ services:
     networks:
       - data-network
     depends_on:
-      cassandra_stelios:
+      cassandra_host:
         condition: service_healthy
 
     command: ['python', 'get_bot_events_2024_12.py']

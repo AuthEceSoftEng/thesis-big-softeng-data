@@ -128,17 +128,3 @@ def heavy_thin_data_of_file(input_filepath, output_filepath, do_again=False, del
 		os.remove(input_filepath)	
 		print(f"Deleted original file: '{os.path.basename(input_filepath)}'")
   
-  
-# # Demo
-# in_dir_path = '/home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/usrlib/github_data_for_speed_testing'
-
-# input_filename = '2024-12-01-11.json.gz'
-# input_path = os.path.join(in_dir_path, input_filename)
-
-# out_dir_path = '/home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/usrlib/github_data_for_speed_testing'
-# output_filename = '2024-12-01-11-heavy-thinned.json.gz'
-# output_path = os.path.join(out_dir_path, output_filename)
-
-
-# heavy_thin_data_of_file(input_path, output_path, do_again=True)
-# extract_compressed_file_from_path(output_path, do_again=True)

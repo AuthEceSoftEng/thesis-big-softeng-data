@@ -231,7 +231,7 @@ def num_of_raw_events_background_thread():
 def query_live_stats_background_thread():
 
     # Query Cassandra for the live statistics
-    cassandra_host = 'cassandra_stelios'
+    cassandra_host = 'cassandra_host'
     cassandra_port = 9142
     cluster = Cluster([cassandra_host],port=cassandra_port)
     session = cluster.connect()
