@@ -5,18 +5,11 @@ from configparser import ConfigParser
 from confluent_kafka import Producer, Consumer, admin
 
 
-from create_topic_from_inside_the_container import create_topic_from_within_container
 
-from thin_data import thin_data_of_file
 from heavy_thin_of_data import heavy_thin_data_of_file
 
 import time, sys
-# from check_job_status_multiple_jobs import check_if_job_is_busy 
-
-# from check_job_status_multiple_jobs  import get_subtasks_endpoints_of_job_in_flink
-
 import json
-import subprocess
 from datetime import datetime, timedelta
 import requests
 import os
@@ -844,28 +837,3 @@ if __name__ == '__main__':
 
 
 
-
-
-
-# Test to increase the topic partitions
-    # topic = 'historical-raw-events'
-    # bootstrap_servers = get_kafka_broker_config(topic)
-    # client = admin.AdminClient({"bootstrap.servers": bootstrap_servers})
-
-    # # # Create topic
-    # # create_topic_future = client.create_topics([topic])
-    # # print(create_topic_future)
-    # # print(create_topic_future[topic])
-    # # print(create_topic_future[topic].result())
-    
-    # # # Delete topic
-    # # delete_topic_future = client.delete_topics([topic])
-    # # print(delete_topic_future[topic].result())
-    
-    
-    # # Increase topic partition
-    # number_of_partitions = 4
-    # new_partitions = admin.NewPartitions(topic, new_total_count=number_of_partitions)
-    # create_topic_partitions_future = client.create_partitions([new_partitions])
-    
-    # print(create_topic_partitions_future[topic].result())

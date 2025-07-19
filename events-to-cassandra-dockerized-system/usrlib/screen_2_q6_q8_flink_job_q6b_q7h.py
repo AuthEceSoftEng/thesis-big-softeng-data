@@ -1,6 +1,6 @@
 '''
 
-Template: /home/xeon/Thesis/local-kafka-flink-cassandra-integration/presentation-10-demo/task-2-store-tables-repos-and-stats/near-real-time-bots-vs-humans-via-flink.py
+Template: /presentation-10-demo/task-2-store-tables-repos-and-stats/near-real-time-bots-vs-humans-via-flink.py
 Template (also): 
 /home/xeon/Thesis/local-kafka-flink-cassandra-integration/presentation-8-demo/count-repos-with-kafka.py
 
@@ -32,9 +32,7 @@ import os
 # I. Set up the flink execution environment
 # region 
 env = StreamExecutionEnvironment.get_execution_environment()
-# env.disable_operator_chaining()
 env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
-# env.set_parallelism(2)
 
 # Connectors in /opt/flink/opt
 env.add_jars("file:///opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar")

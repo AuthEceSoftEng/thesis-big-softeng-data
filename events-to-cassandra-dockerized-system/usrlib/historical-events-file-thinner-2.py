@@ -4,23 +4,12 @@ from configparser import ConfigParser
 from confluent_kafka import Producer, Consumer, admin
 
 
-# from create_topic_from_inside_the_container import create_topic_from_within_container
-
-from thin_data import thin_data_of_file
 from heavy_thin_of_data import heavy_thin_data_of_file
 
-import time, sys
-# from check_job_status_multiple_jobs import check_if_job_is_busy 
-
-# from check_job_status_multiple_jobs  import get_subtasks_endpoints_of_job_in_flink
-
-import json
-import subprocess
+import time
 from datetime import datetime, timedelta
 import requests
 import os
-
-# from delete_and_recreate_topic import get_kafka_broker_config, get_topic_number_of_messages, create_topic_if_not_exists, delete_topic_if_full
 
 
 def download_compressed_GHA_file(gha_file_url, folderpath):
