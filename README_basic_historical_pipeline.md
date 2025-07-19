@@ -2,7 +2,7 @@
 
 
 ## Ingest historical events 
-All terminals below are in the events-to-cassandra-dockerized-system directory
+All terminals below are in the project root directory
 
 ### Terminal 1: Pull and build docker images 
 

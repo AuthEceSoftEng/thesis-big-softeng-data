@@ -298,8 +298,7 @@ if __name__ == '__main__':
         st = time.time()
         
         gharchive_file_URL = 'https://data.gharchive.org/' + current_date_formatted + '.json.gz'
-        # folderpath_to_download_into = '/github_data'
-        folderpath_to_download_into = '/home/xeon/thesis-big-softeng-data/events-to-cassandra-dockerized-system/usrlib/github_data'
+        folderpath_to_download_into = '/github_data'
         
         # Raw events file
         filename = current_date_formatted + '.json.gz'
