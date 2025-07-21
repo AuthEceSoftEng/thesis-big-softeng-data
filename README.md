@@ -1,7 +1,8 @@
 # Design and implementation of streaming and static data analysis platform for software process data
 Diploma thesis for processing Big Data from software processes. Incorporates Apache Kafka, Flink and Cassandra to handle real time and historical GitHub events for software processes analyses.
 
-The running app consists of the real time data analysis and the historical data analysis.
+The running app consists of the real time data analysis and the historical data analysis and runs on a Linux terminal.
+
 
 ## Contents
 [Ingest real time GitHub events](#Ingest-real-time-events)
@@ -45,6 +46,10 @@ docker build -f Dockerfile-python -t python:3.10-script-executing-image-with-req
 
 ### Step 2: Compose Kafka, Flink and Cassandra
 ```sh
+# Run bash script to create directories for the kafka docker container
+./helpers/setup-kafka-and-ui.sh
+
+# Compose the actual services
 docker compose up -d kafka kafka-ui jobmanager taskmanager-real-time cassandra_host cassandra-ui 
 ```
 

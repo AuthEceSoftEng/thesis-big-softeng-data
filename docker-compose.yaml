@@ -65,7 +65,6 @@ services:
       - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
       - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/opt/flink-connector-cassandra_2.12-3.2.0-1.18.jar
       
-
     # Cancel all jobs
       - ./usrlib/cancel_all_flink_jobs.py:/opt/flink/usrlib/cancel_all_flink_jobs.py
     
@@ -179,10 +178,8 @@ services:
     container_name: python-real-time-events-producer
     volumes: 
       - ./usrlib/real_time_producer.py:/usrlib/real_time_producer.py
-      
-      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
-    
       - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
+      - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
     
     command: ['python', 'real_time_producer.py', '/usrlib/helpers/getting-started-in-docker.ini']
     environment:
