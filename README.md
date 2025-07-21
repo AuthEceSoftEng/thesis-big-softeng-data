@@ -26,21 +26,21 @@ The running app consists of the real time data analysis and the historical data 
 docker image pull bitnami/kafka:3.9
 
 # kafka-ui
-docker image pull provectuslabs/kafka-ui:latest
+docker pull provectuslabs/kafka-ui:v0.7.2
 
 # cassandra
 docker image pull cassandra:4.1.7
 
 # cassandra-ui
-docker image pull ipushc/cassandra-web:latest
+docker pull ipushc/cassandra-web:v1.1.5
 
 # jobmanager, taskmanager
 docker build -f Dockerfile-pyflink -t pyflink:1.18.1 .
 
-# python-real-time-events-producer, python-data-exposing-server, python-flask-app, python-historical-events-producer 
+# python-real-time-events-producer, python-data-exposing-server, 
+# python-flask-app, python-historical-events-producer 
 docker build -f Dockerfile-python -t python:3.10-script-executing-image . 
-# or
-docker build -f Dockerfile-python -t python:3.10-script-executing-image-with-requests_sse . 
+
 ```
 
 
