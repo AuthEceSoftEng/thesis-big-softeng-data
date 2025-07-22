@@ -5,13 +5,23 @@ The running app consists of the real time data analysis and the historical data 
 
 
 ## Contents
-[Ingest real time GitHub events](#Ingest-real-time-events)
+[Ingest real time GitHub events](#ingest-real-time-events)
 - [Step 1: Pull and build the docker images](#step-1-pull-and-build-the-docker-images)
 - [Step 2: Compose Kafka, Flink and Cassandra](#step-2-compose-kafka-flink-and-cassandra)
 - [Step 3: Compose the real time GitHub events Kafka Producer](#step-3-compose-the-real-time-gitHub-events-kafka-producer)
 - [Step 4: Ingest real GitHub events using a Pyflink job](#step-4-ingest-real-github-events-using-a-pyflink-job)
 - [Step 5: Expose GitHub events to the UI and deploy it](#step-5-expose-github-events-to-the-ui-and-deploy-it)
 
+
+[Ingest historical events](#ingest-historical-events)
+- [Step 1: Run bash script to create directories for the kafka docker container](#run-bash-script-to-create-directories-for-the-kafka-docker-container)
+- [Step 2: Start services kafka, cassandra and flask app ui](Step-2-start-services-kafka-cassandra-and-flask-app-ui)
+- [Step 3: Download events of the designated gharchive files, thin them and produce them to kafka](Step-3-Download-events-of-the-designated-gharchive-files-thin-them-and-produce-them-to-kafka)
+- [Step 4: Deploy screen 2 pyflink jobs (job getting the screen 2 data)](Step-4-deploy-screen-2-pyflink-jobs-job-getting-the-screen-2-data)
+- [Step 5: Deploy screen 3 pyflink job (job getting the screen 3 data](Step-5-deploy-screen-3-pyflink-job-(job-getting-the-screen-3-data))
+- [Step 6: Deploy screen 4 pyflink job (job getting the screen 4 data)](Step-6-deploy-screen-4-pyflink-job-(-job-getting-the-screen-4-data))
+- [Step 7 (optional): Cancel all jobs (you can also do so manually from the UI)](Step-7-(optional)-cancel-all-jobs-(you-can-also-do-so-manually-from-the-ui))
+- [Step 8 (optional): Delete messages of the 'historical-raw-events' topic if the topic takes up too much space](Step-8-(optional)-delete-messages-of-the-historical-raw-events-topic-if-the-topic-takes-up-too-much-space)
 
 <!-- 2. [Ingest historical GitHub events](#Ingest-historical-events) -->
 
