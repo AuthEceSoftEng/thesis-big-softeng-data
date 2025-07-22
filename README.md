@@ -61,6 +61,10 @@ docker build -f Dockerfile-python -t python:3.10-script-executing-image .
 # Compose the actual services
 docker compose up -d kafka kafka-ui jobmanager taskmanager-real-time cassandra_host cassandra-ui 
 ```
+Now you should be able to see 
+- The kafka-ui at localhost:8080
+- The flink web ui at localhost:8081
+- The cassandra-ui at localhost:8083
 
 ### Step 3: Compose the real time GitHub events Kafka Producer
 ```sh
@@ -79,7 +83,8 @@ docker exec -d -i  jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/py
 ```sh
 docker compose up -d event-data-exposing-server events-flask-app
 ```
-
+Now you should be able to see 
+- The flask app UI at localhost:5100
 
 
 
@@ -105,18 +110,22 @@ docker compose down kafka kafka-ui jobmanager taskmanager-1 cassandra_host cassa
 
 Now you should be able to see 
 - The kafka-ui at localhost:8080
-- The cassandra-ui at localhost:8083
-- The flask app UI at localhost:5000
 - The flink web ui at localhost:8081
+- The cassandra-ui at localhost:8083
+- The flask app UI at localhost:5100
+
 
 
 ### Step 3: Download events of the designated gharchive files, thin them and produce them to kafka
 ```sh
 
-# For the historical analysis, choose the events of December you want to download and thin in files historical-files-thinner, historical-files-thinner-2 (and sililarly for 3 and 4) in lines:
-# starting_date_formatted = '2024-12-04-0'
-# ending_date_formatted = '2024-12-04-4' 
-# (Change the dates as you choose)
+# For the historical analysis, choose the events of December 2024 you want to download and thin in files historical-files-thinner, historical-files-thinner-2 (and sililarly for 3 and 4) in lines:
+# starting_date_formatted = <earlier-designated-date>
+# ending_date_formatted = <older-designated-date> 
+# (Change the dates as you choose in the format: 
+# '2024-12-d-h' (day -d- should be zero padded but the hour -h- should not)
+# Example: '2024-12-01-0' for the 12 am on 5/12/2024
+#          '2024-12-06-15' for the 3 pm on 15/12/2024
 docker compose up python-historical-events-thinner # (for a single downloaded and thinner)
 # For multiple downloaders and thinners running in parallel:
 docker compose up python-historical-events-thinner-2
