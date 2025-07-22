@@ -74,20 +74,17 @@ docker compose up -d event-data-exposing-server events-flask-app
 
 
 
-
-<!-- 
-
 ## Ingest historical events 
-All terminals below are in the project root directory
+All terminals below are in the project's root directory
 
+### Step 1: Run bash script to create directories for the kafka docker container
 
-
-### Terminal 2: Run bash script to create directories for the kafka docker container
+Execute the bash script below if it was not executed already for the real time GitHub events ingestion part
 ```sh
 ./helpers/setup-kafka-and-ui.sh
 ```
 
-### Terminal 3: Start services kafka, cassandra and flask app ui
+### Step 2: Start services kafka, cassandra and flask app ui
 ```sh
 # Start the services
 docker compose up kafka kafka-ui jobmanager taskmanager-1 cassandra_host cassandra-ui python-flask-app
@@ -102,8 +99,13 @@ Now you should be able to see
 - The flink web ui at localhost:8081
 
 
-### Terminal 4: Download events of the designated gharchive files, thin them and produce them to kafka
+### Step 3: Download events of the designated gharchive files, thin them and produce them to kafka
 ```sh
+
+# For the historical analysis, choose the events of December you want to download and thin in files historical-files-thinner, historical-files-thinner-2 (and sililarly for 3 and 4) in lines:
+# starting_date_formatted = '2024-12-04-0'
+# ending_date_formatted = '2024-12-04-4' 
+# (Change the dates as you choose)
 docker compose up python-historical-events-thinner # (for a single downloaded and thinner)
 # For multiple downloaders and thinners running in parallel:
 docker compose up python-historical-events-thinner-2
@@ -118,50 +120,33 @@ docker compose up python-historical-events-producer
 
 
 ### Attention:
-In terminals 5-7, change the pyclientexec option to the host python environment (e.g. /usr/bin/python).
+In terminals 5-7, change the pyclientexec option to your host's python path (e.g. /usr/bin/python).
 
-### Terminal 5: Deploy screen 2 pyflink job (job getting the screen 2 data)
+### Step 4: Deploy screen 2 pyflink jobs (job getting the screen 2 data)
 ```sh
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
-
-# Screen 2 job split in 2 
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
-
-
-# Legacy screen 2 parts
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7b_backup_27_4.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_2_q6_q8_flink_job_q7h_q8h_backup_27_4.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
-
-
 ```
 
-### Terminal 6: Deploy screen 3 pyflink job (job getting the screen 3 data)
+### Step 5: Deploy screen 3 pyflink job (job getting the screen 3 data)
 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_3_q9_q10_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
-
-# Legacy
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_3_q9_q10_flink_job_backup_27_4.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'
 ```
 
 
-### Terminal 7: Deploy screen 4 pyflink job (job getting the screen 4 data)
+### Step 6: Deploy screen 4 pyflink job (job getting the screen 4 data)
 
 ```sh
 docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_4_q11_q15_flink_job.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
-
-# Legacy
-docker exec -i jobmanager bash -c './bin/flink run -pyclientexec /usr/bin/python -py /opt/flink/usrlib/screen_4_q11_q15_flink_job_backup_27_4.py --config_file_path /opt/flink/usrlib/getting-started-in-docker.ini'  
-
 ```
 
-### Terminal 8: Cancel all jobs (you can also do so manually from the UI)
+### Step 7 (optional): Cancel all jobs (you can also do so manually from the UI)
 ```sh
 docker compose up cancel-all-flink-jobs
 ```
 
-### Terminal 9 (optional): Delete messages of the 'historical-raw-events' topic if the topic takes up too much space
+### Step 8 (optional): Delete messages of the 'historical-raw-events' topic if the topic takes up too much space
 ```sh
 # Free up the space of the topic (delete its messages and make its size = 0)
 cd usrlib
@@ -169,5 +154,3 @@ cd usrlib
 ```
 
 
-
- -->
