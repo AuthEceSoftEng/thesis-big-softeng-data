@@ -23,7 +23,6 @@ The running app consists of the real time data analysis and the historical data 
 - [Step 7 (optional): Cancel all jobs (you can also do so manually from the UI)](#step-7-optional-cancel-all-jobs-you-can-also-do-so-manually-from-the-ui)
 - [Step 8 (optional): Delete messages of the 'historical-raw-events' topic if the topic takes up too much space](#step-8-optional-delete-messages-of-the-historical-raw-events-topic-if-the-topic-takes-up-too-much-space)
 
-<!-- 2. [Ingest historical GitHub events](#Ingest-historical-events) -->
 
 
 ## Ingest real time events 
@@ -47,8 +46,8 @@ docker pull ipushc/cassandra-web:v1.1.5
 # jobmanager, taskmanager
 docker build -f Dockerfile-pyflink -t pyflink:1.18.1 .
 
-# python-real-time-events-producer, python-data-exposing-server, 
-# python-flask-app, python-historical-events-producer 
+# python-real-time-events-producer, event-data-exposing-server, 
+# events-flask-app, python-historical-events-producer 
 docker build -f Dockerfile-python -t python:3.10-script-executing-image . 
 
 ```
@@ -84,12 +83,14 @@ docker compose up -d event-data-exposing-server events-flask-app
 
 
 
-## Ingest historical events 
+## Ingest historical GitHub events 
 All terminals below are in the project's root directory
 
 ### Step 1: Run bash script to create directories for the kafka docker container
 
-Execute the bash script below if it was not executed already for the real time GitHub events ingestion part
+First pull and build the images if not done already (see [Step 1: Pull and build the docker images](#step-1-pull-and-build-the-docker-images))
+
+Execute the bash script below if it was not executed already for the [real time GitHub events ingestion part](#step-2-compose-kafka-flink-and-cassandra)
 ```sh
 ./helpers/setup-kafka-and-ui.sh
 ```
@@ -97,9 +98,9 @@ Execute the bash script below if it was not executed already for the real time G
 ### Step 2: Start services kafka, cassandra and flask app ui
 ```sh
 # Start the services
-docker compose up kafka kafka-ui jobmanager taskmanager-1 cassandra_host cassandra-ui python-flask-app
+docker compose up kafka kafka-ui jobmanager taskmanager-1 cassandra_host cassandra-ui event-data-exposing-server events-flask-app
 # Stop the services
-docker compose down kafka kafka-ui jobmanager taskmanager-1 cassandra_host cassandra-ui python-flask-app
+docker compose down kafka kafka-ui jobmanager taskmanager-1 cassandra_host cassandra-ui event-data-exposing-server events-flask-app
 ```
 
 Now you should be able to see 

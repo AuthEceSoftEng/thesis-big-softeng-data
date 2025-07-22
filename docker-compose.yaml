@@ -171,7 +171,6 @@ services:
       - CASSANDRA_HOST=cassandra_host
       - CASSANDRA_PORT=9142
 
-
 # Real time events producer using GitHub firehose
   python-real-time-events-producer:
     image: python:3.10-script-executing-image
@@ -241,7 +240,6 @@ services:
     volumes: 
       # /usrlib
       - ./usrlib/historical-events-file-thinner.py:/usrlib/historical-events-file-thinner.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
       - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
 
       # github_data
@@ -257,7 +255,6 @@ services:
     volumes: 
       # /usrlib
       - ./usrlib/historical-events-file-thinner-2.py:/usrlib/historical-events-file-thinner-2.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
       - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
 
       # github_data
@@ -273,7 +270,6 @@ services:
     volumes: 
       # /usrlib
       - ./usrlib/historical-events-file-thinner-3.py:/usrlib/historical-events-file-thinner-3.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
       - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
 
       # github_data
@@ -289,7 +285,6 @@ services:
     volumes: 
       # /usrlib
       - ./usrlib/historical-events-file-thinner-4.py:/usrlib/historical-events-file-thinner-4.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
       - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py
 
       # github_data
@@ -301,18 +296,17 @@ services:
 # Flink taskmanager 1
   taskmanager-1:
     image: pyflink:1.18.1
-    # container_name: taskmanager-1
+    container_name: taskmanager-1
     volumes:
       # Connectors in opt/flink/opt
       - ./connectors/flink-sql-connector-kafka-3.0.2-1.18.jar:/opt/flink/opt/flink-sql-connector-kafka-3.0.2-1.18.jar
       - ./connectors/flink-connector-cassandra_2.12-3.2.0-1.18.jar:/opt/flink/lib/flink-connector-cassandra_2.12-3.2.0-1.18.jar
       
       # Pyflink jobs for screen 2, 3 and 4
-      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
-      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
       - ./usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q6b_q7h.py
       - ./usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py:/opt/flink/usrlib/screen_2_q6_q8_flink_job_q8b_q8h.py
-   
+      - ./usrlib/screen_3_q9_q10_flink_job.py:/opt/flink/usrlib/screen_3_q9_q10_flink_job.py
+      - ./usrlib/screen_4_q11_q15_flink_job.py:/opt/flink/usrlib/screen_4_q11_q15_flink_job.py
 
       # Config file
       - ./usrlib/getting-started-in-docker.ini:/opt/flink/usrlib/getting-started-in-docker.ini
@@ -330,11 +324,11 @@ services:
 
     deploy:
       mode: replicated-job
-      replicas: 4
+      replicas: 1
       resources:
         limits:
-          cpus: '1.0'   # Limit this container to 4 CPUs
-          memory: 1g
+          cpus: '4.0'   # Limit this container to 4 CPUs
+          memory: 4g
 
         # reservations:
         #   cpus: '2.0'   # Guarantee at least 2 CPUs
@@ -352,10 +346,8 @@ services:
       - ./usrlib/historical-events-file-rotating-producer.py:/usrlib/historical-events-file-rotating-producer.py
       - ./usrlib/produce_from_last_line_of_file.py:/usrlib/produce_from_last_line_of_file.py
       - ./usrlib/get_parsed_gharchive_files.py:/usrlib/get_parsed_gharchive_files.py
-      - ./usrlib/thin_data.py:/usrlib/thin_data.py      
       - ./usrlib/heavy_thin_of_data.py:/usrlib/heavy_thin_of_data.py      
       - ./usrlib/delete_and_recreate_topic.py:/usrlib/delete_and_recreate_topic.py
-      
 
       # usrlib/helpers
       - ./usrlib/getting-started-in-docker.ini:/usrlib/helpers/getting-started-in-docker.ini
