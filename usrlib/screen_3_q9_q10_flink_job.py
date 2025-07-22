@@ -144,7 +144,7 @@ pull_request_events_ds = env.from_source(source=pull_request_events_source, \
 
 cassandra_host = 'cassandra_host'
 cassandra_port = 9142
-cassandra_keyspace = "prod_gharchive_backup"
+cassandra_keyspace = "prod_gharchive"
 max_concurrent_requests = 1000
 print(f"Start reading data from kafka topics to create "
         f"Cassandra tables:\n"

@@ -265,8 +265,8 @@ def get_running_job_names():
 if __name__ == '__main__':
     
     # Get the URL of the gharchive available you want to 
-    starting_date_formatted =  '2024-12-25-1'
-    ending_date_formatted =  '2024-12-25-3' 
+    starting_date_formatted =  '2024-12-09-1'
+    ending_date_formatted =  '2024-12-09-3' 
 
     current_date_formatted = starting_date_formatted
     starting_date = datetime.strptime(starting_date_formatted, '%Y-%m-%d-%H')

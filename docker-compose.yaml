@@ -117,7 +117,7 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         parallelism.default: 4
-        taskmanager.numberOfTaskSlots: 8
+        taskmanager.numberOfTaskSlots: 16
 
       # taskmanager.rpc.port: 36429
       # taskmanager.data.port: 36430
@@ -317,7 +317,7 @@ services:
       - | 
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 1
+        taskmanager.numberOfTaskSlots: 16
         parallelism.default: 1
         rest.flamegraph.enabled: true
         metrics.latency.interval: 1000

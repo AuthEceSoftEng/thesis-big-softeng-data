@@ -119,13 +119,17 @@ Now you should be able to see
 ### Step 3: Download events of the designated gharchive files, thin them and produce them to kafka
 ```sh
 
-# For the historical analysis, choose the events of December 2024 you want to download and thin in files historical-files-thinner, historical-files-thinner-2 (and sililarly for 3 and 4) in lines:
+# For the historical analysis, choose the events of December 2024 you want to download and thin in files historical-files-thinner, historical-files-thinner-2 (and similarly for 3 and 4) in lines:
 # starting_date_formatted = <earlier-designated-date>
 # ending_date_formatted = <older-designated-date> 
+# of file historical-events-thinner.py (and historical-events-thinner-2.py, historical-events-thinner-3.py etc)
 # (Change the dates as you choose in the format: 
 # '2024-12-d-h' (day -d- should be zero padded but the hour -h- should not)
 # Example: '2024-12-01-0' for the 12 am on 5/12/2024
 #          '2024-12-06-15' for the 3 pm on 15/12/2024
+# Another example:
+# starting_date_formatted =  '2024-12-09-1'
+# ending_date_formatted =  '2024-12-09-3' 
 docker compose up python-historical-events-thinner # (for a single downloaded and thinner)
 # For multiple downloaders and thinners running in parallel:
 docker compose up python-historical-events-thinner-2
@@ -135,6 +139,15 @@ docker compose up python-historical-events-thinner-4
 # Create the topic
 # Note: Ignore the error on the deletion of the topic as the topic has not been created yet
 ./delete_and_recreate_topic.sh
+
+# Do the same as above for the produced files:
+# (Change the dates as you choose in the format: 
+# '2024-12-d-h' (day -d- should be zero padded but the hour -h- should not)
+# Example: '2024-12-01-0' for the 12 am on 5/12/2024
+#          '2024-12-06-15' for the 3 pm on 15/12/2024
+# Another example:
+# starting_date_formatted =  '2024-12-09-1'
+# ending_date_formatted =  '2024-12-09-3' 
 docker compose up python-historical-events-producer
 ```
 

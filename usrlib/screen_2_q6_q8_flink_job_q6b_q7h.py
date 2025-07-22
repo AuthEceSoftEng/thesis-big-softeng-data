@@ -134,7 +134,8 @@ pull_request_events_ds = env.from_source(source=pull_request_events_source, \
 max_concurrent_requests = 1000
 cassandra_host = 'cassandra_host'
 cassandra_port = 9142
-cassandra_keyspace = "prod_gharchive_backup"
+
+cassandra_keyspace = "prod_gharchive"
 print(f"Insert data from kafka topics into Cassandra tables:\n"
         "T6_b: top_bot_contributions_by_day, T6_h: top_human_contributors_by_day,\n"
         "T7_b: number_of_pull_requests_by_bots, T7_h: number_of_pull_requests_by_humans")
@@ -243,7 +244,7 @@ cassandra_sink_q6_h = CassandraSink.add_sink(top_human_contributors_info_ds_q6_h
 # region
 
 number_of_pull_requests_by_bots_by_day_type_info_q7_b = \
-    Types.ROW_NAMED(['number_of_pull_requests', 'was_accepted', 'day'], \
+    Types.ROW_NAMED(['number_of_pull_requests', 'were_accepted', 'day'], \
     [Types.LONG(),\
         Types.BOOLEAN(), Types.STRING()])
 
@@ -274,7 +275,7 @@ number_of_closed_pull_requests_ds_q7_b = number_of_closed_pull_requests_ds\
 upsert_element_into_T7_b_number_of_pull_requests_by_bots = \
             f"UPDATE {cassandra_keyspace}.number_of_pull_requests_by_bots \
             SET number_of_pull_requests = number_of_pull_requests + ? WHERE \
-            was_accepted = ? AND day = ?;"
+            were_accepted = ? AND day = ?;"
 cassandra_sink_q7_b = CassandraSink.add_sink(number_of_closed_pull_requests_ds_q7_b)\
     .set_query(upsert_element_into_T7_b_number_of_pull_requests_by_bots)\
     .set_host(host=cassandra_host, port=cassandra_port)\
@@ -348,8 +349,8 @@ if __name__ =='__main__':
 
     create_number_of_pull_requests_by_bots_q7_b = \
         f"CREATE TABLE IF NOT EXISTS {cassandra_keyspace}.number_of_pull_requests_by_bots \
-        (day text, was_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, \
-        was_accepted)));"
+        (day text, were_accepted boolean, number_of_pull_requests counter, PRIMARY KEY ((day, \
+        were_accepted)));"
     session.execute(create_number_of_pull_requests_by_bots_q7_b)
 
     create_number_of_pull_requests_by_humans_q7_h = \
