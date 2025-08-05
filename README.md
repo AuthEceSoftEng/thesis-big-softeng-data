@@ -3,6 +3,8 @@ Diploma thesis for processing Big Data from software processes. Incorporates Apa
 
 The running app consists of the real time data analysis and the historical data analysis and runs on a Linux terminal.
 
+The thesis text itself (in Greek) can be found at [My Thesis online](https://ikee.lib.auth.gr/record/365012/files/Topalidis_Stylianos.pdf?version=1).
+
 
 ## Contents
 [Ingest real time GitHub events](#ingest-real-time-events)
@@ -26,6 +28,8 @@ The running app consists of the real time data analysis and the historical data 
 
 
 ## Ingest real time events 
+
+![Image](./helpers/screen_1_trending_pt_1_near_real_time_stats_pop_repos.png)
 
 ### Step 1: Pull and build the docker images 
 
